@@ -34,6 +34,14 @@ const accionesBase = [
     adminOnly: false,
   },
   {
+    titulo: "Cierre de servicio",
+    descripcion: "Resumen, exportar y cerrar el día",
+    href: "/cierre",
+    disponible: true,
+    adminOnly: true,
+    permiso: "cierre" as const,
+  },
+  {
     titulo: "Carta",
     descripcion: "Platos, precios, ingredientes y alérgenos",
     href: "/configuracion/carta",
@@ -65,10 +73,12 @@ export function HomeClient() {
     puedeConfigCarta,
     puedeConfigMenuDia,
     puedeConfigImpresora,
+    puedeCierre,
   } = useAuth();
 
   const acciones = accionesBase.filter((accion) => {
     if (!accion.adminOnly) return true;
+    if (accion.permiso === "cierre") return puedeCierre;
     if (accion.permiso === "carta") return puedeConfigCarta;
     if (accion.permiso === "menuDia") return puedeConfigMenuDia;
     if (accion.permiso === "impresora") return puedeConfigImpresora;
