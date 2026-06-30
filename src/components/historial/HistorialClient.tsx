@@ -1,41 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/Button";
 import { HistorialCard } from "@/components/historial/HistorialCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHistorial } from "@/hooks/useHistorial";
+import { getNombreMesa } from "@/lib/storage/mesas";
 import type { HistorialTipo } from "@/types/panel";
 
 type FiltroTipo = "todos" | HistorialTipo;
 
-export function HistorialClient() {
+function HistorialContent() {
+  const searchParams = useSearchParams();
+  const mesaFiltro = searchParams.get("mesa");
   const { puedeBorrarHistorial } = useAuth();
   const { entradas, recargar, eliminar, reimprimir, reimpresionMsg, reimpresionError } =
     useHistorial();
   const [filtro, setFiltro] = useState<FiltroTipo>("todos");
 
-  const filtradas =
-    filtro === "todos"
-      ? entradas
-      : entradas.filter((e) => e.tipo === filtro);
+  const filtradas = entradas
+    .filter((e) => (filtro === "todos" ? true : e.tipo === filtro))
+    .filter((e) => (mesaFiltro ? String(e.comanda.mesa) === mesaFiltro : true));
 
   return (
-    <RequireAuth>
-      <main className="mx-auto min-h-dvh max-w-lg px-4 py-4">
+    <main className="mx-auto min-h-dvh max-w-lg px-4 py-4">
       <header className="mb-4">
         <Link
-          href="/"
+          href={mesaFiltro ? "/mesas" : "/"}
           className="mb-2 inline-block text-sm font-semibold text-accent"
         >
-          ← Inicio
+          ← {mesaFiltro ? "Mesas" : "Inicio"}
         </Link>
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-primary">Historial</h1>
-            <p className="text-sm text-muted">{entradas.length} comandas guardadas</p>
+            <p className="text-sm text-muted">
+              {mesaFiltro
+                ? `Mesa ${getNombreMesa(mesaFiltro)} · ${filtradas.length} tickets`
+                : `${entradas.length} comandas guardadas`}
+            </p>
           </div>
           <Button variant="outline" size="sm" onClick={recargar}>
             Actualizar
@@ -83,8 +89,6 @@ export function HistorialClient() {
       {filtradas.length === 0 ? (
         <p className="rounded-2xl border-2 border-dashed border-border bg-card p-8 text-center text-muted">
           No hay comandas en el historial.
-          <br />
-          <span className="text-sm">Envía una comanda desde el comandero.</span>
         </p>
       ) : (
         <div className="space-y-3">
@@ -99,7 +103,22 @@ export function HistorialClient() {
           ))}
         </div>
       )}
-      </main>
+    </main>
+  );
+}
+
+export function HistorialClient() {
+  return (
+    <RequireAuth>
+      <Suspense
+        fallback={
+          <main className="mx-auto flex min-h-dvh max-w-lg items-center justify-center px-4">
+            <p className="text-muted">Cargando…</p>
+          </main>
+        }
+      >
+        <HistorialContent />
+      </Suspense>
     </RequireAuth>
   );
 }

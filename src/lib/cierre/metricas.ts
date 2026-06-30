@@ -54,7 +54,7 @@ export function calcularResumenCierre(filtros: FiltrosCierre): ResumenCierre {
   const postres = getComandasPostresFiltradas(filtros);
 
   const porCamarero = new Map<string, number>();
-  const porMesa = new Map<number, number>();
+  const porMesa = new Map<string, number>();
   const porEstado: Record<EstadoPanel, number> = { ...ESTADOS_VACIOS };
 
   const platosMap = new Map<string, number>();
@@ -89,7 +89,7 @@ export function calcularResumenCierre(filtros: FiltrosCierre): ResumenCierre {
       .sort((a, b) => b.cantidad - a.cantidad),
     porMesa: [...porMesa.entries()]
       .map(([mesa, cantidad]) => ({ mesa, cantidad }))
-      .sort((a, b) => a.mesa - b.mesa),
+      .sort((a, b) => a.mesa.localeCompare(b.mesa, "es")),
     platosMasPedidos: topItems(platosMap),
     bebidasMasPedidas: topItems(bebidasMap),
     postresMasPedidos: topItems(postresMap),

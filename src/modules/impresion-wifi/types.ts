@@ -11,7 +11,7 @@ export interface PrintTicketRequest {
   destino: DestinoImpresion;
   tipo: TipoImpresion;
   comandaId?: string;
-  mesa?: number;
+  mesa?: string;
   camarero?: string;
   /** Impresora principal — todos los destinos usan la misma físicamente */
   impresora?: ImpresoraConfig;

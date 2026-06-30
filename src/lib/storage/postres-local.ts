@@ -6,6 +6,7 @@ const STORAGE_KEY = "comandero-taberneta:postres";
 function normalizarPostres(comanda: ComandaPostres): ComandaPostres {
   return {
     ...comanda,
+    mesa: typeof comanda.mesa === "number" ? String(comanda.mesa) : comanda.mesa,
     postres: comanda.postres ?? [],
     observaciones: comanda.observaciones ?? [],
     estadoPanel: comanda.estadoPanel ?? "pendiente",

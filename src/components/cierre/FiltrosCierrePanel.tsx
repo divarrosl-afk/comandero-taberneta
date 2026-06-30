@@ -10,7 +10,7 @@ import {
 interface FiltrosCierrePanelProps {
   filtros: FiltrosCierre;
   camareros: string[];
-  mesas: number[];
+  mesas: string[];
   onChange: (cambios: Partial<FiltrosCierre>) => void;
 }
 
@@ -70,7 +70,7 @@ export function FiltrosCierrePanel({
             value={filtros.mesa ?? ""}
             onChange={(e) =>
               onChange({
-                mesa: e.target.value ? Number(e.target.value) : null,
+                mesa: e.target.value || null,
               })
             }
             className="min-h-11 w-full rounded-xl border-2 border-border bg-background px-3 outline-none focus:border-primary"
@@ -78,7 +78,7 @@ export function FiltrosCierrePanel({
             <option value="">Todas</option>
             {mesas.map((m) => (
               <option key={m} value={m}>
-                Mesa {m}
+                {m}
               </option>
             ))}
           </select>

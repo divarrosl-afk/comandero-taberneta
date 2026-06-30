@@ -13,9 +13,14 @@ function normalizarPlato<T extends { modificaciones?: string[]; salsas?: { nombr
   };
 }
 
+function migrarMesa(mesa: string | number): string {
+  return typeof mesa === "number" ? String(mesa) : mesa;
+}
+
 function normalizarComanda(comanda: ComandaCocina): ComandaCocina {
   return {
     ...comanda,
+    mesa: migrarMesa(comanda.mesa as string | number),
     entrantes: comanda.entrantes.map(normalizarPlato),
     primeros: comanda.primeros.map(normalizarPlato),
     segundos: comanda.segundos.map(normalizarPlato),

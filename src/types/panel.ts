@@ -52,7 +52,7 @@ export type HistorialTipo = "cocina" | "postres";
 export interface HistorialItem {
   id: string;
   tipo: HistorialTipo;
-  mesa: number;
+  mesa: string;
   camarero: string;
   creadaEn: string;
   estadoPanel: EstadoPanel;

@@ -76,7 +76,7 @@ export interface PlatoComanda {
 
 export interface ComandaCocina {
   id: string;
-  mesa: number;
+  mesa: string;
   camarero: string;
   tipoServicio: TipoServicio;
   entrantes: PlatoComanda[];
@@ -108,7 +108,7 @@ export interface PlatoFormItem {
 }
 
 export interface ComandaFormState {
-  mesa: number | null;
+  mesa: string | null;
   camareroId: string | null;
   entrantes: PlatoFormItem[];
   primeros: PlatoFormItem[];

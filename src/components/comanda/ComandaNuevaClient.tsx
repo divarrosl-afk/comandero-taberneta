@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useMemo, Suspense, useEffect } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { ComandaEditView } from "@/components/comanda/nueva/ComandaEditView";
 import { ComandaEnviadaView } from "@/components/comanda/nueva/ComandaEnviadaView";
@@ -8,13 +10,16 @@ import { ComandaPreviewView } from "@/components/comanda/nueva/ComandaPreviewVie
 import { useAuth } from "@/contexts/AuthContext";
 import { useComandaForm } from "@/hooks/useComandaForm";
 import { formToComanda } from "@/lib/comanda/map-form";
+import { notificarComandaEnviada, marcarMesaOcupada } from "@/lib/mesas/estado-mesa";
 import { limpiarBorrador } from "@/lib/storage/borrador-comanda";
 import { guardarComandaLocal } from "@/lib/storage/comandas-local";
 
 function ComandaNuevaForm() {
+  const searchParams = useSearchParams();
+  const mesaParam = searchParams.get("mesa");
   const { sesion, puedeCambiarCamarero } = useAuth();
   const camareroFijo = puedeCambiarCamarero ? null : (sesion?.camareroId ?? null);
-  const formActions = useComandaForm(camareroFijo);
+  const formActions = useComandaForm(camareroFijo, mesaParam);
   const {
     form,
     step,
@@ -27,9 +32,14 @@ function ComandaNuevaForm() {
 
   const comanda = useMemo(() => formToComanda(form), [form]);
 
+  useEffect(() => {
+    if (mesaParam) marcarMesaOcupada(mesaParam);
+  }, [mesaParam]);
+
   const handleEnviar = () => {
     if (!comanda) return;
     guardarComandaLocal(comanda);
+    notificarComandaEnviada(comanda.mesa);
     limpiarBorrador();
     setStep("enviada");
   };
@@ -82,13 +92,21 @@ export function ComandaNuevaClient() {
 
   return (
     <RequireAuth>
-      {!listo ? (
-        <main className="mx-auto flex min-h-dvh max-w-lg items-center justify-center px-4">
-          <p className="text-muted">Cargando…</p>
-        </main>
-      ) : (
-        <ComandaNuevaForm />
-      )}
+      <Suspense
+        fallback={
+          <main className="mx-auto flex min-h-dvh max-w-lg items-center justify-center px-4">
+            <p className="text-muted">Cargando…</p>
+          </main>
+        }
+      >
+        {!listo ? (
+          <main className="mx-auto flex min-h-dvh max-w-lg items-center justify-center px-4">
+            <p className="text-muted">Cargando…</p>
+          </main>
+        ) : (
+          <ComandaNuevaForm />
+        )}
+      </Suspense>
     </RequireAuth>
   );
 }

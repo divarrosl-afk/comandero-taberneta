@@ -7,6 +7,7 @@ import { PrintStatusBanner } from "@/components/impresion/PrintStatusBanner";
 import { ComandaTicketPreview } from "@/components/comanda/nueva/ComandaTicketPreview";
 import { imprimirComandaCocina } from "@/modules/impresion-wifi";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi";
+import { getNombreMesa } from "@/lib/storage/mesas";
 import type { ComandaCocina } from "@/types/comanda";
 
 interface ComandaEnviadaViewProps {
@@ -55,7 +56,7 @@ export function ComandaEnviadaView({
           {PRINT_MESSAGES.enviada}
         </p>
         <h1 className="mt-2 text-3xl font-bold text-primary">
-          MESA {comanda.mesa}
+          MESA {getNombreMesa(String(comanda.mesa))}
         </h1>
         <p className="mt-1 text-muted">
           Guardada en este dispositivo · modo local

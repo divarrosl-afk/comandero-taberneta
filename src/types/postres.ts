@@ -10,7 +10,7 @@ export interface PostreFormItem {
 }
 
 export interface PostresFormState {
-  mesa: number | null;
+  mesa: string | null;
   camareroId: string | null;
   postres: PostreFormItem[];
   estadoX: EstadoPostreX | null;
@@ -29,7 +29,7 @@ export interface PostreItem {
 
 export interface ComandaPostres {
   id: string;
-  mesa: number;
+  mesa: string;
   camarero: string;
   postres: PostreItem[];
   estadoX: EstadoPostreX | null;
