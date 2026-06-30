@@ -10,7 +10,7 @@ import type { HistorialTipo } from "@/types/panel";
 type FiltroTipo = "todos" | HistorialTipo;
 
 export function HistorialClient() {
-  const { entradas, recargar, eliminar, reimprimir, reimpresionMsg } =
+  const { entradas, recargar, eliminar, reimprimir, reimpresionMsg, reimpresionError } =
     useHistorial();
   const [filtro, setFiltro] = useState<FiltroTipo>("todos");
 
@@ -40,7 +40,14 @@ export function HistorialClient() {
       </header>
 
       {reimpresionMsg && (
-        <div className="mb-4 rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
+        <div
+          className={[
+            "mb-4 rounded-xl border px-4 py-3 text-sm font-medium",
+            reimpresionError
+              ? "border-red-200 bg-red-50 text-red-800"
+              : "border-green-200 bg-green-50 text-green-800",
+          ].join(" ")}
+        >
           {reimpresionMsg}
         </div>
       )}
