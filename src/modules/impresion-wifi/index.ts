@@ -14,3 +14,4 @@ export {
   reimprimirTicket,
   destinoDesdeHistorial,
 } from "@/modules/impresion-wifi/imprimir-comanda";
+export { probarImpresora } from "@/modules/impresion-wifi/probar-impresora";

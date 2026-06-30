@@ -1,9 +1,7 @@
 import type { PrintMode } from "@/modules/impresion-wifi/types";
-
-export function getPrintMode(): PrintMode {
-  const mode = process.env.NEXT_PUBLIC_PRINT_MODE ?? process.env.PRINT_MODE ?? "mock";
-  return mode === "network" ? "network" : "mock";
-}
+import type { ImpresoraConfig } from "@/types/impresora";
+import { IMPRESORA_DEFAULT } from "@/types/impresora";
+import { getImpresoraConfig } from "@/lib/storage/impresora-config";
 
 export function getPrintServerUrl(): string | null {
   const url =
@@ -13,11 +11,30 @@ export function getPrintServerUrl(): string | null {
   return url?.trim() || null;
 }
 
-export function getPrinterIp(destino: "cocina" | "barra" | "postres"): string | null {
-  const map = {
-    cocina: process.env.PRINTER_COCINA_IP,
-    barra: process.env.PRINTER_BARRA_IP,
-    postres: process.env.PRINTER_POSTRES_IP,
+/** Lee configuración de impresora: localStorage (cliente) o env (servidor) */
+export function resolveImpresoraConfig(
+  override?: ImpresoraConfig,
+): ImpresoraConfig {
+  if (override) return override;
+
+  if (typeof window !== "undefined") {
+    return getImpresoraConfig();
+  }
+
+  const ip = process.env.PRINTER_IP?.trim() ?? "";
+  const modo = process.env.PRINT_MODE === "network" ? "network" : "mock";
+
+  return {
+    ...IMPRESORA_DEFAULT,
+    ip,
+    puerto: Number(process.env.PRINTER_PORT ?? 9100),
+    modo,
   };
-  return map[destino]?.trim() || null;
+}
+
+export function getEffectivePrintMode(
+  impresora: ImpresoraConfig,
+): PrintMode {
+  if (!impresora.activa) return "mock";
+  return impresora.modo === "network" ? "network" : "mock";
 }

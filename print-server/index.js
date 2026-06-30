@@ -8,13 +8,6 @@ const LOG_DIR = path.join(__dirname, "logs");
 const LOG_FILE = path.join(LOG_DIR, "tickets.log");
 
 const PORT = Number(process.env.PORT ?? 3100);
-const PRINT_MODE = process.env.PRINT_MODE === "network" ? "network" : "mock";
-
-const PRINTER_IPS = {
-  cocina: process.env.PRINTER_COCINA_IP?.trim() || null,
-  barra: process.env.PRINTER_BARRA_IP?.trim() || null,
-  postres: process.env.PRINTER_POSTRES_IP?.trim() || null,
-};
 
 function ensureLogDir() {
   if (!fs.existsSync(LOG_DIR)) {
@@ -24,11 +17,13 @@ function ensureLogDir() {
 
 function logTicket(request, result) {
   ensureLogDir();
+  const imp = request.impresora ?? {};
   const entry = [
     `\n${"=".repeat(60)}`,
-    `[${result.timestamp}] ${request.destino.toUpperCase()} · ${request.tipo}`,
-    `Mesa: ${request.mesa ?? "—"} | Camarero: ${request.camarero ?? "—"}`,
-    `Mode: ${result.mode} | OK: ${result.ok} | Simulated: ${result.simulated}`,
+    `[${result.timestamp}] ${imp.nombre ?? "Impresora principal"}`,
+    `Destino lógico: ${request.destino} · Tipo: ${request.tipo}`,
+    `IP: ${imp.ip || "—"}:${imp.puerto ?? 9100} · Papel: ${imp.anchoPapel ?? "80mm"}`,
+    `Mesa: ${request.mesa ?? "—"} | Mode: ${result.mode} | OK: ${result.ok}`,
   ].join("\n");
 
   fs.appendFileSync(LOG_FILE, `${entry}\n${request.ticket}\n`, "utf8");
@@ -37,26 +32,25 @@ function logTicket(request, result) {
 }
 
 async function printEscPosStub(request) {
-  const ip = PRINTER_IPS[request.destino];
-  if (!ip) {
+  const imp = request.impresora ?? {};
+  if (!imp.ip) {
     return {
       ok: false,
       mode: "network",
       destino: request.destino,
       tipo: request.tipo,
-      message: `Sin IP configurada para impresora ${request.destino}`,
+      message: "Configure la IP de la impresora principal",
       simulated: false,
       timestamp: new Date().toISOString(),
     };
   }
 
-  // Stub: próximo paso implementar TCP ESC/POS al puerto 9100
   return {
     ok: false,
     mode: "network",
     destino: request.destino,
     tipo: request.tipo,
-    message: `ESC/POS pendiente (${ip}). Usa PRINT_MODE=mock mientras tanto.`,
+    message: `ESC/POS pendiente (${imp.nombre} @ ${imp.ip}:${imp.puerto ?? 9100})`,
     simulated: false,
     timestamp: new Date().toISOString(),
   };
@@ -64,19 +58,35 @@ async function printEscPosStub(request) {
 
 function printMock(request) {
   const timestamp = new Date().toISOString();
+  const imp = request.impresora ?? {};
   return {
     ok: true,
     mode: "mock",
     destino: request.destino,
     tipo: request.tipo,
-    message: `Ticket simulado → ${request.destino}`,
+    message: `Ticket simulado → ${imp.nombre ?? "Impresora principal"}`,
     simulated: true,
     timestamp,
   };
 }
 
 async function handlePrint(request) {
-  if (PRINT_MODE === "network") {
+  const imp = request.impresora ?? {};
+  const modo = imp.modo === "network" ? "network" : "mock";
+
+  if (!imp.activa) {
+    return {
+      ok: true,
+      mode: "mock",
+      destino: request.destino,
+      tipo: request.tipo,
+      message: "Impresora inactiva — ticket no enviado",
+      simulated: true,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  if (modo === "network") {
     return printEscPosStub(request);
   }
   return printMock(request);
@@ -104,13 +114,7 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && req.url === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(
-      JSON.stringify({
-        ok: true,
-        mode: PRINT_MODE,
-        printers: PRINTER_IPS,
-      }),
-    );
+    res.end(JSON.stringify({ ok: true, impresora: "principal-unica" }));
     return;
   }
 
@@ -153,7 +157,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   ensureLogDir();
-  console.info(`🖨️  Print server · puerto ${PORT} · modo ${PRINT_MODE}`);
+  console.info(`🖨️  Print server · puerto ${PORT} · impresora principal única`);
   console.info(`   Health: http://localhost:${PORT}/health`);
   console.info(`   Log:    ${LOG_FILE}`);
 });

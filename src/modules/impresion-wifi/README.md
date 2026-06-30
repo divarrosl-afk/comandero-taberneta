@@ -1,56 +1,32 @@
 # Módulo de impresión Wi-Fi
 
-Impresión de tickets vía **servidor local**. Los móviles nunca imprimen directamente.
+Impresión de tickets vía **servidor local** y **una impresora principal**.
 
 ## Arquitectura
 
 ```
-Móviles (PWA comandero)
-        ↓  printTicket()
-API interna (/api/impresion)  o  PRINT_SERVER_URL
-        ↓
-Servidor local (print-server/)
-        ↓
-Impresora ESC/POS Wi-Fi/Ethernet (futuro)
+Móviles (PWA) → printTicket() → /api/impresion o print-server
+                                        ↓
+                              Impresora principal (única)
 ```
 
-## Destinos
+## Destinos lógicos (futuro multi-impresora)
 
-| Destino | Ticket |
-|---------|--------|
-| `cocina` | Entrantes, primeros, segundos, extras, observaciones |
-| `barra` | Bebidas, extras de barra, observaciones |
-| `postres` | Ticket postres separado (sin copia cocina) |
-| `reimpresion` | Desde historial |
+Internamente se distinguen `cocina`, `barra`, `postres`, `reimpresion`.
+**Físicamente todos salen por la misma impresora** configurada en `/configuracion/impresora`.
+
+## Configuración
+
+- App: `/configuracion/impresora` → localStorage
+- Campos: nombre, IP, puerto (9100), ancho (58/80mm), activa, modo mock/network
 
 ## Modos
 
-- **mock** (`PRINT_MODE=mock`): registra ticket en consola y `print-server/logs/tickets.log`
-- **network** (`PRINT_MODE=network`): preparado para ESC/POS — pendiente modelo/IP impresora
+- **mock**: simula impresión (consola + log)
+- **network**: preparado ESC/POS — pendiente implementación real
 
-## Uso en código
+## Próximo paso
 
-```typescript
-import { imprimirComandaCocina, printTicket } from "@/modules/impresion-wifi";
-
-await imprimirComandaCocina(comanda); // cocina + barra si hay bebidas
-await printTicket(texto, "postres", { tipo: "postres", mesa: 4 });
-```
-
-## Servidor local
-
-```bash
-cd print-server
-cp .env.example .env
-npm start
-```
-
-## Variables (.env)
-
-Ver `.env.example` en la raíz del proyecto.
-
-## Próximo paso (impresión física)
-
-1. Confirmar modelo impresora (80mm ESC/POS, Wi-Fi o Ethernet)
-2. IP fija de cada impresora
-3. Implementar driver TCP puerto 9100 en `drivers/escpos.ts`
+1. Modelo impresora ESC/POS confirmado
+2. Implementar TCP en `drivers/escpos.ts`
+3. Más adelante: soporte multi-impresora si se añaden

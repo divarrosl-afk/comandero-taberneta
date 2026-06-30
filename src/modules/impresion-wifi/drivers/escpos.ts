@@ -1,22 +1,29 @@
+import type { ImpresoraConfig } from "@/types/impresora";
+
 /**
- * Driver ESC/POS — stub para implementación futura.
- *
- * Requiere conocer modelo de impresora (80mm, Wi-Fi/Ethernet, ESC/POS).
- * Próximo paso: conectar vía TCP al IP:9100 típico de impresoras de red.
+ * Driver ESC/POS — stub para impresora principal única.
+ * Próximo paso: TCP a ip:puerto (típico 9100).
  */
 export interface EscPosPrintOptions {
-  ip: string;
-  port?: number;
+  impresora: ImpresoraConfig;
   ticket: string;
   destino: string;
 }
 
 export async function printEscPos(
-  _options: EscPosPrintOptions,
+  options: EscPosPrintOptions,
 ): Promise<{ ok: false; message: string }> {
+  const { impresora } = options;
+
+  if (!impresora.ip) {
+    return {
+      ok: false,
+      message: "Configure la IP de la impresora principal",
+    };
+  }
+
   return {
     ok: false,
-    message:
-      "Driver ESC/POS no implementado todavía. Configure PRINT_MODE=mock o confirme modelo de impresora.",
+    message: `ESC/POS pendiente (${impresora.nombre} @ ${impresora.ip}:${impresora.puerto}). Usa modo mock mientras tanto.`,
   };
 }

@@ -1,27 +1,31 @@
-import type { PrintTicketRequest, PrintResult } from "@/modules/impresion-wifi/types";
+import type { PrintTicketRequest } from "@/modules/impresion-wifi/types";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi/types";
 
 /**
- * Driver mock — registra el ticket sin enviar a impresora física.
+ * Driver mock — registra el ticket en la impresora principal (simulado).
  */
-export function printMock(request: PrintTicketRequest): PrintResult {
+export function printMock(request: PrintTicketRequest) {
   const timestamp = new Date().toISOString();
-  const header = `[MOCK PRINT] ${request.destino.toUpperCase()} · ${request.tipo}`;
+  const imp = request.impresora;
+  const printerLabel = imp?.nombre ?? "Impresora principal";
 
-  console.info(header, {
-    mesa: request.mesa,
-    camarero: request.camarero,
-    comandaId: request.comandaId,
-    lines: request.ticket.split("\n").length,
-  });
+  console.info(
+    `[MOCK PRINT] ${printerLabel} · ${request.destino} · ${request.tipo}`,
+    {
+      ip: imp?.ip || "—",
+      puerto: imp?.puerto ?? 9100,
+      ancho: imp?.anchoPapel ?? "80mm",
+      mesa: request.mesa,
+    },
+  );
   console.info(request.ticket);
 
   return {
     ok: true,
-    mode: "mock",
+    mode: "mock" as const,
     destino: request.destino,
     tipo: request.tipo,
-    message: `${PRINT_MESSAGES.ticketSimulado} → ${request.destino}`,
+    message: `${PRINT_MESSAGES.ticketSimulado} → ${printerLabel}`,
     simulated: true,
     timestamp,
   };
