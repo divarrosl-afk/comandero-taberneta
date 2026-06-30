@@ -10,8 +10,8 @@ const acciones = [
   {
     titulo: "Postres",
     descripcion: "Comandero separado de postres",
-    href: "#",
-    disponible: false,
+    href: "/postres/nuevo",
+    disponible: true,
   },
   {
     titulo: "Panel cocina",
