@@ -1,3 +1,5 @@
+import type { EstadoPanel } from "@/types/panel";
+
 export type EstadoPostreX = "sin_postre" | "pendiente" | "marcado";
 
 export interface PostreFormItem {
@@ -35,4 +37,5 @@ export interface ComandaPostres {
   observaciones: string[];
   creadaEn: string;
   enviada: boolean;
+  estadoPanel: EstadoPanel;
 }

@@ -16,14 +16,14 @@ const acciones = [
   {
     titulo: "Panel cocina",
     descripcion: "Ver comandas por secciones",
-    href: "#",
-    disponible: false,
+    href: "/panel",
+    disponible: true,
   },
   {
     titulo: "Historial",
     descripcion: "Comandas del día",
-    href: "#",
-    disponible: false,
+    href: "/historial",
+    disponible: true,
   },
 ];
 
