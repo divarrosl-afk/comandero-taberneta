@@ -6,13 +6,14 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { PostreCard } from "@/components/postres/nueva/PostreCard";
 import { PostresFrecuentesGrid } from "@/components/postres/nueva/PostresFrecuentesGrid";
+import type { ProductoCatalogo } from "@/types/catalogo";
 import type { PostreFormItem } from "@/types/postres";
 
 interface PostresSeccionPanelProps {
   postres: PostreFormItem[];
   onUpdate: (id: string, cambios: Partial<PostreFormItem>) => void;
   onAdd: () => void;
-  onAddFrecuente: (nombre: string) => void;
+  onAddFrecuente: (producto: ProductoCatalogo) => void;
   onRemove: (id: string) => void;
   onDuplicate: (id: string) => void;
   onClear: () => void;

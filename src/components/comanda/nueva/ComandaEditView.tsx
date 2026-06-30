@@ -23,6 +23,7 @@ interface ComandaEditViewProps {
   onSetCamarero: ComandaFormActions["setCamarero"];
   onUpdatePlato: ComandaFormActions["updatePlato"];
   onAddPlato: ComandaFormActions["addPlato"];
+  onAddPlatoFromCatalog: ComandaFormActions["addPlatoFromCatalog"];
   onRemovePlato: ComandaFormActions["removePlato"];
   onDuplicatePlato: ComandaFormActions["duplicatePlato"];
   onClearSeccion: ComandaFormActions["clearSeccion"];
@@ -51,6 +52,7 @@ export function ComandaEditView({
   onSetCamarero,
   onUpdatePlato,
   onAddPlato,
+  onAddPlatoFromCatalog,
   onRemovePlato,
   onDuplicatePlato,
   onClearSeccion,
@@ -115,13 +117,16 @@ export function ComandaEditView({
             active
             onUpdate={(id, c) => onUpdatePlato("entrantes", id, c)}
             onAdd={() => onAddPlato("entrantes")}
+            onSelectCatalogo={(p) => onAddPlatoFromCatalog("entrantes", p)}
             onRemove={(id) => onRemovePlato("entrantes", id)}
             onDuplicate={(id) => onDuplicatePlato("entrantes", id)}
             onClear={() => onClearSeccion("entrantes")}
             onToggleModificacion={(id, mod) =>
               onToggleModificacion("entrantes", id, mod)
             }
-            onCycleSalsa={(id, salsa) => onCycleSalsa("entrantes", id, salsa)}
+            onCycleSalsa={(id, sid, nom) =>
+              onCycleSalsa("entrantes", id, sid, nom)
+            }
           />
         )}
 
@@ -134,13 +139,16 @@ export function ComandaEditView({
             active
             onUpdate={(id, c) => onUpdatePlato("primeros", id, c)}
             onAdd={() => onAddPlato("primeros")}
+            onSelectCatalogo={(p) => onAddPlatoFromCatalog("primeros", p)}
             onRemove={(id) => onRemovePlato("primeros", id)}
             onDuplicate={(id) => onDuplicatePlato("primeros", id)}
             onClear={() => onClearSeccion("primeros")}
             onToggleModificacion={(id, mod) =>
               onToggleModificacion("primeros", id, mod)
             }
-            onCycleSalsa={(id, salsa) => onCycleSalsa("primeros", id, salsa)}
+            onCycleSalsa={(id, sid, nom) =>
+              onCycleSalsa("primeros", id, sid, nom)
+            }
           />
         )}
 
@@ -153,13 +161,16 @@ export function ComandaEditView({
             active
             onUpdate={(id, c) => onUpdatePlato("segundos", id, c)}
             onAdd={() => onAddPlato("segundos")}
+            onSelectCatalogo={(p) => onAddPlatoFromCatalog("segundos", p)}
             onRemove={(id) => onRemovePlato("segundos", id)}
             onDuplicate={(id) => onDuplicatePlato("segundos", id)}
             onClear={() => onClearSeccion("segundos")}
             onToggleModificacion={(id, mod) =>
               onToggleModificacion("segundos", id, mod)
             }
-            onCycleSalsa={(id, salsa) => onCycleSalsa("segundos", id, salsa)}
+            onCycleSalsa={(id, sid, nom) =>
+              onCycleSalsa("segundos", id, sid, nom)
+            }
           />
         )}
 
@@ -171,13 +182,16 @@ export function ComandaEditView({
             active
             onUpdate={(id, c) => onUpdatePlato("bebidas", id, c)}
             onAdd={() => onAddPlato("bebidas")}
+            onSelectCatalogo={(p) => onAddPlatoFromCatalog("bebidas", p)}
             onRemove={(id) => onRemovePlato("bebidas", id)}
             onDuplicate={(id) => onDuplicatePlato("bebidas", id)}
             onClear={() => onClearSeccion("bebidas")}
             onToggleModificacion={(id, mod) =>
               onToggleModificacion("bebidas", id, mod)
             }
-            onCycleSalsa={(id, salsa) => onCycleSalsa("bebidas", id, salsa)}
+            onCycleSalsa={(id, sid, nom) =>
+              onCycleSalsa("bebidas", id, sid, nom)
+            }
           />
         )}
 

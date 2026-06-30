@@ -12,6 +12,7 @@ import {
   guardarBorradorPostres,
   limpiarBorradorPostres,
 } from "@/lib/storage/borrador-postres";
+import type { ProductoCatalogo } from "@/types/catalogo";
 import type {
   EstadoPostreX,
   PostreFormItem,
@@ -92,20 +93,21 @@ export function usePostresForm() {
     }));
   }, []);
 
-  const addPostreFrecuente = useCallback((nombre: string) => {
+  const addPostreFrecuente = useCallback((producto: ProductoCatalogo) => {
     setForm((prev) => {
       const vacio = prev.postres.find((p) => !p.nombre.trim());
+      const datos = { nombre: producto.nombre };
       if (vacio) {
         return {
           ...prev,
           postres: prev.postres.map((p) =>
-            p.id === vacio.id ? { ...p, nombre } : p,
+            p.id === vacio.id ? { ...p, ...datos } : p,
           ),
         };
       }
       return {
         ...prev,
-        postres: [...prev.postres, { ...crearPostreVacio(), nombre }],
+        postres: [...prev.postres, { ...crearPostreVacio(), ...datos }],
       };
     });
   }, []);

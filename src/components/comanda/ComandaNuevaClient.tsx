@@ -41,6 +41,7 @@ export function ComandaNuevaClient() {
           onSetCamarero={formActions.setCamarero}
           onUpdatePlato={formActions.updatePlato}
           onAddPlato={formActions.addPlato}
+          onAddPlatoFromCatalog={formActions.addPlatoFromCatalog}
           onRemovePlato={formActions.removePlato}
           onDuplicatePlato={formActions.duplicatePlato}
           onClearSeccion={formActions.clearSeccion}
