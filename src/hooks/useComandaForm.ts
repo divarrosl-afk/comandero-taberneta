@@ -31,7 +31,22 @@ const estadoInicial: ComandaFormState = {
 
 const DEBOUNCE_MS = 400;
 
-export function useComandaForm() {
+function aplicarCamareroFijo(
+  form: ComandaFormState,
+  camareroFijo: string | null | undefined,
+): ComandaFormState {
+  if (!camareroFijo) return form;
+  return { ...form, camareroId: camareroFijo };
+}
+
+function estadoConCamarero(
+  camareroFijo: string | null | undefined,
+): ComandaFormState {
+  if (!camareroFijo) return estadoInicial;
+  return { ...estadoInicial, camareroId: camareroFijo };
+}
+
+export function useComandaForm(camareroFijo?: string | null) {
   const [form, setForm] = useState<ComandaFormState>(estadoInicial);
   const [step, setStep] = useState<ComandaFormStep>("editar");
   const [borradorRecuperado, setBorradorRecuperado] = useState(false);
@@ -43,10 +58,12 @@ export function useComandaForm() {
 
     const borrador = cargarBorrador();
     if (borrador && borradorTieneDatos(borrador)) {
-      setForm(borrador);
+      setForm(aplicarCamareroFijo(borrador, camareroFijo));
       setBorradorRecuperado(true);
+    } else if (camareroFijo) {
+      setForm(estadoConCamarero(camareroFijo));
     }
-  }, []);
+  }, [camareroFijo]);
 
   useEffect(() => {
     if (!inicializado.current) return;
@@ -254,16 +271,16 @@ export function useComandaForm() {
 
   const reset = useCallback(() => {
     limpiarBorrador();
-    setForm(estadoInicial);
+    setForm(estadoConCamarero(camareroFijo));
     setStep("editar");
     setBorradorRecuperado(false);
-  }, []);
+  }, [camareroFijo]);
 
   const descartarBorrador = useCallback(() => {
     limpiarBorrador();
-    setForm(estadoInicial);
+    setForm(estadoConCamarero(camareroFijo));
     setBorradorRecuperado(false);
-  }, []);
+  }, [camareroFijo]);
 
   const esValido = formEsValido(form);
 

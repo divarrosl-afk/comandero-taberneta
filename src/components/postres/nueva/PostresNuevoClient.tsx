@@ -1,16 +1,20 @@
 "use client";
 
 import { useMemo } from "react";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import { PostresEditView } from "@/components/postres/nueva/PostresEditView";
 import { PostresEnviadaView } from "@/components/postres/nueva/PostresEnviadaView";
 import { PostresPreviewView } from "@/components/postres/nueva/PostresPreviewView";
+import { useAuth } from "@/contexts/AuthContext";
 import { usePostresForm } from "@/hooks/usePostresForm";
 import { formToComandaPostres } from "@/lib/postres/map-form";
 import { limpiarBorradorPostres } from "@/lib/storage/borrador-postres";
 import { guardarPostresLocal } from "@/lib/storage/postres-local";
 
-export function PostresNuevoClient() {
-  const formActions = usePostresForm();
+function PostresNuevoForm() {
+  const { sesion, puedeCambiarCamarero } = useAuth();
+  const camareroFijo = puedeCambiarCamarero ? null : (sesion?.camareroId ?? null);
+  const formActions = usePostresForm(camareroFijo);
   const {
     form,
     step,
@@ -37,6 +41,7 @@ export function PostresNuevoClient() {
           form={form}
           borradorRecuperado={borradorRecuperado}
           esValido={esValido}
+          puedeCambiarCamarero={puedeCambiarCamarero}
           onSetMesa={formActions.setMesa}
           onSetCamarero={formActions.setCamarero}
           onUpdatePostre={formActions.updatePostre}
@@ -68,5 +73,21 @@ export function PostresNuevoClient() {
         <PostresEnviadaView comanda={comanda} onNueva={reset} />
       )}
     </main>
+  );
+}
+
+export function PostresNuevoClient() {
+  const { listo } = useAuth();
+
+  return (
+    <RequireAuth>
+      {!listo ? (
+        <main className="mx-auto flex min-h-dvh max-w-lg items-center justify-center px-4">
+          <p className="text-muted">Cargando…</p>
+        </main>
+      ) : (
+        <PostresNuevoForm />
+      )}
+    </RequireAuth>
   );
 }

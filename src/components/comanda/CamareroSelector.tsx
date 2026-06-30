@@ -6,20 +6,41 @@ interface CamareroSelectorProps {
   camareroSeleccionado: string | null;
   onSelect: (camareroId: string) => void;
   compact?: boolean;
+  soloLectura?: boolean;
 }
 
 export function CamareroSelector({
   camareroSeleccionado,
   onSelect,
   compact = false,
+  soloLectura = false,
 }: CamareroSelectorProps) {
+  const activos = camareros.filter((c) => c.activo);
+
+  if (soloLectura && camareroSeleccionado) {
+    const camarero = activos.find((c) => c.id === camareroSeleccionado);
+    return (
+      <div className={compact ? "" : "space-y-3"}>
+        {!compact && (
+          <h2 className="text-base font-bold uppercase">Camarero</h2>
+        )}
+        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 px-4 py-3">
+          <p className="text-lg font-bold text-primary">
+            {camarero?.nombre ?? camareroSeleccionado}
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            Asignado a tu usuario de sesión
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={compact ? "" : "space-y-3"}>
       {!compact && <h2 className="text-base font-bold uppercase">Camarero</h2>}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {camareros
-          .filter((c) => c.activo)
-          .map((camarero) => {
+        {activos.map((camarero) => {
             const activo = camareroSeleccionado === camarero.id;
             return (
               <button

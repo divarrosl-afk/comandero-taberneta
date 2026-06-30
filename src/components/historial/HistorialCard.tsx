@@ -15,12 +15,14 @@ interface HistorialCardProps {
   entrada: HistorialEntrada;
   onReimprimir: () => void;
   onEliminar: () => void;
+  puedeEliminar?: boolean;
 }
 
 export function HistorialCard({
   entrada,
   onReimprimir,
   onEliminar,
+  puedeEliminar = false,
 }: HistorialCardProps) {
   const [expandido, setExpandido] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -67,14 +69,16 @@ export function HistorialCard({
               <Button variant="secondary" size="sm" fullWidth onClick={onReimprimir}>
                 Reimprimir
               </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                fullWidth
-                onClick={() => setConfirmDelete(true)}
-              >
-                Eliminar
-              </Button>
+              {puedeEliminar && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  fullWidth
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  Eliminar
+                </Button>
+              )}
             </div>
           </div>
         )}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/Button";
 import { PanelComandaCard } from "@/components/panel/PanelComandaCard";
 import { PanelPostresCard } from "@/components/panel/PanelPostresCard";
@@ -25,7 +26,8 @@ export function PanelClient() {
   const listaPostres = tab === "postres" ? postresActivas : [];
 
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl px-4 py-4">
+    <RequireAuth>
+      <main className="mx-auto min-h-dvh max-w-2xl px-4 py-4">
       <header className="mb-4">
         <Link
           href="/"
@@ -122,6 +124,7 @@ export function PanelClient() {
           )}
         </div>
       )}
-    </main>
+      </main>
+    </RequireAuth>
   );
 }
