@@ -5,12 +5,17 @@ import { mesas } from "@/data/mesas";
 interface MesaSelectorProps {
   mesaSeleccionada: number | null;
   onSelect: (mesa: number) => void;
+  compact?: boolean;
 }
 
-export function MesaSelector({ mesaSeleccionada, onSelect }: MesaSelectorProps) {
+export function MesaSelector({
+  mesaSeleccionada,
+  onSelect,
+  compact = false,
+}: MesaSelectorProps) {
   return (
-    <section>
-      <h2 className="mb-3 text-lg font-semibold">Mesa</h2>
+    <div className={compact ? "" : "space-y-3"}>
+      {!compact && <h2 className="text-base font-bold uppercase">Mesa</h2>}
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
         {mesas.map((mesa) => {
           const activa = mesaSeleccionada === mesa;
@@ -20,10 +25,11 @@ export function MesaSelector({ mesaSeleccionada, onSelect }: MesaSelectorProps) 
               type="button"
               onClick={() => onSelect(mesa)}
               className={[
-                "flex min-h-14 items-center justify-center rounded-xl text-lg font-bold transition active:scale-95",
+                "flex items-center justify-center rounded-xl font-bold transition active:scale-95",
+                compact ? "min-h-12 text-base" : "min-h-14 text-lg",
                 activa
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "border-2 border-border bg-card text-foreground hover:border-primary/40",
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30"
+                  : "border-2 border-border bg-card hover:border-primary/40",
               ].join(" ")}
             >
               {mesa}
@@ -31,6 +37,6 @@ export function MesaSelector({ mesaSeleccionada, onSelect }: MesaSelectorProps) 
           );
         })}
       </div>
-    </section>
+    </div>
   );
 }

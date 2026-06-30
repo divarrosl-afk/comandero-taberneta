@@ -1,15 +1,23 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import type { ComandaFormState, ComandaFormStep, PlatoFormItem } from "@/types/comanda";
-
-function crearPlatoVacio(): PlatoFormItem {
-  return {
-    id: crypto.randomUUID(),
-    nombre: "",
-    cantidad: 1,
-  };
-}
+import { useCallback, useEffect, useRef, useState } from "react";
+import { crearPlatoVacio, duplicarPlato } from "@/lib/comanda/plato-factory";
+import { formEsValido } from "@/lib/comanda/map-form";
+import {
+  borradorTieneDatos,
+  cargarBorrador,
+  guardarBorrador,
+  limpiarBorrador,
+} from "@/lib/storage/borrador-comanda";
+import type {
+  ComandaFormState,
+  ComandaFormStep,
+  ExtraMesaId,
+  ModificacionId,
+  PlatoFormItem,
+  SalsaId,
+  SeccionPlatos,
+} from "@/types/comanda";
 
 const estadoInicial: ComandaFormState = {
   mesa: null,
@@ -18,12 +26,43 @@ const estadoInicial: ComandaFormState = {
   primeros: [crearPlatoVacio()],
   segundos: [crearPlatoVacio()],
   bebidas: [crearPlatoVacio()],
+  extras: [],
   observaciones: [""],
 };
+
+const DEBOUNCE_MS = 400;
 
 export function useComandaForm() {
   const [form, setForm] = useState<ComandaFormState>(estadoInicial);
   const [step, setStep] = useState<ComandaFormStep>("editar");
+  const [borradorRecuperado, setBorradorRecuperado] = useState(false);
+  const inicializado = useRef(false);
+
+  useEffect(() => {
+    if (inicializado.current) return;
+    inicializado.current = true;
+
+    const borrador = cargarBorrador();
+    if (borrador && borradorTieneDatos(borrador)) {
+      setForm(borrador);
+      setBorradorRecuperado(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!inicializado.current) return;
+
+    const timer = setTimeout(() => {
+      if (step === "enviada") return;
+      if (borradorTieneDatos(form)) {
+        guardarBorrador(form);
+      } else {
+        limpiarBorrador();
+      }
+    }, DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [form, step]);
 
   const setMesa = useCallback((mesa: number) => {
     setForm((prev) => ({ ...prev, mesa }));
@@ -34,11 +73,7 @@ export function useComandaForm() {
   }, []);
 
   const updatePlato = useCallback(
-    (
-      seccion: "entrantes" | "primeros" | "segundos" | "bebidas",
-      id: string,
-      cambios: Partial<PlatoFormItem>,
-    ) => {
+    (seccion: SeccionPlatos, id: string, cambios: Partial<PlatoFormItem>) => {
       setForm((prev) => ({
         ...prev,
         [seccion]: prev[seccion].map((p) =>
@@ -49,31 +84,124 @@ export function useComandaForm() {
     [],
   );
 
-  const addPlato = useCallback(
-    (seccion: "entrantes" | "primeros" | "segundos" | "bebidas") => {
+  const addPlato = useCallback((seccion: SeccionPlatos) => {
+    setForm((prev) => ({
+      ...prev,
+      [seccion]: [...prev[seccion], crearPlatoVacio()],
+    }));
+  }, []);
+
+  const removePlato = useCallback((seccion: SeccionPlatos, id: string) => {
+    setForm((prev) => {
+      const lista = prev[seccion].filter((p) => p.id !== id);
+      return {
+        ...prev,
+        [seccion]: lista.length ? lista : [crearPlatoVacio()],
+      };
+    });
+  }, []);
+
+  const duplicatePlato = useCallback((seccion: SeccionPlatos, id: string) => {
+    setForm((prev) => {
+      const index = prev[seccion].findIndex((p) => p.id === id);
+      if (index === -1) return prev;
+
+      const copia = duplicarPlato(prev[seccion][index]);
+      const lista = [...prev[seccion]];
+      lista.splice(index + 1, 0, copia);
+
+      return { ...prev, [seccion]: lista };
+    });
+  }, []);
+
+  const clearSeccion = useCallback((seccion: SeccionPlatos) => {
+    setForm((prev) => ({
+      ...prev,
+      [seccion]: [crearPlatoVacio()],
+    }));
+  }, []);
+
+  const toggleModificacion = useCallback(
+    (seccion: SeccionPlatos, platoId: string, mod: ModificacionId) => {
       setForm((prev) => ({
         ...prev,
-        [seccion]: [...prev[seccion], crearPlatoVacio()],
+        [seccion]: prev[seccion].map((p) => {
+          if (p.id !== platoId) return p;
+          const tiene = p.modificaciones.includes(mod);
+          return {
+            ...p,
+            modificaciones: tiene
+              ? p.modificaciones.filter((m) => m !== mod)
+              : [...p.modificaciones, mod],
+          };
+        }),
       }));
     },
     [],
   );
 
-  const removePlato = useCallback(
-    (
-      seccion: "entrantes" | "primeros" | "segundos" | "bebidas",
-      id: string,
-    ) => {
-      setForm((prev) => {
-        const lista = prev[seccion].filter((p) => p.id !== id);
-        return {
-          ...prev,
-          [seccion]: lista.length ? lista : [crearPlatoVacio()],
-        };
-      });
+  const cycleSalsa = useCallback(
+    (seccion: SeccionPlatos, platoId: string, salsaId: SalsaId) => {
+      setForm((prev) => ({
+        ...prev,
+        [seccion]: prev[seccion].map((p) => {
+          if (p.id !== platoId) return p;
+
+          const existente = p.salsas.find((s) => s.id === salsaId);
+          if (!existente) {
+            return { ...p, salsas: [...p.salsas, { id: salsaId, cantidad: 1 }] };
+          }
+
+          if (existente.cantidad < 3) {
+            return {
+              ...p,
+              salsas: p.salsas.map((s) =>
+                s.id === salsaId
+                  ? { ...s, cantidad: (s.cantidad + 1) as 1 | 2 | 3 }
+                  : s,
+              ),
+            };
+          }
+
+          return { ...p, salsas: p.salsas.filter((s) => s.id !== salsaId) };
+        }),
+      }));
     },
     [],
   );
+
+  const setExtraCantidad = useCallback((extraId: ExtraMesaId, cantidad: number) => {
+    setForm((prev) => {
+      const extras = [...prev.extras];
+      const index = extras.findIndex((e) => e.id === extraId);
+
+      if (cantidad <= 0) {
+        return { ...prev, extras: extras.filter((e) => e.id !== extraId) };
+      }
+
+      if (index === -1) {
+        extras.push({ id: extraId, cantidad });
+      } else {
+        extras[index] = { id: extraId, cantidad };
+      }
+
+      return { ...prev, extras };
+    });
+  }, []);
+
+  const cycleExtra = useCallback((extraId: ExtraMesaId) => {
+    setForm((prev) => {
+      const actual = prev.extras.find((e) => e.id === extraId)?.cantidad ?? 0;
+      const siguiente = actual >= 3 ? 0 : actual + 1;
+      const extras = prev.extras.filter((e) => e.id !== extraId);
+
+      if (siguiente > 0) {
+        extras.push({ id: extraId, cantidad: siguiente });
+      }
+
+      return { ...prev, extras };
+    });
+  }, []);
 
   const setObservacion = useCallback((index: number, valor: string) => {
     setForm((prev) => {
@@ -100,17 +228,32 @@ export function useComandaForm() {
     });
   }, []);
 
-  const reset = useCallback(() => {
-    setForm(estadoInicial);
-    setStep("editar");
+  const appendObservacionRapida = useCallback((texto: string) => {
+    setForm((prev) => {
+      const vacia = prev.observaciones.findIndex((o) => !o.trim());
+      if (vacia !== -1) {
+        const observaciones = [...prev.observaciones];
+        observaciones[vacia] = texto;
+        return { ...prev, observaciones };
+      }
+      return { ...prev, observaciones: [...prev.observaciones, texto] };
+    });
   }, []);
 
-  const puedePrevisualizar =
-    form.mesa !== null &&
-    form.camareroId !== null &&
-    [...form.entrantes, ...form.primeros, ...form.segundos, ...form.bebidas].some(
-      (p) => p.nombre.trim().length > 0,
-    );
+  const reset = useCallback(() => {
+    limpiarBorrador();
+    setForm(estadoInicial);
+    setStep("editar");
+    setBorradorRecuperado(false);
+  }, []);
+
+  const descartarBorrador = useCallback(() => {
+    limpiarBorrador();
+    setForm(estadoInicial);
+    setBorradorRecuperado(false);
+  }, []);
+
+  const esValido = formEsValido(form);
 
   return {
     form,
@@ -121,10 +264,19 @@ export function useComandaForm() {
     updatePlato,
     addPlato,
     removePlato,
+    duplicatePlato,
+    clearSeccion,
+    toggleModificacion,
+    cycleSalsa,
+    setExtraCantidad,
+    cycleExtra,
     setObservacion,
     addObservacion,
     removeObservacion,
+    appendObservacionRapida,
     reset,
-    puedePrevisualizar,
+    descartarBorrador,
+    borradorRecuperado,
+    esValido,
   };
 }
