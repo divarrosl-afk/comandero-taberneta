@@ -9,13 +9,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { buscarUsuario, usuarioASesion } from "@/lib/auth/credentials";
+import { autenticarUsuario } from "@/lib/auth/credentials";
 import {
   puedeAccederConfigCatalogo,
   puedeAccederConfigCarta,
   puedeAccederConfigImpresora,
   puedeAccederConfigMenuDia,
   puedeAccederCierre,
+  puedeAdministrarUsuarios,
   puedeBorrarHistorial,
   puedeCambiarCamarero,
 } from "@/lib/auth/permisos";
@@ -31,6 +32,7 @@ interface AuthContextValue {
   puedeConfigCarta: boolean;
   puedeConfigMenuDia: boolean;
   puedeCierre: boolean;
+  puedeAdminUsuarios: boolean;
   puedeConfigImpresora: boolean;
   puedeBorrarHistorial: boolean;
   puedeCambiarCamarero: boolean;
@@ -48,10 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const iniciarSesion = useCallback((username: string, password: string) => {
-    const usuario = buscarUsuario(username, password);
-    if (!usuario) return false;
+    const nueva = autenticarUsuario(username, password);
+    if (!nueva) return false;
 
-    const nueva = usuarioASesion(usuario);
     guardarSesion(nueva);
     setSesion(nueva);
     return true;
@@ -76,6 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ? puedeAccederConfigMenuDia(sesion.rol)
         : false,
       puedeCierre: sesion ? puedeAccederCierre(sesion.rol) : false,
+      puedeAdminUsuarios: sesion
+        ? puedeAdministrarUsuarios(sesion.rol)
+        : false,
       puedeConfigImpresora: sesion
         ? puedeAccederConfigImpresora(sesion.rol)
         : false,

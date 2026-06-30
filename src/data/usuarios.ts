@@ -1,6 +1,6 @@
 import type { Usuario } from "@/types/auth";
 
-/** Usuarios locales de fase 1 — contraseñas en claro solo para entorno local */
+/** Usuarios iniciales — solo si no hay datos en localStorage */
 export const usuariosIniciales: Usuario[] = [
   {
     username: "divarro",
@@ -8,6 +8,9 @@ export const usuariosIniciales: Usuario[] = [
     rol: "ADMIN",
     nombre: "Divarro",
     camareroId: null,
+    activo: true,
+    ultimoAcceso: null,
+    creadoEn: new Date().toISOString(),
   },
   {
     username: "david",
@@ -15,6 +18,9 @@ export const usuariosIniciales: Usuario[] = [
     rol: "CAMARERO",
     nombre: "David",
     camareroId: "david",
+    activo: true,
+    ultimoAcceso: null,
+    creadoEn: new Date().toISOString(),
   },
   {
     username: "ingrid",
@@ -22,6 +28,9 @@ export const usuariosIniciales: Usuario[] = [
     rol: "CAMARERO",
     nombre: "Ingrid",
     camareroId: "ingrid",
+    activo: true,
+    ultimoAcceso: null,
+    creadoEn: new Date().toISOString(),
   },
   {
     username: "cocina",
@@ -29,5 +38,8 @@ export const usuariosIniciales: Usuario[] = [
     rol: "CAMARERO",
     nombre: "Cocina",
     camareroId: "cocina",
+    activo: true,
+    ultimoAcceso: null,
+    creadoEn: new Date().toISOString(),
   },
 ];

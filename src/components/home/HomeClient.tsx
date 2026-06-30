@@ -34,6 +34,14 @@ const accionesBase = [
     adminOnly: false,
   },
   {
+    titulo: "Usuarios",
+    descripcion: "Crear camareros y gestionar accesos",
+    href: "/configuracion/usuarios",
+    disponible: true,
+    adminOnly: true,
+    permiso: "usuarios" as const,
+  },
+  {
     titulo: "Cierre de servicio",
     descripcion: "Resumen, exportar y cerrar el día",
     href: "/cierre",
@@ -74,10 +82,12 @@ export function HomeClient() {
     puedeConfigMenuDia,
     puedeConfigImpresora,
     puedeCierre,
+    puedeAdminUsuarios,
   } = useAuth();
 
   const acciones = accionesBase.filter((accion) => {
     if (!accion.adminOnly) return true;
+    if (accion.permiso === "usuarios") return puedeAdminUsuarios;
     if (accion.permiso === "cierre") return puedeCierre;
     if (accion.permiso === "carta") return puedeConfigCarta;
     if (accion.permiso === "menuDia") return puedeConfigMenuDia;
