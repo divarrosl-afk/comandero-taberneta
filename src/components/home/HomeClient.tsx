@@ -34,28 +34,44 @@ const accionesBase = [
     adminOnly: false,
   },
   {
+    titulo: "Carta",
+    descripcion: "Platos, precios, ingredientes y alérgenos",
+    href: "/configuracion/carta",
+    disponible: true,
+    adminOnly: true,
+    permiso: "carta" as const,
+  },
+  {
+    titulo: "Menú del día",
+    descripcion: "Configurar menú de hoy",
+    href: "/configuracion/menu-dia",
+    disponible: true,
+    adminOnly: true,
+    permiso: "menuDia" as const,
+  },
+  {
     titulo: "Impresora",
     descripcion: "Configurar impresora principal",
     href: "/configuracion/impresora",
     disponible: true,
     adminOnly: true,
-  },
-  {
-    titulo: "Catálogo",
-    descripcion: "Platos, bebidas y postres",
-    href: "/configuracion/catalogo",
-    disponible: true,
-    adminOnly: true,
+    permiso: "impresora" as const,
   },
 ];
 
 export function HomeClient() {
-  const { sesion, puedeConfigCatalogo, puedeConfigImpresora } = useAuth();
+  const {
+    sesion,
+    puedeConfigCarta,
+    puedeConfigMenuDia,
+    puedeConfigImpresora,
+  } = useAuth();
 
   const acciones = accionesBase.filter((accion) => {
     if (!accion.adminOnly) return true;
-    if (accion.href === "/configuracion/catalogo") return puedeConfigCatalogo;
-    if (accion.href === "/configuracion/impresora") return puedeConfigImpresora;
+    if (accion.permiso === "carta") return puedeConfigCarta;
+    if (accion.permiso === "menuDia") return puedeConfigMenuDia;
+    if (accion.permiso === "impresora") return puedeConfigImpresora;
     return true;
   });
 
@@ -116,7 +132,7 @@ export function HomeClient() {
           <ul className="mt-3 space-y-2 text-sm">
             <li className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-green-500" />
-              Base Next.js + TypeScript + PWA
+              Carta y menú del día configurables
             </li>
             <li className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-green-500" />
@@ -125,10 +141,6 @@ export function HomeClient() {
             <li className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-amber-500" />
               Supabase preparado (sin conectar)
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-stone-300" />
-              Integración Ágora TPV — módulo futuro
             </li>
           </ul>
         </section>

@@ -12,7 +12,23 @@ export function puedeAccederConfigImpresora(rol: Rol): boolean {
   return esAdmin(rol);
 }
 
+export function puedeAccederConfigCarta(rol: Rol): boolean {
+  return esAdmin(rol);
+}
+
+export function puedeAccederConfigMenuDia(rol: Rol): boolean {
+  return esAdmin(rol);
+}
+
+export function puedeConsultarCarta(rol: Rol): boolean {
+  return rol === "ADMIN" || rol === "CAMARERO";
+}
+
 export function puedeEditarCatalogo(rol: Rol): boolean {
+  return esAdmin(rol);
+}
+
+export function puedeEditarCarta(rol: Rol): boolean {
   return esAdmin(rol);
 }
 

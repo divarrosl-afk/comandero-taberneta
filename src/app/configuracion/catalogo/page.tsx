@@ -1,14 +1,10 @@
-import { CatalogoConfigClient } from "@/components/configuracion/CatalogoConfigClient";
-import { RequireAdmin } from "@/components/auth/RequireAdmin";
+import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Catálogo de platos · Comandero",
+  title: "Catálogo · Comandero",
 };
 
+/** Redirige al nuevo editor de carta */
 export default function CatalogoConfigPage() {
-  return (
-    <RequireAdmin>
-      <CatalogoConfigClient />
-    </RequireAdmin>
-  );
+  redirect("/configuracion/carta");
 }

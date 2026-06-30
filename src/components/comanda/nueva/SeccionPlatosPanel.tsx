@@ -77,6 +77,7 @@ export function SeccionPlatosPanel({
       >
         <ProductosRapidosGrid
           seccion={SECCION_A_CATALOGO[seccion]}
+          seccionPlatos={seccion}
           onSelect={onSelectCatalogo}
         />
 

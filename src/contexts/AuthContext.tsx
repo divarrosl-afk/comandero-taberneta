@@ -12,7 +12,9 @@ import {
 import { buscarUsuario, usuarioASesion } from "@/lib/auth/credentials";
 import {
   puedeAccederConfigCatalogo,
+  puedeAccederConfigCarta,
   puedeAccederConfigImpresora,
+  puedeAccederConfigMenuDia,
   puedeBorrarHistorial,
   puedeCambiarCamarero,
 } from "@/lib/auth/permisos";
@@ -25,6 +27,8 @@ interface AuthContextValue {
   iniciarSesion: (username: string, password: string) => boolean;
   cerrarSesion: () => void;
   puedeConfigCatalogo: boolean;
+  puedeConfigCarta: boolean;
+  puedeConfigMenuDia: boolean;
   puedeConfigImpresora: boolean;
   puedeBorrarHistorial: boolean;
   puedeCambiarCamarero: boolean;
@@ -64,6 +68,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cerrarSesion,
       puedeConfigCatalogo: sesion
         ? puedeAccederConfigCatalogo(sesion.rol)
+        : false,
+      puedeConfigCarta: sesion ? puedeAccederConfigCarta(sesion.rol) : false,
+      puedeConfigMenuDia: sesion
+        ? puedeAccederConfigMenuDia(sesion.rol)
         : false,
       puedeConfigImpresora: sesion
         ? puedeAccederConfigImpresora(sesion.rol)
