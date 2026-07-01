@@ -100,9 +100,14 @@ export async function actualizarEstadoComanda(
 export async function eliminarComanda(id: string): Promise<boolean> {
   const eraPendiente = getPendingCocina().some((c) => c.id === id);
   removePendingCocina(id);
-  const ok = await getComandasRepository().eliminar(id);
-  if (usesRemoteData()) await loadComandasMerged();
-  return ok || eraPendiente;
+  try {
+    await getComandasRepository().eliminar(id);
+    if (usesRemoteData()) await loadComandasMerged();
+    return true;
+  } catch {
+    if (eraPendiente && usesRemoteData()) await loadComandasMerged();
+    return eraPendiente;
+  }
 }
 
 export async function eliminarComandasDelDia(fecha: string): Promise<number> {

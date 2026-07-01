@@ -2,6 +2,7 @@ import { esMismaFecha } from "@/lib/cierre/fecha";
 import type { ComandasRepository } from "@/lib/comandas/comandas-repository";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { getSupabaseEnv } from "@/lib/supabase/env";
+import { throwIfSupabaseError } from "@/lib/supabase/errors";
 import {
   comandaToRow,
   rowToComandaCocina,
@@ -24,7 +25,8 @@ export const comandasRepositorySupabase: ComandasRepository = {
       .is("deleted_at", null)
       .order("creada_en", { ascending: false });
 
-    if (error || !data) return [];
+    throwIfSupabaseError(error, "Error al cargar comandas");
+    if (!data) return [];
     return (data as DbComandaCocina[]).map(rowToComandaCocina);
   },
 
@@ -115,9 +117,11 @@ export const comandasRepositorySupabase: ComandasRepository = {
       .from("comandas_cocina")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id)
-      .eq("restaurante_id", env.restauranteId);
+      .eq("restaurante_id", env.restauranteId)
+      .is("deleted_at", null);
 
-    return !error;
+    if (error) throw new Error(error.message);
+    return true;
   },
 
   async eliminarDelDia(fecha) {
@@ -131,7 +135,8 @@ export const comandasRepositorySupabase: ComandasRepository = {
       .eq("restaurante_id", env.restauranteId)
       .is("deleted_at", null);
 
-    if (error || !data) return 0;
+    throwIfSupabaseError(error, "Error al listar comandas del día");
+    if (!data) return 0;
 
     const ids = data
       .filter((r) => esMismaFecha(r.creada_en as string, fecha))
@@ -142,8 +147,10 @@ export const comandasRepositorySupabase: ComandasRepository = {
     const { error: delError } = await client
       .from("comandas_cocina")
       .update({ deleted_at: new Date().toISOString() })
-      .in("id", ids);
+      .in("id", ids)
+      .is("deleted_at", null);
 
-    return delError ? 0 : ids.length;
+    if (delError) throw new Error(delError.message);
+    return ids.length;
   },
 };

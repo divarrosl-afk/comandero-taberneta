@@ -1,6 +1,5 @@
 import { buildComandaPersistMeta } from "@/lib/comandas/comanda-persist-meta";
-import { fetchComandas } from "@/lib/comandas/comandas-service";
-import { fetchPostres } from "@/lib/postres/postres-service";
+import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { getComandasRepository, getPostresRepository } from "@/lib/data/data-layer";
 import {
   getPendingCocina,
@@ -41,6 +40,6 @@ export async function retryPendingSync(): Promise<RetrySyncResult> {
     }
   }
 
-  await Promise.all([fetchComandas(), fetchPostres()]);
+  await fetchOperativaData();
   return { ok, fail };
 }

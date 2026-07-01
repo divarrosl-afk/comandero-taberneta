@@ -6,8 +6,9 @@ import {
   getHistorialEntradas,
   type HistorialEntrada,
 } from "@/lib/historial/items";
-import { eliminarComanda, fetchComandas } from "@/lib/comandas/comandas-service";
-import { eliminarPostres, fetchPostres } from "@/lib/postres/postres-service";
+import { eliminarComanda } from "@/lib/comandas/comandas-service";
+import { eliminarPostres } from "@/lib/postres/postres-service";
+import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { usesRemoteData } from "@/lib/data/backend";
 import {
   destinoDesdeHistorial,
@@ -22,7 +23,11 @@ export function useHistorial() {
 
   const recargar = useCallback(async () => {
     if (usesRemoteData()) {
-      await Promise.all([fetchComandas(), fetchPostres()]);
+      try {
+        await fetchOperativaData();
+      } catch (e) {
+        console.error("[historial] Error al cargar operativa:", e);
+      }
     }
     setEntradas(getHistorialEntradas());
   }, []);

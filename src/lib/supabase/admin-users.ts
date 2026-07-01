@@ -10,9 +10,14 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
 const SUPABASE_ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? "";
 
-export async function verifyAdminRequest(
+const VALID_ROLES: Rol[] = ["ADMIN", "CAMARERO"];
+
+type AuthFail = { ok: false; status: number; error: string };
+type AuthOk = { ok: true; username: string; rol: Rol };
+
+async function verifySession(
   request: Request,
-): Promise<{ ok: true; username: string } | { ok: false; status: number; error: string }> {
+): Promise<AuthOk | AuthFail> {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return { ok: false, status: 401, error: "Token no proporcionado" };
@@ -44,11 +49,33 @@ export async function verifyAdminRequest(
     return { ok: false, status: 403, error: "Perfil no encontrado" };
   }
 
-  if (!perfil.activo || perfil.rol !== "ADMIN") {
-    return { ok: false, status: 403, error: "Solo administradores" };
+  if (!perfil.activo) {
+    return { ok: false, status: 403, error: "Usuario inactivo" };
   }
 
-  return { ok: true, username: perfil.username as string };
+  const rol = perfil.rol as Rol;
+  if (!VALID_ROLES.includes(rol)) {
+    return { ok: false, status: 403, error: "Sin permisos" };
+  }
+
+  return { ok: true, username: perfil.username as string, rol };
+}
+
+export async function verifyAuthenticatedRequest(
+  request: Request,
+): Promise<AuthOk | AuthFail> {
+  return verifySession(request);
+}
+
+export async function verifyAdminRequest(
+  request: Request,
+): Promise<{ ok: true; username: string } | AuthFail> {
+  const session = await verifySession(request);
+  if (!session.ok) return session;
+  if (session.rol !== "ADMIN") {
+    return { ok: false, status: 403, error: "Solo administradores" };
+  }
+  return { ok: true, username: session.username };
 }
 
 export async function contarAdminsActivos(

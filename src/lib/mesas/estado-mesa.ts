@@ -1,7 +1,6 @@
 import { getComandasSync } from "@/lib/comandas/comandas-service";
-import { fetchComandas } from "@/lib/comandas/comandas-service";
 import { getPostresSync } from "@/lib/postres/postres-service";
-import { fetchPostres } from "@/lib/postres/postres-service";
+import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { usesRemoteData } from "@/lib/data/backend";
 import type {
   EstadoMesaOperativo,
@@ -106,5 +105,5 @@ export function limpiarEstadoMesa(mesaId: string): void {
 /** Refresca caché operativa desde Supabase (modo remoto). */
 export async function refrescarEstadoMesasDesdeRemoto(): Promise<void> {
   if (!usesRemoteData()) return;
-  await Promise.all([fetchComandas(), fetchPostres()]);
+  await fetchOperativaData();
 }

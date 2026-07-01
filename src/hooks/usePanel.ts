@@ -3,18 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   actualizarEstadoComanda,
-  fetchComandas,
 } from "@/lib/comandas/comandas-service";
 import {
   actualizarEstadoPostres,
-  fetchPostres,
 } from "@/lib/postres/postres-service";
 import { useSupabaseOperativaRealtime } from "@/hooks/useSupabaseOperativaRealtime";
+import { OPERATIVA_POLL_MS } from "@/lib/sync/constants";
+import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import type { ComandaCocina } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
 import type { ComandaPostres } from "@/types/postres";
-
-const POLL_MS = 5000;
 
 export function usePanel() {
   const [comandasCocina, setComandasCocina] = useState<ComandaCocina[]>([]);
@@ -22,18 +20,20 @@ export function usePanel() {
   const [cargando, setCargando] = useState(true);
 
   const recargar = useCallback(async () => {
-    const [cocina, postres] = await Promise.all([
-      fetchComandas(),
-      fetchPostres(),
-    ]);
-    setComandasCocina(cocina);
-    setComandasPostres(postres);
-    setCargando(false);
+    try {
+      const { cocina, postres } = await fetchOperativaData();
+      setComandasCocina(cocina);
+      setComandasPostres(postres);
+    } catch (e) {
+      console.error("[panel] Error al cargar operativa:", e);
+    } finally {
+      setCargando(false);
+    }
   }, []);
 
   useEffect(() => {
     void recargar();
-    const interval = setInterval(() => void recargar(), POLL_MS);
+    const interval = setInterval(() => void recargar(), OPERATIVA_POLL_MS);
     return () => clearInterval(interval);
   }, [recargar]);
 

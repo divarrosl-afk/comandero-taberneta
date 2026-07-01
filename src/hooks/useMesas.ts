@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getMesasRepository } from "@/lib/mesas/mesas-service";
 import { guardarMesasConfig } from "@/lib/storage/mesas";
 import { getEstadoMesa } from "@/lib/mesas/estado-mesa";
-import { fetchComandas } from "@/lib/comandas/comandas-service";
-import { fetchPostres } from "@/lib/postres/postres-service";
+import { OPERATIVA_POLL_MS } from "@/lib/sync/constants";
+import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { usesRemoteData } from "@/lib/data/backend";
 import { useSupabaseOperativaRealtime } from "@/hooks/useSupabaseOperativaRealtime";
 import type { MesaConfig, MesaOperativa, ZonaMesa } from "@/types/mesas";
@@ -87,7 +87,11 @@ export function useMesasOperativas() {
 
   const refrescarOperativa = useCallback(async () => {
     if (usesRemoteData()) {
-      await Promise.all([fetchComandas(), fetchPostres()]);
+      try {
+        await fetchOperativaData();
+      } catch (e) {
+        console.error("[mesas] Error al refrescar operativa:", e);
+      }
     }
     setRevision((v) => v + 1);
   }, []);
@@ -98,7 +102,7 @@ export function useMesasOperativas() {
 
   useEffect(() => {
     if (!usesRemoteData()) return;
-    const interval = setInterval(() => void refrescarOperativa(), 5000);
+    const interval = setInterval(() => void refrescarOperativa(), OPERATIVA_POLL_MS);
     return () => clearInterval(interval);
   }, [refrescarOperativa]);
 

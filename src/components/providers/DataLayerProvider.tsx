@@ -2,8 +2,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { getCatalogo } from "@/lib/catalogo/catalogo-service";
-import { fetchComandas } from "@/lib/comandas/comandas-service";
-import { fetchPostres } from "@/lib/postres/postres-service";
+import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { initializeDataLayer } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
 import { getImpresoraConfig } from "@/lib/impresora/impresora-config-service";
@@ -20,8 +19,7 @@ export function DataLayerProvider({ children }: { children: ReactNode }) {
         getMenuDia(),
         getCatalogo(),
         getImpresoraConfig(),
-        fetchComandas(),
-        fetchPostres(),
+        fetchOperativaData(),
         getMesasRepository()
           .getConfig()
           .then((mesas) => guardarMesasConfig(mesas)),

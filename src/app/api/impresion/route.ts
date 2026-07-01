@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import { printMock } from "@/modules/impresion-wifi/drivers/mock";
 import { printEscPos } from "@/modules/impresion-wifi/drivers/escpos";
 import { getEffectivePrintMode } from "@/modules/impresion-wifi/config";
+import { verifyAuthenticatedRequest } from "@/lib/supabase/admin-users";
 import type { PrintTicketRequest, PrintResult } from "@/modules/impresion-wifi/types";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi/types";
 import { IMPRESORA_DEFAULT } from "@/types/impresora";
 
 const VALID_DESTINOS = new Set(["cocina", "barra", "postres"]);
 const VALID_TIPOS = new Set(["cocina", "barra", "postres", "reimpresion"]);
+
+function requiresPrintAuth(): boolean {
+  const backend = process.env.NEXT_PUBLIC_DATA_BACKEND?.trim().toLowerCase();
+  return backend === "supabase" || backend === "hybrid";
+}
 
 async function forwardToPrintServer(
   request: PrintTicketRequest,
@@ -29,6 +35,16 @@ async function forwardToPrintServer(
 
 export async function POST(req: Request) {
   try {
+    if (requiresPrintAuth()) {
+      const auth = await verifyAuthenticatedRequest(req);
+      if (!auth.ok) {
+        return NextResponse.json(
+          { ok: false, message: auth.error },
+          { status: auth.status },
+        );
+      }
+    }
+
     const body = (await req.json()) as PrintTicketRequest;
 
     if (!body.ticket?.trim()) {

@@ -95,9 +95,14 @@ export async function actualizarEstadoPostres(
 export async function eliminarPostres(id: string): Promise<boolean> {
   const eraPendiente = getPendingPostres().some((c) => c.id === id);
   removePendingPostres(id);
-  const ok = await getPostresRepository().eliminar(id);
-  if (usesRemoteData()) await loadPostresMerged();
-  return ok || eraPendiente;
+  try {
+    await getPostresRepository().eliminar(id);
+    if (usesRemoteData()) await loadPostresMerged();
+    return true;
+  } catch {
+    if (eraPendiente && usesRemoteData()) await loadPostresMerged();
+    return eraPendiente;
+  }
 }
 
 export async function eliminarPostresDelDia(fecha: string): Promise<number> {

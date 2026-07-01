@@ -1,14 +1,13 @@
 import { esMismaFecha } from "@/lib/cierre/fecha";
 import {
   eliminarComandasDelDia,
-  fetchComandas,
 } from "@/lib/comandas/comandas-service";
 import {
   eliminarPostresDelDia,
-  fetchPostres,
 } from "@/lib/postres/postres-service";
 import { getComandasSync } from "@/lib/comandas/comandas-service";
 import { getPostresSync } from "@/lib/postres/postres-service";
+import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { usesRemoteData } from "@/lib/data/backend";
 
 export interface ResultadoBorradoDia {
@@ -23,7 +22,7 @@ export async function eliminarDatosDelDia(
   const postresEliminados = await eliminarPostresDelDia(fecha);
 
   if (usesRemoteData()) {
-    await Promise.all([fetchComandas(), fetchPostres()]);
+    await fetchOperativaData();
   }
 
   return { cocinaEliminadas, postresEliminados };

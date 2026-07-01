@@ -3,7 +3,10 @@ import {
   crearUsuarioAdmin,
   verifyAdminRequest,
 } from "@/lib/supabase/admin-users";
-import type { UsuarioInput } from "@/types/auth";
+import type { UsuarioInput, Rol } from "@/types/auth";
+
+const VALID_ROLES: Rol[] = ["ADMIN", "CAMARERO"];
+const MIN_PASSWORD_LENGTH = 6;
 
 export async function POST(request: Request) {
   const auth = await verifyAdminRequest(request);
@@ -23,6 +26,17 @@ export async function POST(request: Request) {
       { error: "Usuario, contraseña y nombre son obligatorios" },
       { status: 400 },
     );
+  }
+
+  if (body.password.trim().length < MIN_PASSWORD_LENGTH) {
+    return NextResponse.json(
+      { error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` },
+      { status: 400 },
+    );
+  }
+
+  if (body.rol && !VALID_ROLES.includes(body.rol)) {
+    return NextResponse.json({ error: "Rol inválido" }, { status: 400 });
   }
 
   try {

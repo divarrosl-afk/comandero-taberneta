@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { countPendingSync } from "@/lib/sync/emergency-local";
 import { retryPendingSync } from "@/lib/sync/retry-pending";
+import { SYNC_PENDING_POLL_MS } from "@/lib/sync/constants";
 import { usesRemoteData } from "@/lib/data/backend";
 
 export function SyncWarningBanner() {
@@ -15,7 +16,7 @@ export function SyncWarningBanner() {
 
     const refresh = () => setPending(countPendingSync());
     refresh();
-    const interval = setInterval(refresh, 3000);
+    const interval = setInterval(refresh, SYNC_PENDING_POLL_MS);
     return () => clearInterval(interval);
   }, []);
 

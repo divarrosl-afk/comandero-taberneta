@@ -3,7 +3,10 @@ import {
   actualizarUsuarioAdmin,
   verifyAdminRequest,
 } from "@/lib/supabase/admin-users";
-import type { Usuario } from "@/types/auth";
+import type { Usuario, Rol } from "@/types/auth";
+
+const VALID_ROLES: Rol[] = ["ADMIN", "CAMARERO"];
+const MIN_PASSWORD_LENGTH = 6;
 
 export async function PATCH(
   request: Request,
@@ -20,6 +23,17 @@ export async function PATCH(
     cambios = (await request.json()) as Partial<Usuario>;
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
+
+  if (cambios.rol && !VALID_ROLES.includes(cambios.rol)) {
+    return NextResponse.json({ error: "Rol inválido" }, { status: 400 });
+  }
+
+  if (cambios.password !== undefined && cambios.password.trim().length < MIN_PASSWORD_LENGTH) {
+    return NextResponse.json(
+      { error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` },
+      { status: 400 },
+    );
   }
 
   try {
