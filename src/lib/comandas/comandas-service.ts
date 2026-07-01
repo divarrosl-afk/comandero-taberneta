@@ -9,6 +9,7 @@ import {
   updatePendingCocinaEstado,
 } from "@/lib/sync/emergency-local";
 import { mergeOperativa } from "@/lib/sync/merge-operativa";
+import { mergeOperativaSafe } from "@/lib/sync/merge-cache-safe";
 import {
   getComandasCache,
   setComandasCache,
@@ -67,8 +68,11 @@ export async function guardarComanda(
   } catch (e) {
     const error = e instanceof Error ? e.message : "Error de sincronización";
     addPendingCocina(comanda);
-    const merged = mergeOperativa(await repo.getAll(), getPendingCocina());
-    setComandasCache(merged);
+    await mergeOperativaSafe(
+      () => getComandasRepository().getAll(),
+      getPendingCocina,
+      setComandasCache,
+    );
     return { data: comanda, synced: false, error };
   }
 }
@@ -86,11 +90,11 @@ export async function actualizarEstadoComanda(
 
   const pendiente = updatePendingCocinaEstado(id, estado);
   if (pendiente && usesRemoteData()) {
-    const merged = mergeOperativa(
-      await getComandasRepository().getAll(),
-      getPendingCocina(),
+    await mergeOperativaSafe(
+      () => getComandasRepository().getAll(),
+      getPendingCocina,
+      setComandasCache,
     );
-    setComandasCache(merged);
     return pendiente;
   }
 

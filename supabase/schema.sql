@@ -380,16 +380,6 @@ AS $$
   SELECT ct_current_rol() = 'ADMIN'::ct_rol;
 $$;
 
-CREATE OR REPLACE FUNCTION ct_is_camarero()
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT ct_current_rol() = 'CAMARERO'::ct_rol;
-$$;
-
 -- =============================================================================
 -- RLS — habilitar
 -- =============================================================================

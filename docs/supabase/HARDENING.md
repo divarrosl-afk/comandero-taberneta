@@ -1,66 +1,88 @@
-# Fase A — Hardening
+# Fase A — Hardening (cerrada)
 
 Auditoría de robustez y seguridad. **Sin funciones nuevas.**
 
-## Migración obligatoria (Supabase)
+**Estado:** Fase A cerrada — lista para Fase B (Tests).
 
-Ejecutar en SQL Editor después de Fase 2:
+---
 
-```bash
-# Archivo: supabase/migrations/20250702_rls_hardening.sql
+## Migraciones Supabase (orden obligatorio)
+
+Ejecutar en el **SQL Editor** de Supabase, en este orden, sobre un proyecto con `schema.sql` base:
+
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| 1 | `supabase/migrations/20250630_config_impresora.sql` | Tabla `config_impresora` |
+| 2 | `supabase/migrations/20250630_touch_ultimo_acceso.sql` | `ct_touch_ultimo_acceso()` |
+| 3 | `supabase/migrations/20250701_realtime_comandas.sql` | Realtime en comandas/postres |
+| 4 | `supabase/migrations/20250702_rls_hardening.sql` | **RLS soft-delete + audit_log** |
+| 5 | `supabase/migrations/20250703_drop_ct_is_camarero.sql` | Elimina función SQL sin uso |
+
+> Proyecto nuevo: ejecutar `supabase/schema.sql` completo (ya incluye políticas finales) y solo las migraciones 3–5 si aplica.
+
+### Verificar RLS aplicado
+
+```sql
+SELECT polname, tablename
+FROM pg_policies
+WHERE tablename IN ('comandas_cocina', 'comandas_postres', 'audit_log');
 ```
 
-### Cambios RLS
+---
 
-| Tabla | Cambio |
-|-------|--------|
-| `comandas_cocina` | UPDATE: solo ADMIN puede establecer `deleted_at` (soft-delete) |
-| `comandas_postres` | Idem |
-| `audit_log` | INSERT: solo ADMIN |
+## RLS — resultado auditoría
 
-**Antes:** un CAMARERO podía anular comandas vía `UPDATE deleted_at` aunque la UI lo ocultara.
-
-## Auditoría RLS (resumen)
-
-| Recurso | SELECT | INSERT | UPDATE | DELETE / soft-delete |
-|---------|--------|--------|--------|----------------------|
-| `restaurantes` | autenticado (propio) | — | — | — |
-| `perfiles` | autenticado | — | ADMIN | ADMIN |
-| `mesas` | autenticado (+ activa si CAMARERO) | ADMIN | ADMIN | ADMIN (soft via admin_write) |
-| `mesa_estados` | autenticado | autenticado | autenticado | ADMIN |
-| `productos` | autenticado (+ activo si CAMARERO) | ADMIN | ADMIN | ADMIN |
-| `menus_dia` | autenticado | ADMIN | ADMIN | ADMIN |
-| `comandas_cocina` | autenticado | autenticado | autenticado (estado); ADMIN (anular) | ADMIN (SQL DELETE) |
-| `comandas_postres` | idem | idem | idem | idem |
+| Recurso | SELECT | INSERT | UPDATE | Soft-delete (`deleted_at`) |
+|---------|--------|--------|--------|----------------------------|
+| `comandas_cocina` | autenticado | autenticado | estado: autenticado | **solo ADMIN** (pass 1) |
+| `comandas_postres` | idem | idem | idem | **solo ADMIN** |
+| `productos` / `mesas` / `menus_dia` | autenticado | ADMIN | ADMIN (`*_admin_write`) | solo ADMIN |
+| `audit_log` | ADMIN | **solo ADMIN** | — | — |
 | `cierres` | ADMIN | ADMIN | ADMIN | ADMIN |
-| `audit_log` | ADMIN | ADMIN | — | — |
-| `config_impresora` | autenticado | ADMIN | ADMIN | ADMIN |
+| `perfiles` | autenticado | — | ADMIN | ADMIN |
 
-`ct_touch_ultimo_acceso()` — función SECURITY DEFINER para `ultimo_acceso` sin abrir UPDATE general en perfiles.
+- `ct_is_camarero()` **eliminada** — no se usaba en ninguna política.
+- `ct_touch_ultimo_acceso()` — SECURITY DEFINER para `ultimo_acceso` sin abrir UPDATE general en perfiles.
+
+---
 
 ## APIs
 
 | Ruta | Auth | Validación |
 |------|------|------------|
-| `POST /api/admin/usuarios` | Bearer + ADMIN | username, password ≥6, rol enum |
+| `POST /api/admin/usuarios` | Bearer + ADMIN | username `a-z0-9_-` 2–32, password ≥6, rol enum, nombre ≤80 |
 | `PATCH /api/admin/usuarios/[username]` | Bearer + ADMIN | rol enum, password ≥6 si se envía |
-| `POST /api/impresion` | Bearer CAMARERO/ADMIN si `supabase`/`hybrid` | ticket, destino, tipo |
+| `POST /api/impresion` | Bearer CAMARERO/ADMIN si `supabase`/`hybrid` | ticket, destino; 401 claro sin sesión |
 
-Modo `local`: `/api/impresion` sin auth (mismo comportamiento que antes).
+- Auth extraída a `src/lib/supabase/api-auth.ts` (anon key).
+- `SUPABASE_SERVICE_ROLE_KEY` solo en `src/lib/supabase/admin.ts` y scripts servidor — **nunca** `NEXT_PUBLIC_`.
+- Modo `local`: `/api/impresion` sin auth (sin cambios).
 
-## Cliente — sync y rendimiento
+---
 
-- `fetchOperativaData()` — deduplica peticiones concurrentes (polling + Realtime).
-- `OPERATIVA_POLL_MS = 5000` — constante compartida.
-- Repositorios Supabase — errores de lectura propagados (no silencian con `[]`).
-- `useSupabaseOperativaRealtime` — cleanup con `removeChannel` en unmount.
+## Sync
 
-## Qué queda para Fase B (tests)
+- `fetchOperativaData()` — una petición en vuelo; polling + Realtime comparten la misma Promise.
+- `mergeOperativaSafe()` — si falla Supabase al guardar pendiente, **no vacía** caché operativa.
+- Hooks (`usePanel`, historial, mesas) — en error conservan estado previo y loguean en consola.
+- `OPERATIVA_POLL_MS = 5000`, `SYNC_PENDING_POLL_MS = 3000`.
+- Realtime — `removeChannel` en unmount; callback estable con `useRef`.
 
-- Tests unitarios de `mergeOperativa`, permisos, repos.
-- Simulación multi-móvil concurrente.
-- Tests de RLS con roles CAMARERO/ADMIN.
+---
 
-## Qué queda para Fases C–E
+## Riesgos residuales aceptados (antes de Fase B)
 
-Ver roadmap del proyecto (optimización, offline serio, impresora TCP 9100).
+| Riesgo | Motivo | Fase |
+|--------|--------|------|
+| Sin tests automatizados | Cobertura 0 | **B** |
+| Historial/cierre sin polling en vivo | Solo refresco al entrar/cambiar fecha | B / D |
+| Estado mesa manual no sincroniza | `mesas-estado` local | D |
+| Offline básico (cola manual) | Sin IndexedDB/outbox | D |
+| `mesa_estados` en Supabase sin usar desde app | Preparado para fase futura | D |
+
+---
+
+## Qué sigue
+
+- **Fase B — Tests:** unitarios, repos, simulación multi-móvil.
+- **Fases C–E:** optimización, offline serio, impresora TCP 9100.

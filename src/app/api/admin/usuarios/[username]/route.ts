@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
+import { actualizarUsuarioAdmin } from "@/lib/supabase/admin-users";
+import { verifyAdminRequest } from "@/lib/supabase/api-auth";
 import {
-  actualizarUsuarioAdmin,
-  verifyAdminRequest,
-} from "@/lib/supabase/admin-users";
-import type { Usuario, Rol } from "@/types/auth";
-
-const VALID_ROLES: Rol[] = ["ADMIN", "CAMARERO"];
-const MIN_PASSWORD_LENGTH = 6;
+  MIN_PASSWORD_LENGTH,
+  validatePassword,
+  validateRol,
+} from "@/lib/api/validation";
+import type { Usuario } from "@/types/auth";
 
 export async function PATCH(
   request: Request,
@@ -25,13 +25,24 @@ export async function PATCH(
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  if (cambios.rol && !VALID_ROLES.includes(cambios.rol)) {
-    return NextResponse.json({ error: "Rol inválido" }, { status: 400 });
+  const rolError = validateRol(cambios.rol);
+  if (rolError) {
+    return NextResponse.json({ error: rolError }, { status: 400 });
   }
 
-  if (cambios.password !== undefined && cambios.password.trim().length < MIN_PASSWORD_LENGTH) {
+  if (
+    cambios.password !== undefined &&
+    cambios.password.trim().length > 0
+  ) {
+    const passwordError = validatePassword(cambios.password, MIN_PASSWORD_LENGTH);
+    if (passwordError) {
+      return NextResponse.json({ error: passwordError }, { status: 400 });
+    }
+  }
+
+  if (cambios.nombre !== undefined && cambios.nombre.trim().length > 80) {
     return NextResponse.json(
-      { error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` },
+      { error: "El nombre no puede superar 80 caracteres" },
       { status: 400 },
     );
   }
@@ -42,7 +53,8 @@ export async function PATCH(
       rol: cambios.rol,
       camareroId: cambios.camareroId,
       activo: cambios.activo,
-      password: cambios.password,
+      password:
+        cambios.password?.trim().length ? cambios.password : undefined,
     });
     return NextResponse.json({ usuario });
   } catch (e) {

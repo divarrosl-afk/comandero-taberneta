@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
+import { crearUsuarioAdmin } from "@/lib/supabase/admin-users";
+import { verifyAdminRequest } from "@/lib/supabase/api-auth";
 import {
-  crearUsuarioAdmin,
-  verifyAdminRequest,
-} from "@/lib/supabase/admin-users";
-import type { UsuarioInput, Rol } from "@/types/auth";
-
-const VALID_ROLES: Rol[] = ["ADMIN", "CAMARERO"];
-const MIN_PASSWORD_LENGTH = 6;
+  MIN_PASSWORD_LENGTH,
+  normalizeUsername,
+  validatePassword,
+  validateRol,
+  validateUsername,
+} from "@/lib/api/validation";
+import type { UsuarioInput } from "@/types/auth";
 
 export async function POST(request: Request) {
   const auth = await verifyAdminRequest(request);
@@ -28,20 +30,31 @@ export async function POST(request: Request) {
     );
   }
 
-  if (body.password.trim().length < MIN_PASSWORD_LENGTH) {
+  const usernameError = validateUsername(body.username);
+  if (usernameError) {
+    return NextResponse.json({ error: usernameError }, { status: 400 });
+  }
+
+  const passwordError = validatePassword(body.password, MIN_PASSWORD_LENGTH);
+  if (passwordError) {
+    return NextResponse.json({ error: passwordError }, { status: 400 });
+  }
+
+  const rolError = validateRol(body.rol);
+  if (rolError) {
+    return NextResponse.json({ error: rolError }, { status: 400 });
+  }
+
+  if (body.nombre.trim().length > 80) {
     return NextResponse.json(
-      { error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` },
+      { error: "El nombre no puede superar 80 caracteres" },
       { status: 400 },
     );
   }
 
-  if (body.rol && !VALID_ROLES.includes(body.rol)) {
-    return NextResponse.json({ error: "Rol inválido" }, { status: 400 });
-  }
-
   try {
     const usuario = await crearUsuarioAdmin({
-      username: body.username,
+      username: normalizeUsername(body.username),
       password: body.password,
       nombre: body.nombre,
       rol: body.rol ?? "CAMARERO",

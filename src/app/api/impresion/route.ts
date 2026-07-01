@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { printMock } from "@/modules/impresion-wifi/drivers/mock";
 import { printEscPos } from "@/modules/impresion-wifi/drivers/escpos";
 import { getEffectivePrintMode } from "@/modules/impresion-wifi/config";
-import { verifyAuthenticatedRequest } from "@/lib/supabase/admin-users";
+import { verifyAuthenticatedRequest } from "@/lib/supabase/api-auth";
 import type { PrintTicketRequest, PrintResult } from "@/modules/impresion-wifi/types";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi/types";
 import { IMPRESORA_DEFAULT } from "@/types/impresora";
@@ -39,13 +39,29 @@ export async function POST(req: Request) {
       const auth = await verifyAuthenticatedRequest(req);
       if (!auth.ok) {
         return NextResponse.json(
-          { ok: false, message: auth.error },
+          {
+            ok: false,
+            message: auth.error,
+            destino: "cocina",
+            tipo: "cocina",
+            simulated: false,
+            mode: "mock",
+            timestamp: new Date().toISOString(),
+          },
           { status: auth.status },
         );
       }
     }
 
-    const body = (await req.json()) as PrintTicketRequest;
+    let body: PrintTicketRequest;
+    try {
+      body = (await req.json()) as PrintTicketRequest;
+    } catch {
+      return NextResponse.json(
+        { ok: false, message: "Cuerpo JSON inválido" },
+        { status: 400 },
+      );
+    }
 
     if (!body.ticket?.trim()) {
       return NextResponse.json(
