@@ -11,13 +11,21 @@ function readEnv(name: string): string | undefined {
   return value && value.length > 0 ? value : undefined;
 }
 
+/** Supabase nuevo wizard usa PUBLISHABLE_KEY; legacy usa ANON_KEY. */
+function readSupabaseAnonKey(): string | undefined {
+  return (
+    readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY") ??
+    readEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
+  );
+}
+
 /**
  * Devuelve la configuración de Supabase si las tres variables públicas existen.
  * Con `DATA_BACKEND=local` puede devolver `null` sin afectar a la app.
  */
 export function getSupabaseEnv(): SupabaseEnvConfig | null {
   const url = readEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const anonKey = readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  const anonKey = readSupabaseAnonKey();
   const restauranteId = readEnv("NEXT_PUBLIC_RESTAURANTE_ID");
 
   if (!url || !anonKey || !restauranteId) {
@@ -58,7 +66,7 @@ export function validateSupabaseSetup(): {
   if (!readEnv("NEXT_PUBLIC_SUPABASE_URL")) {
     missing.push("NEXT_PUBLIC_SUPABASE_URL");
   }
-  if (!readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY")) {
+  if (!readSupabaseAnonKey()) {
     missing.push("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
   if (!readEnv("NEXT_PUBLIC_RESTAURANTE_ID")) {
