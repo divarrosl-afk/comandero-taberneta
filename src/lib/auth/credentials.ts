@@ -1,7 +1,5 @@
-import {
-  getUsuariosRepository,
-  registrarAccesoUsuario,
-} from "@/lib/auth/usuarios-service";
+import { registrarAccesoUsuario } from "@/lib/auth/usuarios-service";
+import { getUsuario } from "@/lib/storage/usuarios";
 import type { Sesion, Usuario } from "@/types/auth";
 
 export function buscarUsuario(
@@ -9,7 +7,7 @@ export function buscarUsuario(
   password: string,
 ): Usuario | null {
   const normalizado = username.trim().toLowerCase();
-  const usuario = getUsuariosRepository().getByUsername(normalizado);
+  const usuario = getUsuario(normalizado);
   if (!usuario || !usuario.activo) return null;
   if (usuario.password !== password) return null;
   return usuario;

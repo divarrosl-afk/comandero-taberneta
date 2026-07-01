@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { autenticarUsuario } from "@/lib/auth/credentials";
 import {
   puedeAccederConfigCatalogo,
   puedeAccederConfigCarta,
@@ -21,14 +20,15 @@ import {
   puedeBorrarHistorial,
   puedeCambiarCamarero,
 } from "@/lib/auth/permisos";
-import { getSesion, guardarSesion, limpiarSesion } from "@/lib/storage/sesion";
+import { getAuthRepository } from "@/lib/data/data-layer";
+import { usesRemoteData } from "@/lib/data/backend";
 import type { Sesion } from "@/types/auth";
 
 interface AuthContextValue {
   sesion: Sesion | null;
   listo: boolean;
-  iniciarSesion: (username: string, password: string) => boolean;
-  cerrarSesion: () => void;
+  iniciarSesion: (username: string, password: string) => Promise<boolean>;
+  cerrarSesion: () => Promise<void>;
   puedeConfigCatalogo: boolean;
   puedeConfigCarta: boolean;
   puedeConfigMenuDia: boolean;
@@ -38,6 +38,7 @@ interface AuthContextValue {
   puedeConfigImpresora: boolean;
   puedeBorrarHistorial: boolean;
   puedeCambiarCamarero: boolean;
+  usaSupabase: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -45,23 +46,34 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [sesion, setSesion] = useState<Sesion | null>(null);
   const [listo, setListo] = useState(false);
+  const usaSupabase = usesRemoteData();
 
   useEffect(() => {
-    setSesion(getSesion());
-    setListo(true);
+    let activo = true;
+
+    void (async () => {
+      const restaurada = await getAuthRepository().restoreSession();
+      if (activo) {
+        setSesion(restaurada);
+        setListo(true);
+      }
+    })();
+
+    return () => {
+      activo = false;
+    };
   }, []);
 
-  const iniciarSesion = useCallback((username: string, password: string) => {
-    const nueva = autenticarUsuario(username, password);
+  const iniciarSesion = useCallback(async (username: string, password: string) => {
+    const nueva = await getAuthRepository().login(username, password);
     if (!nueva) return false;
 
-    guardarSesion(nueva);
     setSesion(nueva);
     return true;
   }, []);
 
-  const cerrarSesion = useCallback(() => {
-    limpiarSesion();
+  const cerrarSesion = useCallback(async () => {
+    await getAuthRepository().logout();
     setSesion(null);
   }, []);
 
@@ -88,8 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         : false,
       puedeBorrarHistorial: sesion ? puedeBorrarHistorial(sesion.rol) : false,
       puedeCambiarCamarero: sesion ? puedeCambiarCamarero(sesion.rol) : false,
+      usaSupabase,
     }),
-    [sesion, listo, iniciarSesion, cerrarSesion],
+    [sesion, listo, iniciarSesion, cerrarSesion, usaSupabase],
   );
 
   return (

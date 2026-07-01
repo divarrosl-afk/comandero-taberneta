@@ -1,11 +1,11 @@
 import type { MesaConfig } from "@/types/mesas";
 
-/** Capa de acceso a configuración de mesas — sustituir por Supabase */
+/** Capa de acceso a configuración de mesas */
 export interface MesasRepository {
-  getConfig(): MesaConfig[];
-  getById(id: string): MesaConfig | undefined;
-  guardarConfig(mesas: MesaConfig[]): void;
-  crear(mesa: MesaConfig): MesaConfig;
-  actualizar(id: string, cambios: Partial<MesaConfig>): MesaConfig | null;
-  restaurarDefault(): MesaConfig[];
+  getConfig(): Promise<MesaConfig[]>;
+  getById(id: string): Promise<MesaConfig | undefined>;
+  guardarConfig(mesas: MesaConfig[]): Promise<void>;
+  crear(mesa: MesaConfig): Promise<MesaConfig>;
+  actualizar(id: string, cambios: Partial<MesaConfig>): Promise<MesaConfig | null>;
+  restaurarDefault(): Promise<MesaConfig[]>;
 }

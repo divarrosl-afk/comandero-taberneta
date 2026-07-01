@@ -20,7 +20,7 @@ function formatUltimoAcceso(iso: string | null): string {
 }
 
 export function UsuariosConfigClient() {
-  const { sesion } = useAuth();
+  const { sesion, usaSupabase } = useAuth();
   const { usuarios, crear, actualizar, puedeDesactivar } = useUsuarios();
   const [editando, setEditando] = useState<string | null>(null);
   const [nuevo, setNuevo] = useState(false);
@@ -30,9 +30,9 @@ export function UsuariosConfigClient() {
     a.username.localeCompare(b.username, "es"),
   );
 
-  const handleCrear = (datos: UsuarioInput) => {
+  const handleCrear = async (datos: UsuarioInput) => {
     try {
-      crear(datos);
+      await crear(datos);
       setNuevo(false);
       setMensaje(`Usuario ${datos.username} creado`);
     } catch (e) {
@@ -40,7 +40,7 @@ export function UsuariosConfigClient() {
     }
   };
 
-  const handleActualizar = (username: string, datos: UsuarioInput) => {
+  const handleActualizar = async (username: string, datos: UsuarioInput) => {
     const cambios: Partial<typeof datos> = {
       nombre: datos.nombre,
       rol: datos.rol,
@@ -49,9 +49,13 @@ export function UsuariosConfigClient() {
     };
     if (datos.password) cambios.password = datos.password;
 
-    actualizar(username, cambios);
-    setEditando(null);
-    setMensaje(`Usuario ${username} actualizado`);
+    try {
+      await actualizar(username, cambios);
+      setEditando(null);
+      setMensaje(`Usuario ${username} actualizado`);
+    } catch (e) {
+      setMensaje(e instanceof Error ? e.message : "Error al actualizar usuario");
+    }
   };
 
   return (
@@ -65,7 +69,8 @@ export function UsuariosConfigClient() {
         </Link>
         <h1 className="text-2xl font-bold text-primary">Usuarios</h1>
         <p className="mt-1 text-sm text-muted">
-          Administración de accesos · localStorage
+          Administración de accesos
+          {usaSupabase ? " · Supabase Auth" : " · localStorage"}
         </p>
       </header>
 

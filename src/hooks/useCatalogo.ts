@@ -8,38 +8,47 @@ import {
   getProductosPorSeccion,
   guardarCatalogo,
   resetCatalogo,
-} from "@/lib/storage/catalogo";
+} from "@/lib/catalogo/catalogo-service";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 
 export function useCatalogo() {
   const [productos, setProductos] = useState<ProductoCatalogo[]>([]);
+  const [cargando, setCargando] = useState(true);
 
-  const recargar = useCallback(() => {
-    setProductos(getCatalogo());
+  const recargar = useCallback(async () => {
+    setCargando(true);
+    try {
+      const lista = await getCatalogo();
+      setProductos(lista);
+    } finally {
+      setCargando(false);
+    }
   }, []);
 
   useEffect(() => {
-    recargar();
+    void recargar();
   }, [recargar]);
 
   const guardar = useCallback(
-    (lista: ProductoCatalogo[]) => {
-      guardarCatalogo(lista);
-      recargar();
+    async (lista: ProductoCatalogo[]) => {
+      await guardarCatalogo(lista);
+      await recargar();
     },
     [recargar],
   );
 
   const agregar = useCallback(
-    (producto: ProductoCatalogo) => {
-      guardar([...getCatalogo(), producto]);
+    async (producto: ProductoCatalogo) => {
+      const lista = await getCatalogo();
+      await guardar([...lista, producto]);
     },
     [guardar],
   );
 
   const actualizar = useCallback(
-    (id: string, cambios: Partial<ProductoCatalogo>) => {
-      const lista = getCatalogo().map((p) =>
+    async (id: string, cambios: Partial<ProductoCatalogo>) => {
+      const lista = await getCatalogo();
+      const actualizada = lista.map((p) =>
         p.id === id
           ? {
               ...p,
@@ -48,24 +57,26 @@ export function useCatalogo() {
             }
           : p,
       );
-      guardar(lista);
+      await guardar(actualizada);
     },
     [guardar],
   );
 
   const eliminar = useCallback(
-    (id: string) => {
-      guardar(getCatalogo().filter((p) => p.id !== id));
+    async (id: string) => {
+      const lista = await getCatalogo();
+      await guardar(lista.filter((p) => p.id !== id));
     },
     [guardar],
   );
 
-  const restaurarDefault = useCallback(() => {
-    setProductos(resetCatalogo());
+  const restaurarDefault = useCallback(async () => {
+    const lista = await resetCatalogo();
+    setProductos(lista);
   }, []);
 
   const porSeccion = useCallback(
-    (seccion: SeccionCatalogo, soloFavoritos = false) =>
+    async (seccion: SeccionCatalogo, soloFavoritos = false) =>
       getProductosPorSeccion(seccion, {
         soloActivos: true,
         soloFavoritos,
@@ -74,12 +85,13 @@ export function useCatalogo() {
   );
 
   const buscarPorId = useCallback(
-    (id: string) => getProductoPorId(id),
+    async (id: string) => getProductoPorId(id),
     [],
   );
 
   return {
     productos,
+    cargando,
     recargar,
     guardar,
     agregar,

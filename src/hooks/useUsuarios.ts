@@ -1,50 +1,67 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { contarAdminsActivos } from "@/lib/storage/usuarios";
-import { getUsuariosRepository } from "@/lib/auth/usuarios-service";
+import { getUsuariosRepository } from "@/lib/data/data-layer";
 import type { Usuario, UsuarioInput } from "@/types/auth";
 
 export function useUsuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [cargando, setCargando] = useState(true);
 
-  const recargar = useCallback(() => {
-    setUsuarios(getUsuariosRepository().getAll());
+  const recargar = useCallback(async () => {
+    setCargando(true);
+    try {
+      setUsuarios(await getUsuariosRepository().getAll());
+    } finally {
+      setCargando(false);
+    }
   }, []);
 
   useEffect(() => {
-    recargar();
+    void recargar();
   }, [recargar]);
 
   const crear = useCallback(
-    (input: UsuarioInput) => {
-      const usuario = getUsuariosRepository().crear(input);
-      recargar();
+    async (input: UsuarioInput) => {
+      const usuario = await getUsuariosRepository().crear(input);
+      await recargar();
       return usuario;
     },
     [recargar],
   );
 
   const actualizar = useCallback(
-    (username: string, cambios: Partial<Usuario>) => {
-      const usuario = getUsuariosRepository().actualizar(username, cambios);
-      recargar();
+    async (username: string, cambios: Partial<Usuario>) => {
+      const usuario = await getUsuariosRepository().actualizar(
+        username,
+        cambios,
+      );
+      await recargar();
       return usuario;
     },
     [recargar],
   );
 
-  const puedeDesactivar = useCallback((username: string): boolean => {
-    const u = getUsuariosRepository().getByUsername(username);
-    if (!u) return false;
-    if (u.rol === "ADMIN" && u.activo && contarAdminsActivos(username) === 0) {
-      return false;
-    }
-    return true;
-  }, []);
+  const puedeDesactivar = useCallback(
+    (username: string): boolean => {
+      const key = username.trim().toLowerCase();
+      const u = usuarios.find((x) => x.username === key);
+      if (!u) return false;
+      if (u.rol === "ADMIN" && u.activo) {
+        const otrosAdmins = usuarios.filter(
+          (x) =>
+            x.rol === "ADMIN" && x.activo && x.username !== key,
+        );
+        if (otrosAdmins.length === 0) return false;
+      }
+      return true;
+    },
+    [usuarios],
+  );
 
   return {
     usuarios,
+    cargando,
     recargar,
     crear,
     actualizar,

@@ -1,11 +1,15 @@
 import type { Usuario, UsuarioInput } from "@/types/auth";
 
-/** Capa de acceso a usuarios — sustituir implementación por Supabase en el futuro */
+/** Capa de acceso a usuarios */
 export interface UsuariosRepository {
-  getAll(): Usuario[];
-  getByUsername(username: string): Usuario | undefined;
-  crear(input: UsuarioInput): Usuario;
-  actualizar(username: string, cambios: Partial<Usuario>): Usuario | null;
-  registrarAcceso(username: string): void;
-  restaurarIniciales(): Usuario[];
+  getAll(): Promise<Usuario[]>;
+  getByUsername(username: string): Promise<Usuario | undefined>;
+  crear(input: UsuarioInput): Promise<Usuario>;
+  actualizar(
+    username: string,
+    cambios: Partial<Usuario>,
+  ): Promise<Usuario | null>;
+  registrarAcceso(username: string): Promise<void>;
+  restaurarIniciales(): Promise<Usuario[]>;
+  contarAdminsActivos(excluir?: string): Promise<number>;
 }

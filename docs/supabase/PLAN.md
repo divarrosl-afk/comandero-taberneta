@@ -1,9 +1,14 @@
 # Plan de migración a Supabase — Comandero Taberneta
 
-## Estado: Fase 0 (preparación)
+## Estado: Fase 1 (Auth + configuración compartida)
 
-La aplicación **sigue funcionando igual** con `NEXT_PUBLIC_DATA_BACKEND=local`.
-Esta fase solo añade documentación, esquema SQL y utilidades base.
+Con `NEXT_PUBLIC_DATA_BACKEND=supabase` o `hybrid`:
+
+- Login real con Supabase Auth (`username@taberneta.local`)
+- Perfiles, carta, menú del día, mesas e impresora (metadata) compartidos
+- Comandas, postres e historial **siguen en localStorage**
+
+Con `NEXT_PUBLIC_DATA_BACKEND=local` (por defecto) la app funciona igual que antes.
 
 ## Contexto
 
@@ -54,10 +59,12 @@ Arquitectura **híbrida**:
 
 ### Fase 1 — Auth + configuración compartida
 
-- Supabase Auth + tabla `perfiles`
-- Repositorios Supabase para mesas, productos, menú del día
-- `DATA_BACKEND=supabase` en staging
-- Comandas/postres **siguen en localStorage**
+- [x] Supabase Auth + tabla `perfiles`
+- [x] Repositorios híbridos (auth, usuarios, catálogo, menú, mesas, impresora)
+- [x] `DATA_BACKEND=supabase|hybrid` con fallback local
+- [x] API admin usuarios (service role)
+- [x] `docs/supabase/SEED.md` + `scripts/seed-supabase.mjs`
+- [x] Comandas/postres **siguen en localStorage**
 
 ### Fase 2 — Comandas sincronizadas
 
