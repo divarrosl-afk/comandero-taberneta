@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   charsPerLine,
   encodeTicket,
+  tcpConnectTest,
 } from "../../../print-server/lib/escpos.js";
 
 describe("ESC/POS encode", () => {
@@ -24,5 +25,10 @@ describe("ESC/POS encode", () => {
     const text = buf.toString("latin1");
     const lines = text.split("\n").filter((l) => l.includes("A"));
     expect(lines.length).toBeGreaterThan(1);
+  });
+
+  it("probe write rechaza host sin impresora (127.0.0.1:9100)", async () => {
+    const result = await tcpConnectTest("127.0.0.1", 9100, 2000);
+    expect(result.ok).toBe(false);
   });
 });

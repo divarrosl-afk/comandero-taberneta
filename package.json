@@ -10,8 +10,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "print-server": "node print-server/index.js",
-    "print-server:dev": "node --watch print-server/index.js",
+    "print-server": "node --env-file=print-server/.env print-server/index.js",
+    "print-server:dev": "node --env-file=print-server/.env --watch print-server/index.js",
     "seed:supabase": "node scripts/seed-supabase.mjs"
   },
   "dependencies": {

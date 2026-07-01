@@ -47,8 +47,9 @@ Móviles (PWA)  ──HTTP──►  Portátil restaurante (print-server :3100)
 ```bash
 cd print-server
 cp .env.example .env
-# Editar PRINTER_IP, PORT=3100
-npm run start   # desde la raíz del monorepo
+# Editar PRINTER_IP, PORT=3100, PRINT_MODE=network
+cd ..
+npm run print-server   # carga print-server/.env automáticamente
 ```
 
 **Windows (servicio permanente):**
@@ -81,6 +82,12 @@ En `/configuracion/impresora`:
 
 - Opcional: `PRINT_API_KEY` + header `X-Print-Key`.
 - El servidor debe estar solo en la **WiFi del restaurante**.
+
+## Red local — subredes
+
+El portátil y la impresora deben estar en la **misma subred** (ej. ambos `192.168.1.x`).
+Si el portátil es `192.168.1.146` y la impresora `192.168.4.100`, **no conectará** salvo routing especial.
+Asigna a la impresora una IP `192.168.1.xxx` en el router o panel de la impresora.
 
 ## Qué NO hace (futuro)
 

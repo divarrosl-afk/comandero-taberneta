@@ -44,24 +44,42 @@ export function encodeTicket(text, anchoPapel = "80mm") {
 
 export function tcpConnectTest(host, port, timeoutMs = 4000) {
   return new Promise((resolve) => {
+    const probe = Buffer.from([0x1b, 0x40]);
+    let settled = false;
+
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+
     const socket = net.createConnection({ host, port }, () => {
-      socket.end();
-      resolve({
-        ok: true,
-        message: `Conexión OK con ${host}:${port}`,
+      socket.write(probe, (writeErr) => {
+        socket.destroy();
+        if (writeErr) {
+          finish({
+            ok: false,
+            message: writeErr.message || `No se pudo enviar a ${host}:${port}`,
+          });
+          return;
+        }
+        finish({
+          ok: true,
+          message: `Conexión OK con ${host}:${port}`,
+        });
       });
     });
 
     socket.setTimeout(timeoutMs);
     socket.on("timeout", () => {
       socket.destroy();
-      resolve({
+      finish({
         ok: false,
         message: `Timeout al conectar con ${host}:${port}`,
       });
     });
     socket.on("error", (err) => {
-      resolve({
+      finish({
         ok: false,
         message: err.message || `No se pudo conectar con ${host}:${port}`,
       });
