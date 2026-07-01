@@ -14,7 +14,8 @@
     "print-server:dev": "node --env-file=print-server/.env --watch print-server/index.js",
     "seed:supabase": "node scripts/seed-supabase.mjs",
     "db:migrate:print-jobs": "node scripts/apply-print-jobs-migration.mjs",
-    "vercel:cloud-print": "node scripts/setup-vercel-cloud-print.mjs"
+    "vercel:cloud-print": "node scripts/setup-vercel-cloud-print.mjs",
+    "deploy:cloud-print": "node scripts/deploy-cloud-print-all.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",

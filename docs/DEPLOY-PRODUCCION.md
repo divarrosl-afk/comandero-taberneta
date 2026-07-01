@@ -14,6 +14,32 @@ Móvil (HTTPS)  →  Vercel /api/impresion  →  Supabase print_jobs
 
 ---
 
+## Automatización (recomendado)
+
+Con los secretos configurados en GitHub (**Settings → Secrets → Actions**):
+
+| Secreto | Uso |
+|---------|-----|
+| `SUPABASE_DB_URL` | Migración `print_jobs` |
+| `VERCEL_TOKEN` | Variables + redeploy |
+| `VERCEL_PROJECT_ID` | Proyecto Vercel |
+| `NEXT_PUBLIC_SUPABASE_URL` | Vercel env |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Vercel env |
+| `SUPABASE_SERVICE_ROLE_KEY` | Vercel env |
+| `NEXT_PUBLIC_RESTAURANTE_ID` | Vercel env |
+
+**GitHub Actions → Deploy cloud print → Run workflow**
+
+O en local:
+
+```bash
+npm run deploy:cloud-print
+```
+
+(mismas variables de entorno que arriba)
+
+---
+
 ## Checklist antes de probar desde Vercel
 
 ### 1. Supabase — migración `print_jobs`
