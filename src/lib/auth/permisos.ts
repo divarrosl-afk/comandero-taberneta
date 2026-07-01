@@ -36,6 +36,10 @@ export function puedeAccederCierre(rol: Rol): boolean {
   return esAdmin(rol);
 }
 
+export function puedeAdministrarUsuarios(rol: Rol): boolean {
+  return esAdmin(rol);
+}
+
 export function puedeBorrarHistorial(rol: Rol): boolean {
   return esAdmin(rol);
 }

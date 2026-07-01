@@ -1,4 +1,7 @@
-import { usuariosIniciales } from "@/data/usuarios";
+import {
+  getUsuariosRepository,
+  registrarAccesoUsuario,
+} from "@/lib/auth/usuarios-service";
 import type { Sesion, Usuario } from "@/types/auth";
 
 export function buscarUsuario(
@@ -6,12 +9,10 @@ export function buscarUsuario(
   password: string,
 ): Usuario | null {
   const normalizado = username.trim().toLowerCase();
-  return (
-    usuariosIniciales.find(
-      (u) =>
-        u.username.toLowerCase() === normalizado && u.password === password,
-    ) ?? null
-  );
+  const usuario = getUsuariosRepository().getByUsername(normalizado);
+  if (!usuario || !usuario.activo) return null;
+  if (usuario.password !== password) return null;
+  return usuario;
 }
 
 export function usuarioASesion(usuario: Usuario): Sesion {
@@ -22,4 +23,14 @@ export function usuarioASesion(usuario: Usuario): Sesion {
     camareroId: usuario.camareroId,
     iniciadaEn: new Date().toISOString(),
   };
+}
+
+export function autenticarUsuario(
+  username: string,
+  password: string,
+): Sesion | null {
+  const usuario = buscarUsuario(username, password);
+  if (!usuario) return null;
+  registrarAccesoUsuario(usuario.username);
+  return usuarioASesion(usuario);
 }
