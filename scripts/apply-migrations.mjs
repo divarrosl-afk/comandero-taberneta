@@ -9,6 +9,7 @@
  * Migraciones aplicadas en orden:
  *   20250702_rls_hardening.sql
  *   20250703_drop_ct_is_camarero.sql
+ *   20250704_print_jobs.sql
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -18,6 +19,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS = [
   "20250702_rls_hardening.sql",
   "20250703_drop_ct_is_camarero.sql",
+  "20250704_print_jobs.sql",
 ];
 
 const dbUrl =

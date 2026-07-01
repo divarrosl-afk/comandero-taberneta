@@ -12,12 +12,15 @@
     "test:watch": "vitest",
     "print-server": "node --env-file=print-server/.env print-server/index.js",
     "print-server:dev": "node --env-file=print-server/.env --watch print-server/index.js",
-    "seed:supabase": "node scripts/seed-supabase.mjs"
+    "seed:supabase": "node scripts/seed-supabase.mjs",
+    "db:migrate:print-jobs": "node scripts/apply-print-jobs-migration.mjs",
+    "vercel:cloud-print": "node scripts/setup-vercel-cloud-print.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
     "idb": "^8.0.3",
     "next": "^15.2.4",
+    "pg": "^8.22.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
