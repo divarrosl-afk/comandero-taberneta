@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { PrintStatusBanner } from "@/components/impresion/PrintStatusBanner";
 import { probarConexionImpresora, probarImpresora } from "@/modules/impresion-wifi";
+import { PRINT_MESSAGES } from "@/modules/impresion-wifi/types";
 import {
   getImpresoraConfig,
   guardarImpresoraConfig,
@@ -51,7 +52,9 @@ export function ImpresoraConfigClient() {
     setConnMsg(null);
     try {
       const result = await probarConexionImpresora(config);
-      setConnMsg(result.message);
+      setConnMsg(
+        result.ok ? PRINT_MESSAGES.impresoraConectada : PRINT_MESSAGES.impresoraNoConecta,
+      );
       setConnError(!result.ok);
     } catch {
       setConnMsg("No se pudo probar la conexión");
@@ -67,8 +70,16 @@ export function ImpresoraConfigClient() {
     setTestMsg(null);
 
     try {
-      const result = await probarImpresora();
-      setTestMsg(result.message);
+      const result = await probarImpresora(config);
+      setTestMsg(
+        result.ok
+          ? result.simulated
+            ? result.message
+            : `✅ ${PRINT_MESSAGES.impresoraConectada} — ticket enviado`
+          : result.message.startsWith("❌")
+            ? result.message
+            : `❌ ${result.message}`,
+      );
       setTestError(!result.ok);
     } catch {
       setTestMsg("Error de impresión");

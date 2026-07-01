@@ -34,7 +34,11 @@ export function PostresEnviadaView({
       try {
         const batch = await imprimirComandaPostres(comanda);
         if (!cancelled) {
-          setPrintSummary(batch.summary);
+          setPrintSummary(
+            batch.allOk
+              ? batch.summary
+              : PRINT_MESSAGES.printFailGuardado,
+          );
           setPrintError(!batch.allOk);
         }
       } catch {

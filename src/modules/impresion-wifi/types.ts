@@ -55,6 +55,10 @@ export const PRINT_MESSAGES = {
   impresoraInactiva: "Impresora inactiva — ticket no enviado",
   impresoraNoConfigurada: "Configure la impresora en Ajustes",
   sinPrintServer: "Configure el servidor de impresión (URL del portátil)",
+  impresoraConectada: "✅ Impresora conectada",
+  impresoraNoConecta: "❌ No se pudo conectar",
+  printFailGuardado:
+    "La comanda se ha guardado pero no se pudo imprimir.",
 } as const;
 
 export const PRINT_STATUS_LABELS: Record<PrintJobStatus, string> = {

@@ -22,13 +22,11 @@ Móviles (PWA)  ──HTTP──►  Portátil restaurante (print-server :3100)
 
 | Capacidad | Implementación |
 |-----------|----------------|
-| Detectar impresora | `POST /test-connection` (TCP al IP:puerto) |
-| Probar conexión | Botón en `/configuracion/impresora` |
-| Ticket ESC/POS real | `print-server/lib/escpos.js` → TCP 9100 |
-| Reimpresión | `reimprimirTicket` (historial) |
-| Cola | `print-server/lib/queue.js` + `data/queue.json` |
-| Reintento si apagada | Backoff exponencial, máx. 8 intentos |
-| Estados UI | En cola · Imprimiendo · Impreso · Error |
+| Driver TCP real | `src/lib/impresion/escpos-network.ts` |
+| Encode ESC/POS | `src/lib/impresion/escpos-encode.ts` |
+| API impresión | `POST /api/impresion` (tickets reales en modo network) |
+| API prueba | `POST /api/impresion/test` (+ `?probe=1` solo TCP) |
+| Print-server LAN | `print-server/` (Vercel → `PRINT_SERVER_URL`) |
 
 ## Endpoints print-server
 

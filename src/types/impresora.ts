@@ -17,7 +17,8 @@ export const IMPRESORA_DEFAULT: ImpresoraConfig = {
   puerto: 9100,
   anchoPapel: "80mm",
   activa: true,
-  modo: "mock",
+  modo: "network",
 };
 
-export const TEST_IMPRESORA_TEXTO = "TEST IMPRESORA · LA TABERNETA";
+export const TEST_IMPRESORA_TEXTO =
+  "TEST IMPRESORA\n\nLA TABERNETA\n\nOK";

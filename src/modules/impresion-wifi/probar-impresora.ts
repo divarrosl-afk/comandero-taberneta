@@ -1,58 +1,78 @@
 import { printTicket } from "@/modules/impresion-wifi/print-ticket";
-import {
-  getPrintServerUrl,
-  resolveImpresoraConfig,
-} from "@/modules/impresion-wifi/config";
-import { PRINT_MESSAGES } from "@/modules/impresion-wifi/types";
-import { TEST_IMPRESORA_TEXTO, type ImpresoraConfig } from "@/types/impresora";
+import { resolveImpresoraConfig } from "@/modules/impresion-wifi/config";
+import { getSupabaseAccessToken } from "@/lib/supabase/client";
+import { usesRemoteData } from "@/lib/data/backend";
+import { TEST_IMPRESORA_TEXTO } from "@/types/impresora";
+import type { ImpresoraConfig } from "@/types/impresora";
 
-export async function probarConexionImpresora(
-  impresora?: ImpresoraConfig,
-) {
-  const config = impresora ?? resolveImpresoraConfig();
-  const serverUrl = getPrintServerUrl();
-
-  if (!serverUrl) {
-    if (!config.ip?.trim()) {
-      return {
-        ok: false,
-        message: PRINT_MESSAGES.impresoraNoConfigurada,
-        timestamp: new Date().toISOString(),
-      };
-    }
-    return {
-      ok: false,
-      message: PRINT_MESSAGES.sinPrintServer,
-      timestamp: new Date().toISOString(),
-    };
+async function authHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (usesRemoteData()) {
+    const token = await getSupabaseAccessToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
   }
-
-  try {
-    const response = await fetch(
-      `${serverUrl.replace(/\/$/, "")}/test-connection`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ impresora: config }),
-      },
-    );
-    return (await response.json()) as {
-      ok: boolean;
-      message: string;
-      timestamp?: string;
-    };
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : "Error de conexión";
-    return {
-      ok: false,
-      message: `No se alcanza el servidor de impresión: ${msg}`,
-      timestamp: new Date().toISOString(),
-    };
-  }
+  return headers;
 }
 
-export async function probarImpresora() {
+/** Prueba TCP real vía API (ticket TEST + corte). */
+export async function probarImpresora(impresora?: ImpresoraConfig) {
+  const config = impresora ?? resolveImpresoraConfig();
+  const headers = await authHeaders();
+
+  const testRes = await fetch("/api/impresion/test", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ impresora: config }),
+  });
+
+  const testData = (await testRes.json()) as {
+    success: boolean;
+    message: string;
+    error?: string;
+  };
+
+  if (!testData.success) {
+    return {
+      ok: false,
+      mode: "network" as const,
+      destino: "cocina" as const,
+      tipo: "reimpresion" as const,
+      message: `❌ ${testData.message || testData.error || "No se pudo conectar"}`,
+      simulated: false,
+      timestamp: new Date().toISOString(),
+      status: "error" as const,
+    };
+  }
+
   return printTicket(TEST_IMPRESORA_TEXTO, "cocina", {
     tipo: "reimpresion",
+    impresora: config,
   });
+}
+
+export async function probarConexionImpresora(impresora?: ImpresoraConfig) {
+  const config = impresora ?? resolveImpresoraConfig();
+  const headers = await authHeaders();
+
+  const res = await fetch("/api/impresion/test?probe=1", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ impresora: { ...config, modo: "network" } }),
+  });
+
+  const data = (await res.json()) as {
+    success: boolean;
+    message: string;
+    error?: string;
+  };
+
+  return {
+    ok: data.success,
+    message: data.success
+      ? "✅ Impresora conectada"
+      : `❌ ${data.message || data.error || "No se pudo conectar"}`,
+    timestamp: new Date().toISOString(),
+  };
 }

@@ -34,7 +34,11 @@ export function ComandaEnviadaView({
       try {
         const batch = await imprimirComandaCocina(comanda);
         if (!cancelled) {
-          setPrintSummary(batch.summary);
+          setPrintSummary(
+            batch.allOk
+              ? batch.summary
+              : PRINT_MESSAGES.printFailGuardado,
+          );
           setPrintError(!batch.allOk);
         }
       } catch {

@@ -1,34 +1,35 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildTestTicketBuffer,
   charsPerLine,
-  encodeTicket,
-  tcpConnectTest,
-} from "../../../print-server/lib/escpos.js";
+  encodePlainTicket,
+} from "@/lib/impresion/escpos-encode";
 
-describe("ESC/POS encode", () => {
+describe("escpos-encode", () => {
   it("calcula ancho por papel", () => {
     expect(charsPerLine("58mm")).toBe(32);
     expect(charsPerLine("80mm")).toBe(48);
   });
 
   it("genera bytes con init y corte", () => {
-    const buf = encodeTicket("Hola\nMundo", "80mm");
+    const buf = encodePlainTicket("Hola\nMundo", "80mm");
     expect(buf[0]).toBe(0x1b);
     expect(buf[1]).toBe(0x40);
     expect(buf.includes(0x1d)).toBe(true);
     expect(buf.toString("latin1")).toContain("Hola");
   });
 
+  it("ticket de prueba incluye texto LA TABERNETA", () => {
+    const buf = buildTestTicketBuffer();
+    expect(buf.toString("latin1")).toContain("LA TABERNETA");
+    expect(buf.toString("latin1")).toContain("TEST IMPRESORA");
+  });
+
   it("envuelve líneas largas", () => {
     const long = "A".repeat(60);
-    const buf = encodeTicket(long, "58mm");
+    const buf = encodePlainTicket(long, "58mm");
     const text = buf.toString("latin1");
     const lines = text.split("\n").filter((l) => l.includes("A"));
     expect(lines.length).toBeGreaterThan(1);
-  });
-
-  it("probe write rechaza host sin impresora (127.0.0.1:9100)", async () => {
-    const result = await tcpConnectTest("127.0.0.1", 9100, 2000);
-    expect(result.ok).toBe(false);
   });
 });

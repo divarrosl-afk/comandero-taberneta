@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { printMock } from "@/modules/impresion-wifi/drivers/mock";
-import { printEscPos } from "@/modules/impresion-wifi/drivers/escpos";
 import { getEffectivePrintMode } from "@/modules/impresion-wifi/config";
 import { verifyAuthenticatedRequest } from "@/lib/supabase/api-auth";
+import { printTicketNetwork } from "@/lib/impresion/print-service";
 import type { PrintTicketRequest, PrintResult } from "@/modules/impresion-wifi/types";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi/types";
 import { IMPRESORA_DEFAULT } from "@/types/impresora";
@@ -13,25 +13,6 @@ const VALID_TIPOS = new Set(["cocina", "barra", "postres", "reimpresion"]);
 function requiresPrintAuth(): boolean {
   const backend = process.env.NEXT_PUBLIC_DATA_BACKEND?.trim().toLowerCase();
   return backend === "supabase" || backend === "hybrid";
-}
-
-async function forwardToPrintServer(
-  request: PrintTicketRequest,
-): Promise<{ result: PrintResult; status: number } | null> {
-  const serverUrl = process.env.PRINT_SERVER_URL?.trim();
-  if (!serverUrl) return null;
-
-  try {
-    const response = await fetch(`${serverUrl.replace(/\/$/, "")}/print`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request),
-    });
-    const result = (await response.json()) as PrintResult;
-    return { result, status: response.status };
-  } catch {
-    return null;
-  }
 }
 
 export async function POST(req: Request) {
@@ -46,7 +27,7 @@ export async function POST(req: Request) {
             destino: "cocina",
             tipo: "cocina",
             simulated: false,
-            mode: "mock",
+            mode: "network",
             timestamp: new Date().toISOString(),
           },
           { status: auth.status },
@@ -86,7 +67,10 @@ export async function POST(req: Request) {
       ...IMPRESORA_DEFAULT,
       ip: process.env.PRINTER_IP?.trim() ?? "",
       puerto: Number(process.env.PRINTER_PORT ?? 9100),
-      modo: process.env.PRINT_MODE === "network" ? "network" : "mock",
+      modo:
+        process.env.PRINT_MODE === "network" || !process.env.PRINT_MODE
+          ? "network"
+          : "mock",
     };
 
     body.impresora = impresora;
@@ -98,8 +82,9 @@ export async function POST(req: Request) {
         destino: body.destino,
         tipo: body.tipo,
         message: PRINT_MESSAGES.impresoraInactiva,
-        simulated: true,
+        simulated: false,
         timestamp: new Date().toISOString(),
+        status: "printed",
       };
       return NextResponse.json(result);
     }
@@ -107,32 +92,12 @@ export async function POST(req: Request) {
     const mode = getEffectivePrintMode(impresora);
 
     if (mode === "network") {
-      const forwarded = await forwardToPrintServer(body);
-      if (forwarded) {
-        return NextResponse.json(forwarded.result, {
-          status: forwarded.status === 202 ? 202 : forwarded.result.ok ? 200 : 502,
-        });
-      }
-
-      const escpos = await printEscPos({
+      const result = await printTicketNetwork(
         impresora,
-        ticket: body.ticket,
-        destino: body.destino,
-      });
-      if (!escpos.ok) {
-        return NextResponse.json(
-          {
-            ok: false,
-            mode: "network",
-            destino: body.destino,
-            tipo: body.tipo,
-            message: escpos.message,
-            simulated: false,
-            timestamp: new Date().toISOString(),
-          },
-          { status: 502 },
-        );
-      }
+        body.ticket,
+        body,
+      );
+      return NextResponse.json(result, { status: result.ok ? 200 : 502 });
     }
 
     const result = printMock(body);
@@ -142,8 +107,8 @@ export async function POST(req: Request) {
       {
         ok: false,
         message: PRINT_MESSAGES.error,
-        simulated: true,
-        mode: "mock",
+        simulated: false,
+        mode: "network",
       },
       { status: 500 },
     );
