@@ -4,8 +4,8 @@ const acciones = [
   {
     titulo: "Nueva comanda",
     descripcion: "Crear pedido de cocina y barra",
-    href: "#",
-    disponible: false,
+    href: "/comanda/nueva",
+    disponible: true,
   },
   {
     titulo: "Postres",
@@ -43,7 +43,7 @@ export default function HomePage() {
       <section className="mb-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
         <h2 className="text-lg font-semibold">Acceso rápido</h2>
         <p className="mt-1 text-sm text-muted">
-          Pantallas en desarrollo — próximamente disponibles
+          Toca una opción para empezar
         </p>
 
         <ul className="mt-4 space-y-3">

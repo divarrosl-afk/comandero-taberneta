@@ -2,6 +2,13 @@ export type TipoServicio = "menu" | "carta" | "mixto";
 
 export type TipoPlato = "menu" | "menu_suplemento" | "carta";
 
+export type TipoPlatoSeleccion =
+  | "menu"
+  | "menu_suplemento"
+  | "carta"
+  | "carta_primero"
+  | "carta_segundo";
+
 export type SaleComo = "primero" | "segundo";
 
 export type EstadoPlato = "pendiente" | "marchado" | "servido";
@@ -56,3 +63,24 @@ export interface Camarero {
   nombre: string;
   activo: boolean;
 }
+
+export interface PlatoFormItem {
+  id: string;
+  nombre: string;
+  cantidad: number;
+  tipoSeleccion?: TipoPlatoSeleccion;
+  suplemento?: number;
+  notasCocina?: string;
+}
+
+export interface ComandaFormState {
+  mesa: number | null;
+  camareroId: string | null;
+  entrantes: PlatoFormItem[];
+  primeros: PlatoFormItem[];
+  segundos: PlatoFormItem[];
+  bebidas: PlatoFormItem[];
+  observaciones: string[];
+}
+
+export type ComandaFormStep = "editar" | "preview" | "enviada";
