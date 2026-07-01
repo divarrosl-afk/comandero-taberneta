@@ -1,15 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { comandaCocinaFixture } from "../setup/fixtures";
 
-vi.mock("@/lib/comandas/comandas-service", () => ({
-  fetchComandas: vi.fn(),
-}));
-vi.mock("@/lib/postres/postres-service", () => ({
-  fetchPostres: vi.fn(),
+vi.mock("@/lib/sync/operativa-read", () => ({
+  loadOperativaMerged: vi.fn(),
 }));
 
-import { fetchComandas } from "@/lib/comandas/comandas-service";
-import { fetchPostres } from "@/lib/postres/postres-service";
+import { loadOperativaMerged } from "@/lib/sync/operativa-read";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 
 describe("fetchOperativaData", () => {
@@ -19,16 +15,12 @@ describe("fetchOperativaData", () => {
       resolveFetch = r;
     });
 
-    vi.mocked(fetchComandas).mockImplementation(
+    vi.mocked(loadOperativaMerged).mockImplementation(
       () =>
         new Promise((resolve) => {
-          gate.then(() => resolve([comandaCocinaFixture()]));
-        }),
-    );
-    vi.mocked(fetchPostres).mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          gate.then(() => resolve([]));
+          gate.then(() =>
+            resolve({ cocina: [comandaCocinaFixture()], postres: [] }),
+          );
         }),
     );
 
@@ -37,7 +29,6 @@ describe("fetchOperativaData", () => {
     resolveFetch();
     const [r1, r2] = await Promise.all([p1, p2]);
     expect(r1).toBe(r2);
-    expect(fetchComandas).toHaveBeenCalledTimes(1);
-    expect(fetchPostres).toHaveBeenCalledTimes(1);
+    expect(loadOperativaMerged).toHaveBeenCalledTimes(1);
   });
 });

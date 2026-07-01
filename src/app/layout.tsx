@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { DataLayerProvider } from "@/components/providers/DataLayerProvider";
+import { SyncWorkerProvider } from "@/components/providers/SyncWorkerProvider";
 import { SupabaseConfigGuard } from "@/components/providers/SupabaseConfigGuard";
 import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
@@ -47,11 +48,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <DataLayerProvider>
-          <SupabaseConfigGuard>
-            <AuthProvider>
-              <AuthShell>{children}</AuthShell>
-            </AuthProvider>
-          </SupabaseConfigGuard>
+          <SyncWorkerProvider>
+            <SupabaseConfigGuard>
+              <AuthProvider>
+                <AuthShell>{children}</AuthShell>
+              </AuthProvider>
+            </SupabaseConfigGuard>
+          </SyncWorkerProvider>
         </DataLayerProvider>
       </body>
     </html>

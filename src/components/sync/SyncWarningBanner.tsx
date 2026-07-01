@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { countPendingSync } from "@/lib/sync/emergency-local";
+import { countOutbox, countOutboxSync, hydrateOutboxMirror } from "@/lib/sync/outbox";
 import { retryPendingSync } from "@/lib/sync/retry-pending";
 import { SYNC_PENDING_POLL_MS } from "@/lib/sync/constants";
 import { usesRemoteData } from "@/lib/data/backend";
@@ -14,9 +14,18 @@ export function SyncWarningBanner() {
   useEffect(() => {
     if (!usesRemoteData()) return;
 
-    const refresh = () => setPending(countPendingSync());
-    refresh();
-    const interval = setInterval(refresh, SYNC_PENDING_POLL_MS);
+    const refresh = async () => {
+      await hydrateOutboxMirror();
+      try {
+        const n = await countOutbox();
+        setPending(n);
+      } catch {
+        setPending(countOutboxSync());
+      }
+    };
+
+    void refresh();
+    const interval = setInterval(() => void refresh(), SYNC_PENDING_POLL_MS);
     return () => clearInterval(interval);
   }, []);
 
@@ -27,9 +36,10 @@ export function SyncWarningBanner() {
     setRetryMsg(null);
     try {
       const { ok, fail } = await retryPendingSync();
-      setPending(countPendingSync());
+      const remaining = await countOutbox().catch(() => countOutboxSync());
+      setPending(remaining);
       if (ok > 0 && fail === 0) {
-        setRetryMsg(`${ok} comanda(s) sincronizada(s).`);
+        setRetryMsg(`${ok} operación(es) sincronizada(s).`);
       } else if (ok > 0) {
         setRetryMsg(`${ok} sincronizada(s), ${fail} aún pendiente(s).`);
       } else {
@@ -44,8 +54,8 @@ export function SyncWarningBanner() {
   return (
     <div className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-center text-sm text-amber-950">
       <p>
-        No se ha podido sincronizar {pending} comanda(s) con Supabase — guardadas
-        solo en este dispositivo.
+        Sin conexión a Supabase — {pending} cambio(s) guardados en este
+        dispositivo. Se sincronizarán solos al volver Internet.
       </p>
       <button
         type="button"
@@ -53,7 +63,7 @@ export function SyncWarningBanner() {
         disabled={retrying}
         className="mt-1 font-semibold underline disabled:opacity-60"
       >
-        {retrying ? "Reintentando…" : "Reintentar sincronización"}
+        {retrying ? "Reintentando…" : "Reintentar ahora"}
       </button>
       {retryMsg && <p className="mt-1 text-xs">{retryMsg}</p>}
     </div>

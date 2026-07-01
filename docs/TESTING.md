@@ -28,8 +28,8 @@ tests/
 
 Cada test arranca con:
 
-- `NEXT_PUBLIC_DATA_BACKEND=local`
-- `localStorage` vacío
+- `NEXT_PUBLIC_DATA_BACKEND=local` (tests de sync remoto hacen `vi.stubEnv(..., "supabase")` en su `beforeEach`)
+- `localStorage` vacío + IndexedDB reset (`fake-indexeddb`)
 - `resetDataLayerForTests()`
 
 ## Qué cubre
@@ -39,7 +39,7 @@ Cada test arranca con:
 | Permisos / roles | `unit/auth/permisos.test.ts`, `seguridad-permisos.test.ts` |
 | Auth local | `unit/auth/seguridad.test.ts`, `repos/auth-repository-local.test.ts` |
 | Backend selector | `unit/data/backend.test.ts` |
-| Sync | `unit/sync/*`, `integration/operativa-fetch.test.ts` |
+| Sync | `unit/sync/*`, `integration/operativa-fetch.test.ts`, `integration/operativa-read-offline.test.ts` |
 | Mesas | `unit/mesas/estado-mesa.test.ts` |
 | Catálogo | `unit/catalogo/search.test.ts` |
 | Tickets | `unit/format/format-ticket.test.ts` |
