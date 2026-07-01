@@ -57,7 +57,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 
 ## Supabase en tests
 
-No se usa Supabase real. Los repositorios remotos se mockean con `vi.mock` (véase `retry-pending.test.ts`).
+No se usa Supabase real. Los repositorios remotos se mockean con `vi.mock` y `vi.stubEnv("NEXT_PUBLIC_DATA_BACKEND", "supabase")` en tests de sync (véase `sync-worker.test.ts`, `outbox-migrate.test.ts`).
 
 Para probar RLS en entorno real: ejecutar migraciones en Supabase y pruebas manuales multi-móvil (ver `docs/supabase/FASE2.md`).
 
