@@ -53,6 +53,44 @@ npm run build
 npm start
 ```
 
+## Despliegue en Vercel
+
+**URL de producción:** https://comandero-taberneta-divarro.vercel.app  
+**Alias:** https://comandero-taberneta.vercel.app (asignado vía `vercel.json`)
+
+### Variables de entorno
+
+| Variable     | Valor  |
+|-------------|--------|
+| `PRINT_MODE` | `mock` |
+
+Definida en `vercel.json` y en el dashboard de Vercel (Production).
+
+### Acceso público (obligatorio para móviles)
+
+Si la URL pide login de Vercel, desactiva **Deployment Protection → Vercel Authentication** en Production:
+
+1. [Settings → Deployment Protection](https://vercel.com/divarro/comandero-taberneta/settings/deployment-protection)
+2. Desactiva protección en **Production**
+3. Redeploy
+
+O ejecuta (una vez, con token de https://vercel.com/account/tokens):
+
+```bash
+VERCEL_TOKEN=xxx node scripts/configure-vercel-production.mjs
+```
+
+### Credenciales de la app
+
+| Usuario  | Contraseña | Rol      |
+|----------|------------|----------|
+| `divarro` | `admin`    | ADMIN    |
+| `david`   | `camarero` | CAMARERO |
+| `ingrid`  | `camarero` | CAMARERO |
+| `cocina`  | `camarero` | CAMARERO |
+
+> La impresora física no imprimirá en Vercel (`PRINT_MODE=mock`). En el restaurante se usará el print-server en red local.
+
 ## PWA — Instalar en el móvil
 
 1. Abre la URL del comandero en Chrome/Safari.
