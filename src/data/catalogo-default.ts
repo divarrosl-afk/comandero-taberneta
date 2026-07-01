@@ -86,6 +86,12 @@ export function crearCatalogoDefault(): ProductoCatalogo[] {
       recomendado: true,
     }),
     item("Lubina plancha", "segundos", { tipo: "ambos", alergenos: ["pescado"] }),
+    item("Bacalao", "segundos", {
+      favorito: true,
+      tipo: "ambos",
+      alergenos: ["pescado"],
+      ingredientes: ["bacalao", "aceite de oliva"],
+    }),
     item("Agua", "bebidas", { favorito: true, tipo: "carta", precioCarta: 2 }),
     item("Copa vino", "bebidas", { favorito: true, tipo: "carta", precioCarta: 3.5 }),
     item("Caña", "bebidas", { favorito: true, tipo: "carta", precioCarta: 2.5 }),

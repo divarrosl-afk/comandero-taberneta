@@ -12,6 +12,15 @@ import { ObservacionesSection } from "@/components/comanda/nueva/ObservacionesSe
 import { SeccionPlatosPanel } from "@/components/comanda/nueva/SeccionPlatosPanel";
 import { SectionTabs, type TabComanda } from "@/components/comanda/nueva/SectionTabs";
 import type { useComandaForm } from "@/hooks/useComandaForm";
+import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
+import type { SeccionPlatos } from "@/types/comanda";
+
+const CATALOGO_A_PLATOS: Partial<Record<SeccionCatalogo, SeccionPlatos>> = {
+  entrantes: "entrantes",
+  primeros: "primeros",
+  segundos: "segundos",
+  bebidas: "bebidas",
+};
 
 type ComandaFormActions = ReturnType<typeof useComandaForm>;
 
@@ -69,6 +78,15 @@ export function ComandaEditView({
   onPreview,
 }: ComandaEditViewProps) {
   const [tab, setTab] = useState<TabComanda>("mesa");
+  const [busqueda, setBusqueda] = useState("");
+
+  const seleccionarCatalogo = (seccionTab: SeccionPlatos, producto: ProductoCatalogo) => {
+    const destino =
+      busqueda.trim().length > 0
+        ? CATALOGO_A_PLATOS[producto.seccion] ?? seccionTab
+        : seccionTab;
+    onAddPlatoFromCatalog(destino, producto);
+  };
 
   return (
     <>
@@ -98,7 +116,13 @@ export function ComandaEditView({
       )}
 
       <CabeceraComanda mesa={form.mesa} camareroId={form.camareroId} />
-      <SectionTabs active={tab} onChange={setTab} />
+      <SectionTabs
+        active={tab}
+        onChange={(t) => {
+          setTab(t);
+          setBusqueda("");
+        }}
+      />
 
       <div className="mt-4 space-y-4 pb-4">
         {tab === "mesa" && (
@@ -120,7 +144,9 @@ export function ComandaEditView({
             active
             onUpdate={(id, c) => onUpdatePlato("entrantes", id, c)}
             onAdd={() => onAddPlato("entrantes")}
-            onSelectCatalogo={(p) => onAddPlatoFromCatalog("entrantes", p)}
+            onSelectCatalogo={(p) => seleccionarCatalogo("entrantes", p)}
+            busqueda={busqueda}
+            onBusquedaChange={setBusqueda}
             onRemove={(id) => onRemovePlato("entrantes", id)}
             onDuplicate={(id) => onDuplicatePlato("entrantes", id)}
             onClear={() => onClearSeccion("entrantes")}
@@ -142,7 +168,9 @@ export function ComandaEditView({
             active
             onUpdate={(id, c) => onUpdatePlato("primeros", id, c)}
             onAdd={() => onAddPlato("primeros")}
-            onSelectCatalogo={(p) => onAddPlatoFromCatalog("primeros", p)}
+            onSelectCatalogo={(p) => seleccionarCatalogo("primeros", p)}
+            busqueda={busqueda}
+            onBusquedaChange={setBusqueda}
             onRemove={(id) => onRemovePlato("primeros", id)}
             onDuplicate={(id) => onDuplicatePlato("primeros", id)}
             onClear={() => onClearSeccion("primeros")}
@@ -164,7 +192,9 @@ export function ComandaEditView({
             active
             onUpdate={(id, c) => onUpdatePlato("segundos", id, c)}
             onAdd={() => onAddPlato("segundos")}
-            onSelectCatalogo={(p) => onAddPlatoFromCatalog("segundos", p)}
+            onSelectCatalogo={(p) => seleccionarCatalogo("segundos", p)}
+            busqueda={busqueda}
+            onBusquedaChange={setBusqueda}
             onRemove={(id) => onRemovePlato("segundos", id)}
             onDuplicate={(id) => onDuplicatePlato("segundos", id)}
             onClear={() => onClearSeccion("segundos")}
@@ -185,7 +215,9 @@ export function ComandaEditView({
             active
             onUpdate={(id, c) => onUpdatePlato("bebidas", id, c)}
             onAdd={() => onAddPlato("bebidas")}
-            onSelectCatalogo={(p) => onAddPlatoFromCatalog("bebidas", p)}
+            onSelectCatalogo={(p) => seleccionarCatalogo("bebidas", p)}
+            busqueda={busqueda}
+            onBusquedaChange={setBusqueda}
             onRemove={(id) => onRemovePlato("bebidas", id)}
             onDuplicate={(id) => onDuplicatePlato("bebidas", id)}
             onClear={() => onClearSeccion("bebidas")}

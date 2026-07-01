@@ -76,6 +76,7 @@ export function PostresEditView({
   onPreview,
 }: PostresEditViewProps) {
   const [tab, setTab] = useState<TabPostres>("mesa");
+  const [busqueda, setBusqueda] = useState("");
 
   return (
     <>
@@ -113,7 +114,10 @@ export function PostresEditView({
             <button
               key={t.id}
               type="button"
-              onClick={() => setTab(t.id)}
+              onClick={() => {
+                setTab(t.id);
+                setBusqueda("");
+              }}
               className={[
                 "shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-95",
                 tab === t.id
@@ -142,6 +146,8 @@ export function PostresEditView({
         {tab === "postres" && (
           <PostresSeccionPanel
             postres={form.postres}
+            busqueda={busqueda}
+            onBusquedaChange={setBusqueda}
             onUpdate={onUpdatePostre}
             onAdd={onAddPostre}
             onAddFrecuente={onAddPostreFrecuente}

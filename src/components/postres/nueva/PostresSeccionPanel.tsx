@@ -6,11 +6,14 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { PostreCard } from "@/components/postres/nueva/PostreCard";
 import { PostresFrecuentesGrid } from "@/components/postres/nueva/PostresFrecuentesGrid";
+import { CatalogoBuscadorRapido } from "@/components/catalogo/CatalogoBuscadorRapido";
 import type { ProductoCatalogo } from "@/types/catalogo";
 import type { PostreFormItem } from "@/types/postres";
 
 interface PostresSeccionPanelProps {
   postres: PostreFormItem[];
+  busqueda?: string;
+  onBusquedaChange?: (value: string) => void;
   onUpdate: (id: string, cambios: Partial<PostreFormItem>) => void;
   onAdd: () => void;
   onAddFrecuente: (producto: ProductoCatalogo) => void;
@@ -21,6 +24,8 @@ interface PostresSeccionPanelProps {
 
 export function PostresSeccionPanel({
   postres,
+  busqueda = "",
+  onBusquedaChange,
   onUpdate,
   onAdd,
   onAddFrecuente,
@@ -50,7 +55,16 @@ export function PostresSeccionPanel({
           </div>
         }
       >
-        <PostresFrecuentesGrid onSelect={onAddFrecuente} />
+        {onBusquedaChange && (
+          <CatalogoBuscadorRapido
+            value={busqueda}
+            onChange={onBusquedaChange}
+            placeholder="Buscar postre, café, alérgeno…"
+            className="mb-4"
+          />
+        )}
+
+        <PostresFrecuentesGrid busqueda={busqueda} onSelect={onAddFrecuente} />
 
         <div className="mt-4 space-y-3">
           {postres.map((postre, index) => (
