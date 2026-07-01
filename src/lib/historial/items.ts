@@ -1,7 +1,7 @@
 import { comandaToTexto } from "@/lib/comanda/format-ticket";
+import { getComandasSync } from "@/lib/comandas/comandas-service";
 import { comandaPostresToTexto } from "@/lib/postres/format-ticket";
-import { getComandasLocales } from "@/lib/storage/comandas-local";
-import { getPostresLocales } from "@/lib/storage/postres-local";
+import { getPostresSync } from "@/lib/postres/postres-service";
 import type { ComandaCocina } from "@/types/comanda";
 import type { HistorialItem, HistorialTipo } from "@/types/panel";
 import type { ComandaPostres } from "@/types/postres";
@@ -11,10 +11,10 @@ export type HistorialEntrada =
   | { tipo: "postres"; comanda: ComandaPostres };
 
 export function getHistorialEntradas(): HistorialEntrada[] {
-  const cocina = getComandasLocales().map(
+  const cocina = getComandasSync().map(
     (comanda): HistorialEntrada => ({ tipo: "cocina", comanda }),
   );
-  const postres = getPostresLocales().map(
+  const postres = getPostresSync().map(
     (comanda): HistorialEntrada => ({ tipo: "postres", comanda }),
   );
 

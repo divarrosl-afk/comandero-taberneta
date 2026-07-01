@@ -1,12 +1,8 @@
 import { esMismaFecha } from "@/lib/cierre/fecha";
-import { getComandasLocales } from "@/lib/storage/comandas-local";
-import { getPostresLocales } from "@/lib/storage/postres-local";
+import { getComandasSync } from "@/lib/comandas/comandas-service";
+import { getPostresSync } from "@/lib/postres/postres-service";
 import type { ComandaCocina } from "@/types/comanda";
-import type {
-  EntradaCierre,
-  FiltrosCierre,
-  FILTRO_TODOS_CAMARERO,
-} from "@/types/cierre";
+import type { EntradaCierre, FiltrosCierre } from "@/types/cierre";
 import type { ComandaPostres } from "@/types/postres";
 
 function cocinaAEntrada(c: ComandaCocina): EntradaCierre {
@@ -32,10 +28,10 @@ function postresAEntrada(c: ComandaPostres): EntradaCierre {
 }
 
 export function getEntradasDelDia(fecha: string): EntradaCierre[] {
-  const cocina = getComandasLocales()
+  const cocina = getComandasSync()
     .filter((c) => esMismaFecha(c.creadaEn, fecha))
     .map(cocinaAEntrada);
-  const postres = getPostresLocales()
+  const postres = getPostresSync()
     .filter((c) => esMismaFecha(c.creadaEn, fecha))
     .map(postresAEntrada);
 
@@ -73,7 +69,7 @@ export function getComandasCocinaFiltradas(
       .filter((e) => e.tipo === "cocina")
       .map((e) => e.id),
   );
-  return getComandasLocales().filter((c) => ids.has(c.id));
+  return getComandasSync().filter((c) => ids.has(c.id));
 }
 
 export function getComandasPostresFiltradas(
@@ -84,7 +80,7 @@ export function getComandasPostresFiltradas(
       .filter((e) => e.tipo === "postres")
       .map((e) => e.id),
   );
-  return getPostresLocales().filter((c) => ids.has(c.id));
+  return getPostresSync().filter((c) => ids.has(c.id));
 }
 
 export function getCamarerosDelDia(fecha: string): string[] {

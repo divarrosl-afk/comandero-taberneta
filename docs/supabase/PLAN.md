@@ -1,12 +1,13 @@
 # Plan de migración a Supabase — Comandero Taberneta
 
-## Estado: Fase 1 (Auth + configuración compartida)
+## Estado: Fase 2 (comandas y postres sincronizados)
 
 Con `NEXT_PUBLIC_DATA_BACKEND=supabase` o `hybrid`:
 
-- Login real con Supabase Auth (`username@taberneta.local`)
-- Perfiles, carta, menú del día, mesas e impresora (metadata) compartidos
-- Comandas, postres e historial **siguen en localStorage**
+- Todo lo de Fase 1
+- Comandas cocina y postres en Supabase (JSONB)
+- Panel, historial, cierre y estado de mesas compartidos entre móviles
+- Realtime + polling; copia local de emergencia si falla la red
 
 Con `NEXT_PUBLIC_DATA_BACKEND=local` (por defecto) la app funciona igual que antes.
 
@@ -68,10 +69,11 @@ Arquitectura **híbrida**:
 
 ### Fase 2 — Comandas sincronizadas
 
-- Repositorios híbridos comandas/postres
-- Cola offline (IndexedDB)
-- Realtime en panel y mapa de mesas
-- `DATA_BACKEND=hybrid` en producción
+- [x] `ComandasRepository` + `PostresRepository` (local / Supabase)
+- [x] Panel, historial, cierre y mesas desde datos compartidos
+- [x] Realtime + polling 5 s
+- [x] Copia local de emergencia + banner de aviso
+- [x] `docs/supabase/FASE2.md`
 
 ### Fase 3 — Cierre en nube
 

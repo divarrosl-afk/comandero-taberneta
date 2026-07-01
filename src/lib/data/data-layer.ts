@@ -1,3 +1,9 @@
+import { comandasRepositoryLocal } from "@/lib/comandas/comandas-repository-local";
+import { comandasRepositorySupabase } from "@/lib/comandas/comandas-repository-supabase";
+import type { ComandasRepository } from "@/lib/comandas/comandas-repository";
+import { postresRepositoryLocal } from "@/lib/postres/postres-repository-local";
+import { postresRepositorySupabase } from "@/lib/postres/postres-repository-supabase";
+import type { PostresRepository } from "@/lib/postres/postres-repository";
 import { authRepositoryLocal } from "@/lib/auth/auth-repository-local";
 import { authRepositorySupabase } from "@/lib/auth/auth-repository-supabase";
 import type { AuthRepository } from "@/lib/auth/auth-repository";
@@ -25,6 +31,8 @@ let catalogoRepo: CatalogoRepository = catalogoRepositoryLocal;
 let menuDiaRepo: MenuDiaRepository = menuDiaRepositoryLocal;
 let mesasRepo: MesasRepository = mesasRepositoryLocal;
 let impresoraRepo: ImpresoraConfigRepository = impresoraConfigRepositoryLocal;
+let comandasRepo: ComandasRepository = comandasRepositoryLocal;
+let postresRepo: PostresRepository = postresRepositoryLocal;
 let initialized = false;
 
 export function initializeDataLayer(): void {
@@ -41,6 +49,8 @@ export function initializeDataLayer(): void {
   menuDiaRepo = menuDiaRepositorySupabase;
   mesasRepo = mesasRepositorySupabase;
   impresoraRepo = impresoraConfigRepositorySupabase;
+  comandasRepo = comandasRepositorySupabase;
+  postresRepo = postresRepositorySupabase;
 }
 
 export function getAuthRepository(): AuthRepository {
@@ -67,6 +77,14 @@ export function getImpresoraConfigRepository(): ImpresoraConfigRepository {
   return impresoraRepo;
 }
 
+export function getComandasRepository(): ComandasRepository {
+  return comandasRepo;
+}
+
+export function getPostresRepository(): PostresRepository {
+  return postresRepo;
+}
+
 export function getActiveBackendLabel(): string {
   const backend = getDataBackend();
   if (backend === "local") return "local";
@@ -83,4 +101,6 @@ export function resetDataLayerForTests(): void {
   menuDiaRepo = menuDiaRepositoryLocal;
   mesasRepo = mesasRepositoryLocal;
   impresoraRepo = impresoraConfigRepositoryLocal;
+  comandasRepo = comandasRepositoryLocal;
+  postresRepo = postresRepositoryLocal;
 }

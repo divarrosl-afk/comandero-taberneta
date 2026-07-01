@@ -633,8 +633,8 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
--- Realtime (opcional — descomentar en Fase 2)
+-- Realtime (Fase 2 — comandas sincronizadas)
 -- =============================================================================
--- ALTER PUBLICATION supabase_realtime ADD TABLE comandas_cocina;
--- ALTER PUBLICATION supabase_realtime ADD TABLE comandas_postres;
+ALTER PUBLICATION supabase_realtime ADD TABLE comandas_cocina;
+ALTER PUBLICATION supabase_realtime ADD TABLE comandas_postres;
 -- ALTER PUBLICATION supabase_realtime ADD TABLE mesa_estados;

@@ -1,10 +1,7 @@
 import { getCamareroNombre } from "@/data/camareros";
 import { postreTieneContenido } from "@/lib/postres/postre-factory";
+import { generarIdPostres } from "@/lib/postres/postres-service";
 import type { ComandaPostres, PostresFormState } from "@/types/postres";
-
-export function generarIdPostres(): string {
-  return `pst-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
 
 export function formToComandaPostres(
   form: PostresFormState,

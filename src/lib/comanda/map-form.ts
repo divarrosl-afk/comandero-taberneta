@@ -1,6 +1,6 @@
 import { getCamareroNombre } from "@/data/camareros";
 import { getExtraLabel, getModificacionLabel, getSalsaLabel } from "@/data/comanda-catalogo";
-import { generarIdComanda } from "@/lib/storage/comandas-local";
+import { generarIdComanda } from "@/lib/comandas/comandas-service";
 import { tipoSeleccionToPlatoFields } from "@/lib/comanda/tipo-plato";
 import { platoTieneContenido } from "@/lib/comanda/plato-factory";
 import type {

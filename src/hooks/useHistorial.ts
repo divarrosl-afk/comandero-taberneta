@@ -6,8 +6,9 @@ import {
   getHistorialEntradas,
   type HistorialEntrada,
 } from "@/lib/historial/items";
-import { eliminarComandaLocal } from "@/lib/storage/comandas-local";
-import { eliminarPostresLocal } from "@/lib/storage/postres-local";
+import { eliminarComanda, fetchComandas } from "@/lib/comandas/comandas-service";
+import { eliminarPostres, fetchPostres } from "@/lib/postres/postres-service";
+import { usesRemoteData } from "@/lib/data/backend";
 import {
   destinoDesdeHistorial,
   reimprimirTicket,
@@ -19,22 +20,25 @@ export function useHistorial() {
   const [reimpresionMsg, setReimpresionMsg] = useState<string | null>(null);
   const [reimpresionError, setReimpresionError] = useState(false);
 
-  const recargar = useCallback(() => {
+  const recargar = useCallback(async () => {
+    if (usesRemoteData()) {
+      await Promise.all([fetchComandas(), fetchPostres()]);
+    }
     setEntradas(getHistorialEntradas());
   }, []);
 
   useEffect(() => {
-    recargar();
+    void recargar();
   }, [recargar]);
 
   const eliminar = useCallback(
-    (entrada: HistorialEntrada) => {
+    async (entrada: HistorialEntrada) => {
       const ok =
         entrada.tipo === "cocina"
-          ? eliminarComandaLocal(entrada.comanda.id)
-          : eliminarPostresLocal(entrada.comanda.id);
+          ? await eliminarComanda(entrada.comanda.id)
+          : await eliminarPostres(entrada.comanda.id);
 
-      if (ok) recargar();
+      if (ok) await recargar();
       return ok;
     },
     [recargar],

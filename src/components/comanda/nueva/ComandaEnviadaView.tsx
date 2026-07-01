@@ -8,16 +8,19 @@ import { ComandaTicketPreview } from "@/components/comanda/nueva/ComandaTicketPr
 import { imprimirComandaCocina } from "@/modules/impresion-wifi";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi";
 import { getNombreMesa } from "@/lib/storage/mesas";
+import { usesRemoteData } from "@/lib/data/backend";
 import type { ComandaCocina } from "@/types/comanda";
 
 interface ComandaEnviadaViewProps {
   comanda: ComandaCocina;
   onNueva: () => void;
+  syncAviso?: string | null;
 }
 
 export function ComandaEnviadaView({
   comanda,
   onNueva,
+  syncAviso,
 }: ComandaEnviadaViewProps) {
   const [printSummary, setPrintSummary] = useState<string | null>(null);
   const [printLoading, setPrintLoading] = useState(true);
@@ -59,7 +62,11 @@ export function ComandaEnviadaView({
           MESA {getNombreMesa(String(comanda.mesa))}
         </h1>
         <p className="mt-1 text-muted">
-          Guardada en este dispositivo · modo local
+          {syncAviso
+            ? syncAviso
+            : usesRemoteData()
+              ? "Sincronizada con el restaurante"
+              : "Guardada en este dispositivo · modo local"}
         </p>
       </header>
 

@@ -8,7 +8,7 @@ Comandero web/PWA para **La Taberneta de Ca la Ingrid**. Aplicación pensada par
 - **TypeScript**
 - **Tailwind CSS 4**
 - **PWA** (instalable en móvil/tablet)
-- **Supabase** — Auth y configuración compartida (Fase 1); comandas aún en localStorage
+- **Supabase** — Auth, carta, comandas y postres compartidos (Fases 1–2)
 - Módulos futuros: impresión Wi-Fi e integración Ágora TPV
 
 ## Requisitos
@@ -38,7 +38,7 @@ Por defecto la app usa **modo local** (`NEXT_PUBLIC_DATA_BACKEND=local`) y no re
 |------|----------|-------------|
 | **Local** (default) | `NEXT_PUBLIC_DATA_BACKEND=local` | Todo en `localStorage` — comportamiento clásico |
 | **Supabase** | `NEXT_PUBLIC_DATA_BACKEND=supabase` | Auth, carta, menú, mesas e impresora (metadata) en Supabase |
-| **Híbrido** | `NEXT_PUBLIC_DATA_BACKEND=hybrid` | Igual que Supabase en Fase 1 (comandas/postres siguen locales) |
+| **Híbrido** | `NEXT_PUBLIC_DATA_BACKEND=hybrid` | Igual que Supabase (comandas/postres en nube + emergencia local) |
 
 ### Modo local
 
@@ -69,7 +69,14 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...   # solo servidor — nunca NEXT_PUBLIC_
 2. Crea usuarios iniciales (ver seed abajo).
 3. Login con username (`divarro`) — internamente usa `divarro@taberneta.local`.
 
-**Importante (Fase 1):** comandas, postres e historial **aún no sincronizan** entre dispositivos. Siguen en `localStorage` de cada móvil. La sincronización operativa llegará en Fase 2.
+**Importante (Fase 2):** comandas y postres se sincronizan entre móviles (Realtime + polling 5 s). Si falla la red al enviar, se guarda en cola local de emergencia con banner y botón «Reintentar sincronización». Ver [`docs/supabase/FASE2.md`](docs/supabase/FASE2.md).
+
+**Realtime** (opcional pero recomendado):
+
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE comandas_cocina;
+ALTER PUBLICATION supabase_realtime ADD TABLE comandas_postres;
+```
 
 Si faltan variables con `supabase`/`hybrid`, la app muestra un error claro en lugar de pantalla rota.
 
@@ -199,9 +206,11 @@ comandero-taberneta/
 - Carta, menú del día, mesas, metadata impresora compartidos
 - Comandas/postres **siguen en localStorage** (Fase 2 = sync entre móviles)
 
-### Fase 2 — Comandas sincronizadas
+### Fase 2 (actual) — Comandas sincronizadas
 
-- Comandas cocina y postres en Supabase + tiempo real entre dispositivos
+- Comandas cocina y postres en Supabase
+- Panel, historial, cierre y estado de mesas compartidos
+- Realtime + polling 5s; copia local de emergencia si falla Supabase
 
 ### Fase 3 — Servidor local e impresión
 
