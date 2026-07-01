@@ -148,7 +148,7 @@ El overlay evita parpadeo con red intermitente: si el poll trae remoto antiguo p
 ## 9. Verificación CI
 
 ```bash
-npm run test   # 76 passed
+npm run test   # 77 passed
 npm run lint   # OK
 npm run build  # OK
 ```
