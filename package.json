@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "print-server": "node print-server/index.js",
     "print-server:dev": "node --watch print-server/index.js",
     "seed:supabase": "node scripts/seed-supabase.mjs"
@@ -19,15 +21,19 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.0",
     "@ducanh2912/next-pwa": "^10.2.9",
+    "@eslint/eslintrc": "^3.3.0",
     "@tailwindcss/postcss": "^4.0.14",
     "@types/node": "^22.13.10",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
+    "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^9.22.0",
     "eslint-config-next": "^15.2.4",
+    "happy-dom": "^20.10.6",
     "tailwindcss": "^4.0.14",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.9"
   }
 }
