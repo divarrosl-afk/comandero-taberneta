@@ -4,7 +4,9 @@ import { mergeOperativa } from "@/lib/sync/merge-operativa";
 import {
   getOutboxPendingCocinaSync,
   getOutboxPendingPostresSync,
+  listOutboxEntries,
 } from "@/lib/sync/outbox";
+import type { OutboxEntry } from "@/lib/sync/outbox-types";
 import {
   loadOperativaSnapshot,
   saveOperativaSnapshot,
@@ -17,6 +19,7 @@ import {
 } from "@/lib/sync/operativa-cache";
 import type { ComandaCocina } from "@/types/comanda";
 import type { ComandaPostres } from "@/types/postres";
+import type { EstadoPanel } from "@/types/panel";
 
 export interface OperativaData {
   cocina: ComandaCocina[];
@@ -33,6 +36,54 @@ async function fetchRemoto(): Promise<OperativaData | null> {
   } catch {
     return null;
   }
+}
+
+/** Overlay last-write-wins de estados pendientes en outbox (por entityId). */
+export function buildEstadoOverlayFromOutbox(
+  entries: OutboxEntry[],
+  estadoKind: "cocina_estado" | "postres_estado",
+  createKind: "cocina_create" | "postres_create",
+): Map<string, EstadoPanel> {
+  const overlay = new Map<string, EstadoPanel>();
+  const sorted = [...entries].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+
+  for (const entry of sorted) {
+    if (entry.kind === estadoKind) {
+      overlay.set(
+        entry.entityId,
+        (entry.payload as { estado: EstadoPanel }).estado,
+      );
+    } else if (entry.kind === createKind) {
+      const item = entry.payload as { id: string; estadoPanel: EstadoPanel };
+      overlay.set(entry.entityId, item.estadoPanel);
+    }
+  }
+
+  return overlay;
+}
+
+export function applyEstadoOverlay<T extends { id: string; estadoPanel: EstadoPanel }>(
+  items: T[],
+  overlay: Map<string, EstadoPanel>,
+): T[] {
+  if (overlay.size === 0) return items;
+
+  return items.map((item) => {
+    const estado = overlay.get(item.id);
+    return estado === undefined ? item : { ...item, estadoPanel: estado };
+  });
+}
+
+function overlayPendingEstados<T extends { id: string; estadoPanel: EstadoPanel }>(
+  items: T[],
+  entries: OutboxEntry[],
+  estadoKind: "cocina_estado" | "postres_estado",
+  createKind: "cocina_create" | "postres_create",
+): T[] {
+  const overlay = buildEstadoOverlayFromOutbox(entries, estadoKind, createKind);
+  return applyEstadoOverlay(items, overlay);
 }
 
 /** Carga operativa: remoto → snapshot IDB → outbox. Persiste snapshot si remoto OK. */
@@ -63,8 +114,22 @@ export async function loadOperativaMerged(): Promise<OperativaData> {
     basePostres = snap?.postres ?? getPostresCache();
   }
 
-  const cocina = mergeOperativa(baseCocina, pendingCocina);
-  const postres = mergeOperativa(basePostres, pendingPostres);
+  const cocinaMerged = mergeOperativa(baseCocina, pendingCocina);
+  const postresMerged = mergeOperativa(basePostres, pendingPostres);
+
+  const outboxEntries = await listOutboxEntries();
+  const cocina = overlayPendingEstados(
+    cocinaMerged,
+    outboxEntries,
+    "cocina_estado",
+    "cocina_create",
+  );
+  const postres = overlayPendingEstados(
+    postresMerged,
+    outboxEntries,
+    "postres_estado",
+    "postres_create",
+  );
 
   setComandasCache(cocina);
   setPostresCache(postres);

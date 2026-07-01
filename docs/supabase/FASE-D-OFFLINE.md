@@ -62,8 +62,9 @@ Sí. La cola vive en **IndexedDB**, no en RAM ni solo en `localStorage`. Al reab
 | Enviar comanda | `setComandasCache` inmediato + outbox si falla remoto |
 | Cambiar estado | `patchCocinaInCache` / `patchPostresInCache` + snapshot IDB + outbox |
 | Panel tras sync | `loadOperativaMerged` refresca caché; merge no duplica por `id` |
+| Estado pendiente en outbox | **Overlay** de `*_estado` y `*_create` sobre la vista merged (last-write-wins local por `entityId`) hasta que el flush confirme |
 
-**Limitación conocida:** si hay red pero `actualizarEstado` falla y acto seguido un poll trae datos remotos, el panel puede **mostrar el estado remoto antiguo** hasta que el flush de `*_estado` termine (el snapshot local sí guardó el estado optimista; ver §5).
+El overlay evita parpadeo con red intermitente: si el poll trae remoto antiguo pero hay `cocina_estado` / `postres_estado` en outbox, **prevalece el estado local pendiente**.
 
 ---
 
@@ -75,6 +76,7 @@ Sí. La cola vive en **IndexedDB**, no en RAM ni solo en `localStorage`. Al reab
 2. Si falla → snapshot IDB (`operativa`).
 3. Si no hay snapshot → caché RAM (`operativa-cache`).
 4. Merge con creates pendientes del outbox (`mergeOperativa`).
+5. **Overlay** de estados pendientes (`*_estado` + `estadoPanel` en `*_create`) sobre la vista final.
 
 ### Quién lo usa
 
@@ -95,8 +97,8 @@ Sí. La cola vive en **IndexedDB**, no en RAM ni solo en `localStorage`. Al reab
 | Dos móviles crean comandas distintas | Sin conflicto (UUID distintos). |
 | Dos móviles crean la misma comanda (mismo UUID) | Improbable; si ocurre, `duplicate key` → idempotente. |
 | Dos móviles cambian estado de la misma comanda offline | **Last-write-wins en servidor:** cada dispositivo hace `actualizarEstado` al flush; gana el último que llegue. No hay `updated_at` ni merge de estados en cliente. |
-| Mismo `id` en remoto y create pendiente local | `mergeOperativa` **gana remoto** (el pendiente se descarta en la vista). |
-| Estado pendiente (`*_estado`) en outbox | **No se aplica en `loadOperativaMerged`** salvo vía snapshot/caché optimista. Riesgo de parpadeo si poll remoto llega antes del flush. |
+| Mismo `id` en remoto y create pendiente local | `mergeOperativa` **gana remoto** en el cuerpo de la comanda; el overlay aplica `estadoPanel` del outbox si hay op pendiente. |
+| Estado pendiente (`*_estado`) en outbox | **Overlay en `loadOperativaMerged`** — prevalece sobre remoto/snapshot/caché hasta flush. Last-write-wins local por `entityId`. |
 
 ---
 
@@ -110,7 +112,7 @@ Sí. La cola vive en **IndexedDB**, no en RAM ni solo en `localStorage`. Al reab
 
 ---
 
-## 7. Tests (70 en total)
+## 7. Tests (77 en total)
 
 ### Nuevos / ampliados para Fase D
 
@@ -120,6 +122,8 @@ Sí. La cola vive en **IndexedDB**, no en RAM ni solo en `localStorage`. Al reab
 | `tests/unit/sync/outbox-migrate.test.ts` | Migración legacy idempotente |
 | `tests/unit/sync/sync-worker.test.ts` | Flush OK, fallo conserva op, duplicate key, anti-concurrencia |
 | `tests/unit/sync/retry-pending.test.ts` | Delegación en `flushOutbox` |
+| `tests/integration/operativa-estado-overlay.test.ts` | Overlay remoto/snapshot + outbox, create sin duplicar, post-flush |
+| `tests/unit/sync/operativa-estado-overlay.test.ts` | Overlay puro last-write-wins |
 | `tests/integration/operativa-read-offline.test.ts` | Snapshot + outbox, fallback caché, no duplicar |
 | `tests/integration/operativa-fetch.test.ts` | Dedup concurrente de `fetchOperativaData` |
 | `tests/unit/sync/merge-operativa.test.ts` | Dedup por `id` (gana remoto) |
@@ -144,7 +148,7 @@ Sí. La cola vive en **IndexedDB**, no en RAM ni solo en `localStorage`. Al reab
 ## 9. Verificación CI
 
 ```bash
-npm run test   # 70 passed
+npm run test   # 76 passed
 npm run lint   # OK
 npm run build  # OK
 ```
@@ -168,24 +172,27 @@ npm run build  # OK
 
 | Riesgo | Severidad | Notas |
 |--------|-----------|-------|
-| Estado offline revertido en poll con red flaky | Media | `*_estado` no overlay en merge; snapshot mitiga en offline puro |
 | Sin aviso si no hay snapshot ni red (primera visita offline) | Baja | Panel vacío; sin mensaje dedicado |
-| Multi-móvil estado: last-write-wins sin CRDT | Media | Aceptado en MVP |
+| Multi-móvil estado: last-write-wins en servidor sin CRDT | Media | Aceptado en MVP; overlay solo en este dispositivo |
 | `mesas-estado` manual no sincroniza | Baja | Fuera de MVP |
 | Borrado / cierre offline | Media | Fuera de MVP |
 | Backoff usa `createdAt` no timestamp del último retry | Baja | Puede espaciar menos de lo esperado |
 | iOS: sin Background Sync API | Baja | Dependemos de online / intervalo / visibility |
+| Snapshot vacío en IDB bloquea fallback a caché RAM | Baja | Solo si `snap !== null` con arrays vacíos |
+
+### R1 — corregido
+
+**Parpadeo de estado con red intermitente:** resuelto con overlay de `*_estado` y `estadoPanel` en `*_create` en `loadOperativaMerged` (`buildEstadoOverlayFromOutbox` + `applyEstadoOverlay`). Tests: `operativa-estado-overlay.test.ts`.
 
 ---
 
 ## Plan futuro
 
-1. Aplicar overlay de `*_estado` pendientes en `loadOperativaMerged`.
-2. Banner «modo offline sin datos» si remoto + snapshot + caché vacíos.
-3. Sincronizar `mesas-estado` manual.
-4. Borrado y cierre offline con cola.
-5. Background Sync API donde el SO lo permita.
-6. Resolución de conflictos con `updated_at` o versioning en Supabase.
+1. Banner «modo offline sin datos» si remoto + snapshot + caché vacíos.
+2. Sincronizar `mesas-estado` manual.
+3. Borrado y cierre offline con cola.
+4. Background Sync API donde el SO lo permita.
+5. Resolución de conflictos con `updated_at` o versioning en Supabase.
 
 ---
 
