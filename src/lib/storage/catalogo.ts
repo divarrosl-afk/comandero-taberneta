@@ -1,20 +1,22 @@
 import { crearCatalogoDefault } from "@/data/catalogo-default";
+import { migrarProducto } from "@/lib/carta/migrate-producto";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 
 const STORAGE_KEY = "comandero-taberneta:catalogo";
 
 function normalizar(producto: ProductoCatalogo): ProductoCatalogo {
+  const m = migrarProducto(producto);
   return {
-    ...producto,
-    nombre: producto.nombre.trim(),
-    activo: producto.activo ?? true,
-    favorito: producto.favorito ?? false,
-    precio: producto.precio && producto.precio > 0 ? producto.precio : undefined,
-    suplemento:
-      producto.suplemento && producto.suplemento > 0
-        ? producto.suplemento
-        : undefined,
+    ...m,
+    nombre: m.nombre.trim(),
+    precio: m.precioCarta,
   };
+}
+
+function ordenarProductos(a: ProductoCatalogo, b: ProductoCatalogo): number {
+  if (a.orden !== b.orden) return a.orden - b.orden;
+  if (a.favorito !== b.favorito) return a.favorito ? -1 : 1;
+  return a.nombre.localeCompare(b.nombre, "es");
 }
 
 export function getCatalogo(): ProductoCatalogo[] {
@@ -27,8 +29,10 @@ export function getCatalogo(): ProductoCatalogo[] {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
       return defaults;
     }
-    const parsed = JSON.parse(raw) as ProductoCatalogo[];
-    return Array.isArray(parsed) ? parsed.map(normalizar) : crearCatalogoDefault();
+    const parsed = JSON.parse(raw) as Partial<ProductoCatalogo>[];
+    return Array.isArray(parsed)
+      ? parsed.map((p) => normalizar(migrarProducto(p)))
+      : crearCatalogoDefault();
   } catch {
     return crearCatalogoDefault();
   }
@@ -59,20 +63,27 @@ export function getProductosPorSeccion(
     .filter((p) => p.seccion === seccion)
     .filter((p) => (soloActivos ? p.activo : true))
     .filter((p) => (soloFavoritos ? p.favorito : true))
-    .sort((a, b) => {
-      if (a.favorito !== b.favorito) return a.favorito ? -1 : 1;
-      return a.nombre.localeCompare(b.nombre, "es");
-    });
+    .sort(ordenarProductos);
 }
 
 export function crearProductoVacio(
   seccion: SeccionCatalogo,
 ): ProductoCatalogo {
-  return {
+  return normalizar({
     id: crypto.randomUUID(),
     nombre: "",
     seccion,
+    tipo: seccion === "extras" || seccion === "salsas" ? "carta" : "ambos",
     activo: true,
+    agotado: false,
     favorito: false,
-  };
+    orden: 0,
+    ingredientes: [],
+    alergenos: [],
+    recomendado: false,
+  });
+}
+
+export function getProductoPorId(id: string): ProductoCatalogo | undefined {
+  return getCatalogo().find((p) => p.id === id);
 }

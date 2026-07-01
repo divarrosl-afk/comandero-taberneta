@@ -16,6 +16,8 @@ import type {
   PlatoFormItem,
   SeccionPlatos,
 } from "@/types/comanda";
+import { platoFieldsFromProducto } from "@/lib/carta/plato-from-producto";
+import { getMenuDia } from "@/lib/storage/menu-dia";
 import type { ProductoCatalogo } from "@/types/catalogo";
 
 const estadoInicial: ComandaFormState = {
@@ -158,13 +160,12 @@ export function useComandaForm(camareroFijo?: string | null) {
 
   const addPlatoFromCatalog = useCallback(
     (seccion: SeccionPlatos, producto: ProductoCatalogo) => {
-      const platoData: Partial<PlatoFormItem> = {
-        nombre: producto.nombre,
-      };
-      if (producto.suplemento) {
-        platoData.tipoSeleccion = "menu_suplemento";
-        platoData.suplemento = producto.suplemento;
-      }
+      if (!producto.activo || producto.agotado) return;
+
+      const platoData = platoFieldsFromProducto(producto, {
+        seccion,
+        menu: getMenuDia(),
+      });
 
       setForm((prev) => {
         const vacio = prev[seccion].find((p) => !p.nombre.trim());

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   crearProductoVacio,
   getCatalogo,
+  getProductoPorId,
   getProductosPorSeccion,
   guardarCatalogo,
   resetCatalogo,
@@ -39,7 +40,13 @@ export function useCatalogo() {
   const actualizar = useCallback(
     (id: string, cambios: Partial<ProductoCatalogo>) => {
       const lista = getCatalogo().map((p) =>
-        p.id === id ? { ...p, ...cambios, nombre: cambios.nombre?.trim() ?? p.nombre } : p,
+        p.id === id
+          ? {
+              ...p,
+              ...cambios,
+              nombre: cambios.nombre?.trim() ?? p.nombre,
+            }
+          : p,
       );
       guardar(lista);
     },
@@ -66,6 +73,11 @@ export function useCatalogo() {
     [],
   );
 
+  const buscarPorId = useCallback(
+    (id: string) => getProductoPorId(id),
+    [],
+  );
+
   return {
     productos,
     recargar,
@@ -75,6 +87,7 @@ export function useCatalogo() {
     eliminar,
     restaurarDefault,
     porSeccion,
+    buscarPorId,
     crearProductoVacio,
   };
 }
