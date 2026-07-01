@@ -3,20 +3,27 @@ import type {
   PrintTicketRequest,
 } from "@/modules/impresion-wifi/types";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi/types";
-import { getPrintMode, getPrintServerUrl } from "@/modules/impresion-wifi/config";
+import {
+  getEffectivePrintMode,
+  getPrintServerUrl,
+  resolveImpresoraConfig,
+} from "@/modules/impresion-wifi/config";
 
 async function postPrintRequest(
   request: PrintTicketRequest,
   endpoint: string,
 ): Promise<PrintResult> {
-  const mode = getPrintMode();
+  const impresora = request.impresora ?? resolveImpresoraConfig();
+  const mode = getEffectivePrintMode(impresora);
   const timestamp = new Date().toISOString();
+
+  const payload: PrintTicketRequest = { ...request, impresora };
 
   try {
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request),
+      body: JSON.stringify(payload),
     });
 
     const data = (await response.json()) as PrintResult;
@@ -49,7 +56,7 @@ async function postPrintRequest(
 }
 
 /**
- * Envía un ticket al servidor local de impresión (o API interna en modo mock).
+ * Envía un ticket a la impresora principal (todos los destinos comparten hardware).
  * Los móviles nunca imprimen directamente.
  */
 export async function printTicket(
@@ -57,6 +64,20 @@ export async function printTicket(
   destino: PrintTicketRequest["destino"],
   options?: Omit<PrintTicketRequest, "ticket" | "destino">,
 ): Promise<PrintResult> {
+  const impresora = resolveImpresoraConfig(options?.impresora);
+
+  if (!impresora.activa) {
+    return {
+      ok: true,
+      mode: "mock",
+      destino,
+      tipo: options?.tipo ?? destino,
+      message: PRINT_MESSAGES.impresoraInactiva,
+      simulated: true,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   const request: PrintTicketRequest = {
     ticket,
     destino,
@@ -64,6 +85,7 @@ export async function printTicket(
     comandaId: options?.comandaId,
     mesa: options?.mesa,
     camarero: options?.camarero,
+    impresora,
   };
 
   const serverUrl = getPrintServerUrl();
@@ -73,7 +95,6 @@ export async function printTicket(
       `${serverUrl.replace(/\/$/, "")}/print`,
     );
     if (result.ok) return result;
-    // Fallback a API interna si el servidor local no responde
     const fallback = await postPrintRequest(request, "/api/impresion");
     if (fallback.ok) return fallback;
     return result;

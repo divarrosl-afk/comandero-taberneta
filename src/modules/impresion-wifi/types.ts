@@ -1,3 +1,5 @@
+import type { ImpresoraConfig } from "@/types/impresora";
+
 export type DestinoImpresion = "cocina" | "barra" | "postres";
 
 export type TipoImpresion = "cocina" | "barra" | "postres" | "reimpresion";
@@ -11,6 +13,8 @@ export interface PrintTicketRequest {
   comandaId?: string;
   mesa?: number;
   camarero?: string;
+  /** Impresora principal — todos los destinos usan la misma físicamente */
+  impresora?: ImpresoraConfig;
 }
 
 export interface PrintResult {
@@ -34,4 +38,6 @@ export const PRINT_MESSAGES = {
   ticketSimulado: "Ticket simulado",
   error: "Error de impresión",
   enviando: "Enviando a impresora...",
+  impresoraInactiva: "Impresora inactiva — ticket no enviado",
+  impresoraNoConfigurada: "Configure la impresora en Ajustes",
 } as const;

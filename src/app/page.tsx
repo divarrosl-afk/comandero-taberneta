@@ -25,6 +25,12 @@ const acciones = [
     href: "/historial",
     disponible: true,
   },
+  {
+    titulo: "Impresora",
+    descripcion: "Configurar impresora principal",
+    href: "/configuracion/impresora",
+    disponible: true,
+  },
 ];
 
 export default function HomePage() {
