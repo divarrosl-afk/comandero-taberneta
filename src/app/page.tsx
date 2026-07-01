@@ -31,6 +31,12 @@ const acciones = [
     href: "/configuracion/impresora",
     disponible: true,
   },
+  {
+    titulo: "Catálogo",
+    descripcion: "Platos, bebidas y postres",
+    href: "/configuracion/catalogo",
+    disponible: true,
+  },
 ];
 
 export default function HomePage() {

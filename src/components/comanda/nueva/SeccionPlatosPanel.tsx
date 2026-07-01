@@ -4,13 +4,22 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
+import { ProductosRapidosGrid } from "@/components/catalogo/ProductosRapidosGrid";
 import { PlatoCard } from "@/components/comanda/nueva/PlatoCard";
+import type { SeccionCatalogo } from "@/types/catalogo";
 import type {
   ModificacionId,
   PlatoFormItem,
-  SalsaId,
   SeccionPlatos,
 } from "@/types/comanda";
+import type { ProductoCatalogo } from "@/types/catalogo";
+
+const SECCION_A_CATALOGO: Record<SeccionPlatos, SeccionCatalogo> = {
+  entrantes: "entrantes",
+  primeros: "primeros",
+  segundos: "segundos",
+  bebidas: "bebidas",
+};
 
 interface SeccionPlatosPanelProps {
   titulo: string;
@@ -20,20 +29,23 @@ interface SeccionPlatosPanelProps {
   active?: boolean;
   onUpdate: (id: string, cambios: Partial<PlatoFormItem>) => void;
   onAdd: () => void;
+  onSelectCatalogo: (producto: ProductoCatalogo) => void;
   onRemove: (id: string) => void;
   onDuplicate: (id: string) => void;
   onClear: () => void;
   onToggleModificacion: (platoId: string, mod: ModificacionId) => void;
-  onCycleSalsa: (platoId: string, salsaId: SalsaId) => void;
+  onCycleSalsa: (platoId: string, salsaId: string, nombre: string) => void;
 }
 
 export function SeccionPlatosPanel({
   titulo,
+  seccion,
   platos,
   conTipo = false,
   active = false,
   onUpdate,
   onAdd,
+  onSelectCatalogo,
   onRemove,
   onDuplicate,
   onClear,
@@ -63,7 +75,12 @@ export function SeccionPlatosPanel({
           </div>
         }
       >
-        <div className="space-y-3">
+        <ProductosRapidosGrid
+          seccion={SECCION_A_CATALOGO[seccion]}
+          onSelect={onSelectCatalogo}
+        />
+
+        <div className="mt-4 space-y-3">
           {platos.map((plato, index) => (
             <PlatoCard
               key={plato.id}
@@ -76,7 +93,7 @@ export function SeccionPlatosPanel({
               onToggleModificacion={(mod) =>
                 onToggleModificacion(plato.id, mod)
               }
-              onCycleSalsa={(salsaId) => onCycleSalsa(plato.id, salsaId)}
+              onCycleSalsa={(id, nombre) => onCycleSalsa(plato.id, id, nombre)}
             />
           ))}
         </div>

@@ -6,8 +6,10 @@ import { platoTieneContenido } from "@/lib/comanda/plato-factory";
 import type {
   ComandaCocina,
   ComandaFormState,
+  ExtraMesaId,
   PlatoComanda,
   PlatoFormItem,
+  SalsaId,
   TipoPlatoSeleccion,
   TipoServicio,
 } from "@/types/comanda";
@@ -19,7 +21,7 @@ function mapPlatoBase(item: PlatoFormItem): Omit<PlatoComanda, "tipo" | "saleCom
     cantidad: item.cantidad,
     modificaciones: item.modificaciones.map(getModificacionLabel),
     salsas: item.salsas.map((s) => ({
-      nombre: getSalsaLabel(s.id),
+      nombre: s.nombre || getSalsaLabel(s.id as SalsaId),
       cantidad: s.cantidad,
     })),
     notaLibre: item.notaLibre?.trim() || undefined,
@@ -75,7 +77,10 @@ export function formToComanda(form: ComandaFormState): ComandaCocina | null {
     bebidas: form.bebidas.filter(platoTieneContenido).map(mapPlatoBase),
     extras: form.extras
       .filter((e) => e.cantidad > 0)
-      .map((e) => ({ nombre: getExtraLabel(e.id), cantidad: e.cantidad })),
+      .map((e) => ({
+        nombre: e.nombre || getExtraLabel(e.id as ExtraMesaId),
+        cantidad: e.cantidad,
+      })),
     observaciones: form.observaciones.map((o) => o.trim()).filter(Boolean),
     creadaEn: new Date().toISOString(),
     enviada: true,

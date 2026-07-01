@@ -12,12 +12,11 @@ import {
 import type {
   ComandaFormState,
   ComandaFormStep,
-  ExtraMesaId,
   ModificacionId,
   PlatoFormItem,
-  SalsaId,
   SeccionPlatos,
 } from "@/types/comanda";
+import type { ProductoCatalogo } from "@/types/catalogo";
 
 const estadoInicial: ComandaFormState = {
   mesa: null,
@@ -140,8 +139,37 @@ export function useComandaForm() {
     [],
   );
 
+  const addPlatoFromCatalog = useCallback(
+    (seccion: SeccionPlatos, producto: ProductoCatalogo) => {
+      const platoData: Partial<PlatoFormItem> = {
+        nombre: producto.nombre,
+      };
+      if (producto.suplemento) {
+        platoData.tipoSeleccion = "menu_suplemento";
+        platoData.suplemento = producto.suplemento;
+      }
+
+      setForm((prev) => {
+        const vacio = prev[seccion].find((p) => !p.nombre.trim());
+        if (vacio) {
+          return {
+            ...prev,
+            [seccion]: prev[seccion].map((p) =>
+              p.id === vacio.id ? { ...p, ...platoData } : p,
+            ),
+          };
+        }
+        return {
+          ...prev,
+          [seccion]: [...prev[seccion], { ...crearPlatoVacio(), ...platoData }],
+        };
+      });
+    },
+    [],
+  );
+
   const cycleSalsa = useCallback(
-    (seccion: SeccionPlatos, platoId: string, salsaId: SalsaId) => {
+    (seccion: SeccionPlatos, platoId: string, salsaId: string, nombre: string) => {
       setForm((prev) => ({
         ...prev,
         [seccion]: prev[seccion].map((p) => {
@@ -149,7 +177,10 @@ export function useComandaForm() {
 
           const existente = p.salsas.find((s) => s.id === salsaId);
           if (!existente) {
-            return { ...p, salsas: [...p.salsas, { id: salsaId, cantidad: 1 }] };
+            return {
+              ...p,
+              salsas: [...p.salsas, { id: salsaId, nombre, cantidad: 1 }],
+            };
           }
 
           if (existente.cantidad < 3) {
@@ -170,33 +201,14 @@ export function useComandaForm() {
     [],
   );
 
-  const setExtraCantidad = useCallback((extraId: ExtraMesaId, cantidad: number) => {
-    setForm((prev) => {
-      const extras = [...prev.extras];
-      const index = extras.findIndex((e) => e.id === extraId);
-
-      if (cantidad <= 0) {
-        return { ...prev, extras: extras.filter((e) => e.id !== extraId) };
-      }
-
-      if (index === -1) {
-        extras.push({ id: extraId, cantidad });
-      } else {
-        extras[index] = { id: extraId, cantidad };
-      }
-
-      return { ...prev, extras };
-    });
-  }, []);
-
-  const cycleExtra = useCallback((extraId: ExtraMesaId) => {
+  const cycleExtra = useCallback((extraId: string, nombre: string) => {
     setForm((prev) => {
       const actual = prev.extras.find((e) => e.id === extraId)?.cantidad ?? 0;
       const siguiente = actual >= 3 ? 0 : actual + 1;
       const extras = prev.extras.filter((e) => e.id !== extraId);
 
       if (siguiente > 0) {
-        extras.push({ id: extraId, cantidad: siguiente });
+        extras.push({ id: extraId, nombre, cantidad: siguiente });
       }
 
       return { ...prev, extras };
@@ -263,12 +275,12 @@ export function useComandaForm() {
     setCamarero,
     updatePlato,
     addPlato,
+    addPlatoFromCatalog,
     removePlato,
     duplicatePlato,
     clearSeccion,
     toggleModificacion,
     cycleSalsa,
-    setExtraCantidad,
     cycleExtra,
     setObservacion,
     addObservacion,

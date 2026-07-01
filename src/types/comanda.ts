@@ -50,12 +50,14 @@ export type ExtraMesaId =
   | "limon";
 
 export interface SalsaCantidad {
-  id: SalsaId;
+  id: string;
+  nombre: string;
   cantidad: 1 | 2 | 3;
 }
 
 export interface ExtraMesaItem {
-  id: ExtraMesaId;
+  id: string;
+  nombre: string;
   cantidad: number;
 }
 

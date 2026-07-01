@@ -8,7 +8,7 @@ import { ModificacionesChips } from "@/components/comanda/nueva/ModificacionesCh
 import { SalsasSelector } from "@/components/comanda/nueva/SalsasSelector";
 import { TipoPlatoBar } from "@/components/comanda/nueva/TipoPlatoBar";
 import { platoTieneContenido } from "@/lib/comanda/plato-factory";
-import type { ModificacionId, PlatoFormItem, SalsaId } from "@/types/comanda";
+import type { ModificacionId, PlatoFormItem } from "@/types/comanda";
 
 interface PlatoCardProps {
   plato: PlatoFormItem;
@@ -18,7 +18,7 @@ interface PlatoCardProps {
   onRemove: () => void;
   onDuplicate: () => void;
   onToggleModificacion: (mod: ModificacionId) => void;
-  onCycleSalsa: (salsaId: SalsaId) => void;
+  onCycleSalsa: (salsaId: string, nombre: string) => void;
 }
 
 export function PlatoCard({
