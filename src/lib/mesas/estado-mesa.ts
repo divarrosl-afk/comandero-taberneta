@@ -1,5 +1,8 @@
-import { getComandasLocales } from "@/lib/storage/comandas-local";
-import { getPostresLocales } from "@/lib/storage/postres-local";
+import { getComandasSync } from "@/lib/comandas/comandas-service";
+import { fetchComandas } from "@/lib/comandas/comandas-service";
+import { getPostresSync } from "@/lib/postres/postres-service";
+import { fetchPostres } from "@/lib/postres/postres-service";
+import { usesRemoteData } from "@/lib/data/backend";
 import type {
   EstadoMesaOperativo,
   MesaEstadoPersistido,
@@ -44,8 +47,8 @@ function setEstadoPersistido(
 }
 
 function calcularEstadoDesdeComandas(mesaId: string): EstadoMesaOperativo {
-  const cocina = getComandasLocales().filter((c) => String(c.mesa) === mesaId);
-  const postres = getPostresLocales().filter((c) => String(c.mesa) === mesaId);
+  const cocina = getComandasSync().filter((c) => String(c.mesa) === mesaId);
+  const postres = getPostresSync().filter((c) => String(c.mesa) === mesaId);
   const todas = [...cocina, ...postres];
 
   if (todas.length === 0) return "libre";
@@ -91,11 +94,17 @@ export function notificarComandaEnviada(mesaId: string): void {
 }
 
 export function getComandasDeMesa(mesaId: string) {
-  const cocina = getComandasLocales().filter((c) => String(c.mesa) === mesaId);
-  const postres = getPostresLocales().filter((c) => String(c.mesa) === mesaId);
+  const cocina = getComandasSync().filter((c) => String(c.mesa) === mesaId);
+  const postres = getPostresSync().filter((c) => String(c.mesa) === mesaId);
   return { cocina, postres, total: cocina.length + postres.length };
 }
 
 export function limpiarEstadoMesa(mesaId: string): void {
   guardarEstados(getEstadosRaw().filter((e) => e.mesaId !== mesaId));
+}
+
+/** Refresca caché operativa desde Supabase (modo remoto). */
+export async function refrescarEstadoMesasDesdeRemoto(): Promise<void> {
+  if (!usesRemoteData()) return;
+  await Promise.all([fetchComandas(), fetchPostres()]);
 }

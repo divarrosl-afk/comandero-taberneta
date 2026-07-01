@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useMemo, Suspense, useEffect } from "react";
+import { useMemo, Suspense, useEffect, useState } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { PostresEditView } from "@/components/postres/nueva/PostresEditView";
 import { PostresEnviadaView } from "@/components/postres/nueva/PostresEnviadaView";
@@ -11,7 +11,7 @@ import { usePostresForm } from "@/hooks/usePostresForm";
 import { notificarComandaEnviada, marcarMesaOcupada } from "@/lib/mesas/estado-mesa";
 import { formToComandaPostres } from "@/lib/postres/map-form";
 import { limpiarBorradorPostres } from "@/lib/storage/borrador-postres";
-import { guardarPostresLocal } from "@/lib/storage/postres-local";
+import { guardarPostres } from "@/lib/postres/postres-service";
 
 function PostresNuevoForm() {
   const searchParams = useSearchParams();
@@ -29,15 +29,26 @@ function PostresNuevoForm() {
     descartarBorrador,
   } = formActions;
 
+  const [syncAviso, setSyncAviso] = useState<string | null>(null);
+
   const comanda = useMemo(() => formToComandaPostres(form), [form]);
 
   useEffect(() => {
     if (mesaParam) marcarMesaOcupada(mesaParam);
   }, [mesaParam]);
 
-  const handleEnviar = () => {
+  const handleEnviar = async () => {
     if (!comanda) return;
-    guardarPostresLocal(comanda);
+    const resultado = await guardarPostres(comanda, {
+      camareroUsername: sesion?.username ?? form.camareroId,
+    });
+    if (!resultado.synced) {
+      setSyncAviso(
+        "No se ha podido sincronizar, guardado localmente en este dispositivo.",
+      );
+    } else {
+      setSyncAviso(null);
+    }
     notificarComandaEnviada(comanda.mesa);
     limpiarBorradorPostres();
     setStep("enviada");
@@ -79,7 +90,11 @@ function PostresNuevoForm() {
       )}
 
       {step === "enviada" && comanda && (
-        <PostresEnviadaView comanda={comanda} onNueva={reset} />
+        <PostresEnviadaView
+          comanda={comanda}
+          onNueva={reset}
+          syncAviso={syncAviso}
+        />
       )}
     </main>
   );

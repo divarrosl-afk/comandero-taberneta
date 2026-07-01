@@ -69,7 +69,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...   # solo servidor — nunca NEXT_PUBLIC_
 2. Crea usuarios iniciales (ver seed abajo).
 3. Login con username (`divarro`) — internamente usa `divarro@taberneta.local`.
 
-**Importante (Fase 1):** comandas, postres e historial **aún no sincronizan** entre dispositivos. Siguen en `localStorage` de cada móvil. La sincronización operativa llegará en Fase 2.
+**Importante (Fase 1–2):** con `supabase`/`hybrid`, carta, menú, mesas, **comandas y postres** se sincronizan entre dispositivos. Si falla la red al enviar, la comanda se guarda localmente con aviso.
 
 Si faltan variables con `supabase`/`hybrid`, la app muestra un error claro en lugar de pantalla rota.
 
@@ -199,9 +199,11 @@ comandero-taberneta/
 - Carta, menú del día, mesas, metadata impresora compartidos
 - Comandas/postres **siguen en localStorage** (Fase 2 = sync entre móviles)
 
-### Fase 2 — Comandas sincronizadas
+### Fase 2 (actual) — Comandas sincronizadas
 
-- Comandas cocina y postres en Supabase + tiempo real entre dispositivos
+- Comandas cocina y postres en Supabase
+- Panel, historial, cierre y estado de mesas compartidos
+- Realtime + polling 5s; copia local de emergencia si falla Supabase
 
 ### Fase 3 — Servidor local e impresión
 

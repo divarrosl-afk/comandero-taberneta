@@ -1,6 +1,6 @@
 import { normalizarTexto } from "@/lib/catalogo/search";
-import { getComandasLocales } from "@/lib/storage/comandas-local";
-import { getPostresLocales } from "@/lib/storage/postres-local";
+import { getComandasSync } from "@/lib/comandas/comandas-service";
+import { getPostresSync } from "@/lib/postres/postres-service";
 import { nombreBoton, type ProductoCatalogo } from "@/types/catalogo";
 
 function acumularNombre(mapa: Map<string, number>, nombre: string, cantidad: number): void {
@@ -13,7 +13,7 @@ function acumularNombre(mapa: Map<string, number>, nombre: string, cantidad: num
 export function getConteoVentasPorNombre(): Map<string, number> {
   const mapa = new Map<string, number>();
 
-  for (const comanda of getComandasLocales()) {
+  for (const comanda of getComandasSync()) {
     for (const plato of [
       ...comanda.entrantes,
       ...comanda.primeros,
@@ -24,7 +24,7 @@ export function getConteoVentasPorNombre(): Map<string, number> {
     }
   }
 
-  for (const comanda of getPostresLocales()) {
+  for (const comanda of getPostresSync()) {
     for (const postre of comanda.postres) {
       acumularNombre(mapa, postre.nombre, postre.cantidad);
     }

@@ -8,16 +8,19 @@ import { PostresTicketPreview } from "@/components/postres/nueva/PostresTicketPr
 import { imprimirComandaPostres } from "@/modules/impresion-wifi";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi";
 import { getNombreMesa } from "@/lib/storage/mesas";
+import { usesRemoteData } from "@/lib/data/backend";
 import type { ComandaPostres } from "@/types/postres";
 
 interface PostresEnviadaViewProps {
   comanda: ComandaPostres;
   onNueva: () => void;
+  syncAviso?: string | null;
 }
 
 export function PostresEnviadaView({
   comanda,
   onNueva,
+  syncAviso,
 }: PostresEnviadaViewProps) {
   const [printSummary, setPrintSummary] = useState<string | null>(null);
   const [printLoading, setPrintLoading] = useState(true);
@@ -59,7 +62,11 @@ export function PostresEnviadaView({
           MESA {getNombreMesa(String(comanda.mesa))}
         </h1>
         <p className="mt-1 text-muted">
-          Guardado en este dispositivo · modo local
+          {syncAviso
+            ? syncAviso
+            : usesRemoteData()
+              ? "Sincronizada con el restaurante"
+              : "Guardado en este dispositivo · modo local"}
         </p>
       </header>
 

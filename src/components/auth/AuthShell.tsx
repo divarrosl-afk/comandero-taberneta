@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { UserBar } from "@/components/auth/UserBar";
+import { SyncWarningBanner } from "@/components/sync/SyncWarningBanner";
 
 export function AuthShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -10,6 +11,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <SyncWarningBanner />
       {!enLogin && <UserBar />}
       {children}
     </>

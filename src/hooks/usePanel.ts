@@ -2,44 +2,57 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  actualizarEstadoComandaLocal,
-  getComandasLocales,
-} from "@/lib/storage/comandas-local";
+  actualizarEstadoComanda,
+  fetchComandas,
+} from "@/lib/comandas/comandas-service";
 import {
-  actualizarEstadoPostresLocal,
-  getPostresLocales,
-} from "@/lib/storage/postres-local";
+  actualizarEstadoPostres,
+  fetchPostres,
+} from "@/lib/postres/postres-service";
+import { useSupabaseOperativaRealtime } from "@/hooks/useSupabaseOperativaRealtime";
 import type { ComandaCocina } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
 import type { ComandaPostres } from "@/types/postres";
 
+const POLL_MS = 5000;
+
 export function usePanel() {
   const [comandasCocina, setComandasCocina] = useState<ComandaCocina[]>([]);
   const [comandasPostres, setComandasPostres] = useState<ComandaPostres[]>([]);
+  const [cargando, setCargando] = useState(true);
 
-  const recargar = useCallback(() => {
-    setComandasCocina(getComandasLocales());
-    setComandasPostres(getPostresLocales());
+  const recargar = useCallback(async () => {
+    const [cocina, postres] = await Promise.all([
+      fetchComandas(),
+      fetchPostres(),
+    ]);
+    setComandasCocina(cocina);
+    setComandasPostres(postres);
+    setCargando(false);
   }, []);
 
   useEffect(() => {
-    recargar();
-    const interval = setInterval(recargar, 5000);
+    void recargar();
+    const interval = setInterval(() => void recargar(), POLL_MS);
     return () => clearInterval(interval);
   }, [recargar]);
 
+  useSupabaseOperativaRealtime(() => {
+    void recargar();
+  });
+
   const cambiarEstadoCocina = useCallback(
-    (id: string, estado: EstadoPanel) => {
-      actualizarEstadoComandaLocal(id, estado);
-      recargar();
+    async (id: string, estado: EstadoPanel) => {
+      await actualizarEstadoComanda(id, estado);
+      await recargar();
     },
     [recargar],
   );
 
   const cambiarEstadoPostres = useCallback(
-    (id: string, estado: EstadoPanel) => {
-      actualizarEstadoPostresLocal(id, estado);
-      recargar();
+    async (id: string, estado: EstadoPanel) => {
+      await actualizarEstadoPostres(id, estado);
+      await recargar();
     },
     [recargar],
   );
@@ -52,6 +65,7 @@ export function usePanel() {
     comandasPostres,
     cocinaActivas,
     postresActivas,
+    cargando,
     recargar,
     cambiarEstadoCocina,
     cambiarEstadoPostres,

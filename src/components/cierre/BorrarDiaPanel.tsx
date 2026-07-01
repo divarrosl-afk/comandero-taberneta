@@ -10,7 +10,7 @@ interface BorrarDiaPanelProps {
   fecha: string;
   totalCocina: number;
   totalPostres: number;
-  onBorrar: () => ResultadoBorradoDia;
+  onBorrar: () => Promise<ResultadoBorradoDia> | ResultadoBorradoDia;
 }
 
 const CONFIRMACION_TEXTO = "BORRAR";
@@ -34,9 +34,9 @@ export function BorrarDiaPanel({
     setTexto("");
   };
 
-  const handleBorrar = () => {
+  const handleBorrar = async () => {
     if (texto !== CONFIRMACION_TEXTO) return;
-    const res = onBorrar();
+    const res = await onBorrar();
     setResultado(res);
     setPaso2(false);
     setTexto("");

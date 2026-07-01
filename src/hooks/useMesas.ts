@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getMesasRepository } from "@/lib/mesas/mesas-service";
+import { guardarMesasConfig } from "@/lib/storage/mesas";
 import { getEstadoMesa } from "@/lib/mesas/estado-mesa";
+import { fetchComandas } from "@/lib/comandas/comandas-service";
+import { fetchPostres } from "@/lib/postres/postres-service";
+import { usesRemoteData } from "@/lib/data/backend";
+import { useSupabaseOperativaRealtime } from "@/hooks/useSupabaseOperativaRealtime";
 import type { MesaConfig, MesaOperativa, ZonaMesa } from "@/types/mesas";
 
 export function useMesas() {
@@ -12,7 +17,11 @@ export function useMesas() {
   const recargar = useCallback(async () => {
     setCargando(true);
     try {
-      setMesas(await getMesasRepository().getConfig());
+      const config = await getMesasRepository().getConfig();
+      if (usesRemoteData()) {
+        guardarMesasConfig(config);
+      }
+      setMesas(config);
     } finally {
       setCargando(false);
     }
@@ -75,6 +84,23 @@ export function useMesasOperativas() {
     setRevision((v) => v + 1);
     void recargar();
   }, [recargar]);
+
+  const refrescarOperativa = useCallback(async () => {
+    if (usesRemoteData()) {
+      await Promise.all([fetchComandas(), fetchPostres()]);
+    }
+    setRevision((v) => v + 1);
+  }, []);
+
+  useSupabaseOperativaRealtime(() => {
+    void refrescarOperativa();
+  });
+
+  useEffect(() => {
+    if (!usesRemoteData()) return;
+    const interval = setInterval(() => void refrescarOperativa(), 5000);
+    return () => clearInterval(interval);
+  }, [refrescarOperativa]);
 
   const operativas: MesaOperativa[] = useMemo(() => {
     void revision;

@@ -1,6 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { fetchComandas } from "@/lib/comandas/comandas-service";
+import { fetchPostres } from "@/lib/postres/postres-service";
+import { usesRemoteData } from "@/lib/data/backend";
 import { hoyFecha } from "@/lib/cierre/fecha";
 import {
   getCamarerosDelDia,
@@ -40,6 +43,11 @@ export function useCierre(sesion: Sesion | null) {
   const recargar = useCallback(() => {
     setRevision((v) => v + 1);
   }, []);
+
+  useEffect(() => {
+    if (!usesRemoteData()) return;
+    void Promise.all([fetchComandas(), fetchPostres()]).then(() => recargar());
+  }, [filtros.fecha, recargar]);
 
   const entradasDia: EntradaCierre[] = useMemo(() => {
     void revision;
@@ -85,8 +93,8 @@ export function useCierre(sesion: Sesion | null) {
     return datos ? resumenExportacion(datos) : null;
   }, [prepararExportacion]);
 
-  const borrarDia = useCallback(() => {
-    const resultado = eliminarDatosDelDia(filtros.fecha);
+  const borrarDia = useCallback(async () => {
+    const resultado = await eliminarDatosDelDia(filtros.fecha);
     recargar();
     return resultado;
   }, [filtros.fecha, recargar]);
