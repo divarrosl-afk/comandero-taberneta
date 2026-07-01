@@ -11,6 +11,16 @@ import {
   guardarImpresoraConfig,
 } from "@/lib/impresora/impresora-config-service";
 import {
+  checkPrintServerHealth,
+  describePrintSetup,
+  detectDeployContext,
+  getPrintServerConfig,
+  resolvePrintTransport,
+  savePrintServerConfig,
+} from "@/lib/print/print-server-config";
+import type { PrintServerConfig } from "@/types/print-server";
+import { PRINT_SERVER_CONFIG_DEFAULT } from "@/types/print-server";
+import {
   IMPRESORA_DEFAULT,
   TEST_IMPRESORA_TEXTO,
   type AnchoPapel,
@@ -20,16 +30,27 @@ import {
 
 export function ImpresoraConfigClient() {
   const [config, setConfig] = useState<ImpresoraConfig>(IMPRESORA_DEFAULT);
+  const [printServer, setPrintServer] = useState<PrintServerConfig>(
+    PRINT_SERVER_CONFIG_DEFAULT,
+  );
+  const [deployCtx, setDeployCtx] = useState("unknown");
+  const [transport, setTransport] = useState("cloud-queue");
   const [guardado, setGuardado] = useState(false);
   const [testLoading, setTestLoading] = useState(false);
   const [connLoading, setConnLoading] = useState(false);
+  const [serverLoading, setServerLoading] = useState(false);
   const [testMsg, setTestMsg] = useState<string | null>(null);
   const [connMsg, setConnMsg] = useState<string | null>(null);
+  const [serverMsg, setServerMsg] = useState<string | null>(null);
   const [testError, setTestError] = useState(false);
   const [connError, setConnError] = useState(false);
+  const [serverError, setServerError] = useState(false);
 
   useEffect(() => {
     void getImpresoraConfig().then(setConfig);
+    setPrintServer(getPrintServerConfig());
+    setDeployCtx(detectDeployContext());
+    setTransport(resolvePrintTransport());
   }, []);
 
   const update = <K extends keyof ImpresoraConfig>(
@@ -42,8 +63,26 @@ export function ImpresoraConfigClient() {
 
   const handleGuardar = async () => {
     await guardarImpresoraConfig(config);
+    savePrintServerConfig(printServer);
     setGuardado(true);
+    setTransport(resolvePrintTransport(printServer));
     setTimeout(() => setGuardado(false), 2500);
+  };
+
+  const handleProbarPrintServer = async () => {
+    savePrintServerConfig(printServer);
+    setServerLoading(true);
+    setServerMsg(null);
+    try {
+      const health = await checkPrintServerHealth();
+      setServerMsg(health.ok ? `✅ ${health.message}` : `❌ ${health.message}`);
+      setServerError(!health.ok);
+    } catch {
+      setServerMsg("❌ No se pudo comprobar el print-server");
+      setServerError(true);
+    } finally {
+      setServerLoading(false);
+    }
   };
 
   const handleProbarConexion = async () => {
@@ -216,6 +255,48 @@ export function ImpresoraConfigClient() {
         </div>
       </div>
 
+      <div className="mt-4 space-y-4 rounded-2xl border-2 border-border bg-card p-4">
+        <div>
+          <h2 className="text-lg font-bold text-primary">Print-server (Lenovo)</h2>
+          <p className="mt-1 text-xs text-muted">
+            Contexto: <strong>{deployCtx}</strong> · Transporte:{" "}
+            <strong>{transport}</strong>
+          </p>
+          <p className="mt-2 text-sm text-muted">{describePrintSetup(printServer)}</p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-semibold">URL local (LAN)</label>
+          <input
+            type="url"
+            value={printServer.localUrl}
+            onChange={(e) =>
+              setPrintServer((p) => ({ ...p, localUrl: e.target.value }))
+            }
+            placeholder="http://192.168.1.146:3100"
+            className="min-h-12 w-full rounded-xl border-2 border-border bg-background px-3 text-base outline-none focus:border-primary"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-semibold">
+            URL remota (HTTPS / túnel)
+          </label>
+          <input
+            type="url"
+            value={printServer.remoteUrl}
+            onChange={(e) =>
+              setPrintServer((p) => ({ ...p, remoteUrl: e.target.value }))
+            }
+            placeholder="https://print.tu-dominio.com"
+            className="min-h-12 w-full rounded-xl border-2 border-border bg-background px-3 text-base outline-none focus:border-primary"
+          />
+          <p className="mt-1 text-xs text-muted">
+            En Vercel (HTTPS) use cola en nube o un túnel HTTPS al print-server.
+          </p>
+        </div>
+      </div>
+
       <div className="mt-4 rounded-xl border border-dashed border-border bg-card/50 p-4">
         <p className="text-xs font-semibold uppercase text-muted">Prueba</p>
         <p className="mt-1 font-mono text-sm">{TEST_IMPRESORA_TEXTO}</p>
@@ -228,6 +309,12 @@ export function ImpresoraConfigClient() {
       />
 
       <PrintStatusBanner
+        summary={serverMsg}
+        loading={serverLoading}
+        error={serverError}
+      />
+
+      <PrintStatusBanner
         summary={testMsg}
         loading={testLoading}
         error={testError}
@@ -236,6 +323,15 @@ export function ImpresoraConfigClient() {
       <div className="mt-4 space-y-3">
         <Button fullWidth size="lg" onClick={handleGuardar}>
           Guardar configuración
+        </Button>
+        <Button
+          variant="secondary"
+          fullWidth
+          size="lg"
+          onClick={handleProbarPrintServer}
+          disabled={serverLoading}
+        >
+          {serverLoading ? "Comprobando print-server…" : "Comprobar print-server"}
         </Button>
         <Button
           variant="secondary"
@@ -258,9 +354,9 @@ export function ImpresoraConfigClient() {
       </div>
 
       <p className="mt-6 text-center text-xs text-muted">
-        Los móviles envían tickets al servidor del portátil (print-server).
+        Producción: la app en Vercel encola tickets en Supabase.
         <br />
-        El portátil imprime por TCP 9100 en la red local del restaurante.
+        El Lenovo (print-server) los imprime por TCP 9100 en la red local.
       </p>
     </main>
   );

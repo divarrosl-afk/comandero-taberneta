@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tcpConnectTest, printTestTicket } from "./lib/escpos.js";
+import { startCloudPoller } from "./lib/cloud-poller.js";
 import {
   enqueueJob,
   getJob,
@@ -19,6 +20,27 @@ const LOG_FILE = path.join(LOG_DIR, "tickets.log");
 const PORT = Number(process.env.PORT ?? 3100);
 const HOST = process.env.PRINT_SERVER_HOST ?? "0.0.0.0";
 const API_KEY = process.env.PRINT_API_KEY?.trim() || "";
+const CORS_ORIGINS = (process.env.PRINT_CORS_ORIGINS ?? "*")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+function setCors(req, res) {
+  const origin = req.headers.origin;
+  if (CORS_ORIGINS.includes("*")) {
+    res.setHeader("Access-Control-Allow-Origin", origin ?? "*");
+  } else if (origin && CORS_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  } else if (CORS_ORIGINS[0]) {
+    res.setHeader("Access-Control-Allow-Origin", CORS_ORIGINS[0]);
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, X-Print-Key, Authorization",
+  );
+  res.setHeader("Vary", "Origin");
+}
 
 function ensureLogDir() {
   if (!fs.existsSync(LOG_DIR)) {
@@ -65,12 +87,7 @@ function json(res, status, body) {
 }
 
 const server = http.createServer(async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, X-Print-Key, Authorization",
-  );
+  setCors(req, res);
 
   if (req.method === "OPTIONS") {
     res.writeHead(204);
@@ -227,6 +244,7 @@ const server = http.createServer(async (req, res) => {
 
 loadQueue();
 void processQueue();
+startCloudPoller();
 
 setInterval(() => {
   void processQueue();

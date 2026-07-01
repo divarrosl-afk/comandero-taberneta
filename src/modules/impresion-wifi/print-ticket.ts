@@ -6,8 +6,9 @@ import type {
 import { PRINT_MESSAGES, PRINT_STATUS_LABELS } from "@/modules/impresion-wifi/types";
 import {
   getEffectivePrintMode,
-  getPrintServerUrl,
   resolveImpresoraConfig,
+  resolvePrintTransport,
+  resolveDirectPrintServerUrl,
 } from "@/modules/impresion-wifi/config";
 import { getSupabaseAccessToken } from "@/lib/supabase/client";
 import { usesRemoteData } from "@/lib/data/backend";
@@ -224,16 +225,15 @@ export async function printTicket(
     impresora,
   };
 
-  const serverUrl = getPrintServerUrl();
-  if (serverUrl) {
+  const transport = resolvePrintTransport();
+  const serverUrl = resolveDirectPrintServerUrl();
+
+  if (transport === "direct" && serverUrl) {
     const result = await postPrintRequest(
       request,
-      `${serverUrl.replace(/\/$/, "")}/print`,
+      `${serverUrl}/print`,
     );
     if (result.ok) return result;
-    const fallback = await postPrintRequest(request, "/api/impresion");
-    if (fallback.ok) return fallback;
-    return result;
   }
 
   return postPrintRequest(request, "/api/impresion");

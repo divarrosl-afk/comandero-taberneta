@@ -3,13 +3,17 @@ import type { ImpresoraConfig } from "@/types/impresora";
 import { IMPRESORA_DEFAULT } from "@/types/impresora";
 import { getImpresoraConfig } from "@/lib/storage/impresora-config";
 
-export function getPrintServerUrl(): string | null {
-  const url =
-    process.env.NEXT_PUBLIC_PRINT_SERVER_URL ??
-    process.env.PRINT_SERVER_URL ??
-    null;
-  return url?.trim() || null;
-}
+export {
+  detectDeployContext,
+  getPrintServerUrl,
+  resolveDirectPrintServerUrl,
+  resolvePrintTransport,
+  checkPrintServerHealth,
+  describePrintSetup,
+  getPrintServerConfig,
+  savePrintServerConfig,
+  isMixedContentBlocked,
+} from "@/lib/print/print-server-config";
 
 /** Lee configuración de impresora: localStorage (cliente) o env (servidor) */
 export function resolveImpresoraConfig(

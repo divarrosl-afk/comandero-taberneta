@@ -1,6 +1,6 @@
 {
   "name": "comandero-taberneta",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Comandero web/PWA para La Taberneta de Ca la Ingrid",
   "scripts": {

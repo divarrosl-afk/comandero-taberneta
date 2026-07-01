@@ -2,6 +2,7 @@ import {
   printTicketText,
   testPrinter,
 } from "@/lib/impresion/escpos-network";
+import { enqueueCloudPrintJob } from "@/lib/print/print-jobs-repository";
 import type { ImpresoraConfig } from "@/types/impresora";
 import type { PrintTicketRequest, PrintResult } from "@/modules/impresion-wifi/types";
 
@@ -9,18 +10,64 @@ function isVercelRuntime(): boolean {
   return process.env.VERCEL === "1";
 }
 
-function getPrintServerUrl(): string | null {
+function getServerPrintServerUrl(): string | null {
   const url =
     process.env.PRINT_SERVER_URL?.trim() ||
     process.env.NEXT_PUBLIC_PRINT_SERVER_URL?.trim();
   return url || null;
 }
 
+function isReachableFromServer(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return true;
+    if (/^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])\./.test(u.hostname)) {
+      return !isVercelRuntime();
+    }
+    return u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+async function enqueueCloudPrint(
+  request: PrintTicketRequest,
+): Promise<PrintResult> {
+  const timestamp = new Date().toISOString();
+  const job = await enqueueCloudPrintJob(request);
+
+  if (!job) {
+    return {
+      ok: false,
+      mode: "network",
+      destino: request.destino,
+      tipo: request.tipo,
+      message:
+        "No se pudo encolar el ticket — compruebe Supabase y la migración print_jobs.",
+      simulated: false,
+      timestamp,
+      status: "error",
+    };
+  }
+
+  return {
+    ok: true,
+    mode: "network",
+    destino: request.destino,
+    tipo: request.tipo,
+    message: "Ticket encolado — el print-server del restaurante lo imprimirá en breve.",
+    simulated: false,
+    timestamp,
+    status: "queued",
+    jobId: job.id,
+  };
+}
+
 export async function forwardToPrintServer(
   request: PrintTicketRequest,
 ): Promise<PrintResult | null> {
-  const serverUrl = getPrintServerUrl();
-  if (!serverUrl) return null;
+  const serverUrl = getServerPrintServerUrl();
+  if (!serverUrl || !isReachableFromServer(serverUrl)) return null;
 
   try {
     const response = await fetch(`${serverUrl.replace(/\/$/, "")}/print`, {
@@ -37,8 +84,8 @@ export async function forwardToPrintServer(
 export async function forwardTestToPrintServer(
   impresora: ImpresoraConfig,
 ): Promise<{ success: boolean; error?: string; message: string } | null> {
-  const serverUrl = getPrintServerUrl();
-  if (!serverUrl) return null;
+  const serverUrl = getServerPrintServerUrl();
+  if (!serverUrl || !isReachableFromServer(serverUrl)) return null;
 
   try {
     const response = await fetch(
@@ -71,7 +118,7 @@ export async function forwardTestToPrintServer(
 export async function printTicketNetwork(
   impresora: ImpresoraConfig,
   ticket: string,
-  meta: Pick<PrintTicketRequest, "destino" | "tipo">,
+  meta: PrintTicketRequest,
 ): Promise<PrintResult> {
   const timestamp = new Date().toISOString();
 
@@ -89,29 +136,18 @@ export async function printTicketNetwork(
   }
 
   const request: PrintTicketRequest = {
+    ...meta,
     ticket,
-    destino: meta.destino,
-    tipo: meta.tipo,
     impresora,
   };
 
   const forwarded = await forwardToPrintServer(request);
-  if (forwarded) {
+  if (forwarded?.ok) {
     return { ...forwarded, simulated: false, mode: "network" };
   }
 
   if (isVercelRuntime()) {
-    return {
-      ok: false,
-      mode: "network",
-      destino: meta.destino,
-      tipo: meta.tipo,
-      message:
-        "En Vercel la impresión requiere PRINT_SERVER_URL apuntando al portátil del restaurante.",
-      simulated: false,
-      timestamp,
-      status: "error",
-    };
+    return enqueueCloudPrint(request);
   }
 
   const result = await printTicketText(
@@ -121,6 +157,11 @@ export async function printTicketNetwork(
     impresora.anchoPapel,
     true,
   );
+
+  if (!result.success) {
+    const cloud = await enqueueCloudPrint(request);
+    if (cloud.ok) return cloud;
+  }
 
   return {
     ok: result.success,
@@ -140,8 +181,8 @@ export async function forwardTestPrintToPrintServer(
   impresora: ImpresoraConfig,
   advanced = false,
 ): Promise<{ success: boolean; error?: string; message: string } | null> {
-  const serverUrl = getPrintServerUrl();
-  if (!serverUrl) return null;
+  const serverUrl = getServerPrintServerUrl();
+  if (!serverUrl || !isReachableFromServer(serverUrl)) return null;
 
   try {
     const response = await fetch(
@@ -189,10 +230,9 @@ export async function testPrinterNetwork(
 
   if (isVercelRuntime()) {
     return {
-      success: false,
-      error: "Sin print-server",
+      success: true,
       message:
-        "Configure PRINT_SERVER_URL con la IP del portátil del restaurante",
+        "Modo nube: la prueba de impresión se hará cuando el print-server recoja el ticket encolado.",
     };
   }
 
