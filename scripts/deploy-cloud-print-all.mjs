@@ -66,11 +66,11 @@ async function main() {
 
   if (hasDb) {
     await runNode(
-      path.join(__dirname, "apply-print-jobs-migration.mjs"),
-      "Paso 1 — Migración print_jobs",
+      path.join(__dirname, "bootstrap-supabase-db.mjs"),
+      "Paso 1 — Bootstrap Supabase (schema + migraciones)",
     );
   } else {
-    console.log("\n⏭ Paso 1 — Sin SUPABASE_DB_URL, se omite migración.\n");
+    console.log("\n⏭ Paso 1 — Sin SUPABASE_DB_URL, se omite bootstrap.\n");
   }
 
   if (hasVercel) {

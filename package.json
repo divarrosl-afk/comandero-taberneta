@@ -16,7 +16,8 @@
     "db:bootstrap": "node scripts/bootstrap-supabase-db.mjs",
     "db:migrate:print-jobs": "node scripts/apply-print-jobs-migration.mjs",
     "vercel:cloud-print": "node scripts/setup-vercel-cloud-print.mjs",
-    "deploy:cloud-print": "node scripts/deploy-cloud-print-all.mjs"
+    "deploy:cloud-print": "node scripts/deploy-cloud-print-all.mjs",
+    "setup:all": "node scripts/setup-all.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
