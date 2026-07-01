@@ -1,30 +1,32 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 
-/**
- * Cliente Supabase preparado para uso futuro.
- * No conectado todavía — requiere NEXT_PUBLIC_SUPABASE_URL y
- * NEXT_PUBLIC_SUPABASE_ANON_KEY en .env.local
- */
 let supabaseClient: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    return null;
-  }
+  const env = getSupabaseEnv();
+  if (!env) return null;
 
   if (!supabaseClient) {
-    supabaseClient = createClient(url, key);
+    supabaseClient = createClient(env.url, env.anonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    });
   }
 
   return supabaseClient;
 }
 
 export function isSupabaseConfigured(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
+  return getSupabaseEnv() !== null;
+}
+
+export async function getSupabaseAccessToken(): Promise<string | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+  const { data } = await client.auth.getSession();
+  return data.session?.access_token ?? null;
 }

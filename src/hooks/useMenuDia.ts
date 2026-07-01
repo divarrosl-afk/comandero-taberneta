@@ -5,42 +5,50 @@ import {
   getMenuDia,
   guardarMenuDia,
   resetMenuDia,
-} from "@/lib/storage/menu-dia";
+} from "@/lib/menu-dia/menu-dia-service";
 import type { MenuDiaConfig } from "@/types/menu-dia";
 
 export function useMenuDia() {
   const [menu, setMenu] = useState<MenuDiaConfig | null>(null);
+  const [cargando, setCargando] = useState(true);
 
-  const recargar = useCallback(() => {
-    setMenu(getMenuDia());
+  const recargar = useCallback(async () => {
+    setCargando(true);
+    try {
+      setMenu(await getMenuDia());
+    } finally {
+      setCargando(false);
+    }
   }, []);
 
   useEffect(() => {
-    recargar();
+    void recargar();
   }, [recargar]);
 
   const guardar = useCallback(
-    (config: MenuDiaConfig) => {
-      guardarMenuDia(config);
-      recargar();
+    async (config: MenuDiaConfig) => {
+      await guardarMenuDia(config);
+      await recargar();
     },
     [recargar],
   );
 
   const actualizar = useCallback(
-    (cambios: Partial<MenuDiaConfig>) => {
-      const actual = getMenuDia();
-      guardar({ ...actual, ...cambios });
+    async (cambios: Partial<MenuDiaConfig>) => {
+      const actual = await getMenuDia();
+      await guardar({ ...actual, ...cambios });
     },
     [guardar],
   );
 
-  const restaurarDefault = useCallback(() => {
-    setMenu(resetMenuDia());
+  const restaurarDefault = useCallback(async () => {
+    const config = await resetMenuDia();
+    setMenu(config);
   }, []);
 
   return {
     menu,
+    cargando,
     recargar,
     guardar,
     actualizar,

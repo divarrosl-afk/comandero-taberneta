@@ -8,14 +8,14 @@ import { useAuth } from "@/contexts/AuthContext";
 export function UserBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { sesion, cerrarSesion } = useAuth();
+  const { sesion, cerrarSesion, usaSupabase } = useAuth();
 
   if (pathname === "/login" || !sesion) return null;
 
   const rolLabel = sesion.rol === "ADMIN" ? "Admin" : "Camarero";
 
-  const handleLogout = () => {
-    cerrarSesion();
+  const handleLogout = async () => {
+    await cerrarSesion();
     router.replace("/login");
   };
 
@@ -38,6 +38,11 @@ export function UserBar() {
               {rolLabel}
             </span>
             @{sesion.username}
+            {usaSupabase && (
+              <span className="ml-1 text-[10px] uppercase text-accent">
+                · cloud
+              </span>
+            )}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={handleLogout}>

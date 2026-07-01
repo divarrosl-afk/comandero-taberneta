@@ -7,13 +7,19 @@ import type { MesaConfig, MesaOperativa, ZonaMesa } from "@/types/mesas";
 
 export function useMesas() {
   const [mesas, setMesas] = useState<MesaConfig[]>([]);
+  const [cargando, setCargando] = useState(true);
 
-  const recargar = useCallback(() => {
-    setMesas(getMesasRepository().getConfig());
+  const recargar = useCallback(async () => {
+    setCargando(true);
+    try {
+      setMesas(await getMesasRepository().getConfig());
+    } finally {
+      setCargando(false);
+    }
   }, []);
 
   useEffect(() => {
-    recargar();
+    void recargar();
   }, [recargar]);
 
   const activas = mesas.filter((m) => m.activa);
@@ -27,29 +33,38 @@ export function useMesas() {
   );
 
   const crear = useCallback(
-    (mesa: MesaConfig) => {
-      const creada = getMesasRepository().crear(mesa);
-      recargar();
+    async (mesa: MesaConfig) => {
+      const creada = await getMesasRepository().crear(mesa);
+      await recargar();
       return creada;
     },
     [recargar],
   );
 
   const actualizar = useCallback(
-    (id: string, cambios: Partial<MesaConfig>) => {
-      const m = getMesasRepository().actualizar(id, cambios);
-      recargar();
+    async (id: string, cambios: Partial<MesaConfig>) => {
+      const m = await getMesasRepository().actualizar(id, cambios);
+      await recargar();
       return m;
     },
     [recargar],
   );
 
-  const restaurarDefault = useCallback(() => {
-    getMesasRepository().restaurarDefault();
-    recargar();
+  const restaurarDefault = useCallback(async () => {
+    await getMesasRepository().restaurarDefault();
+    await recargar();
   }, [recargar]);
 
-  return { mesas, activas, porZona, recargar, crear, actualizar, restaurarDefault };
+  return {
+    mesas,
+    activas,
+    cargando,
+    porZona,
+    recargar,
+    crear,
+    actualizar,
+    restaurarDefault,
+  };
 }
 
 export function useMesasOperativas() {
@@ -58,7 +73,7 @@ export function useMesasOperativas() {
 
   const refrescar = useCallback(() => {
     setRevision((v) => v + 1);
-    recargar();
+    void recargar();
   }, [recargar]);
 
   const operativas: MesaOperativa[] = useMemo(() => {

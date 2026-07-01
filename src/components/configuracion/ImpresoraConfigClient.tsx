@@ -8,7 +8,7 @@ import { probarImpresora } from "@/modules/impresion-wifi";
 import {
   getImpresoraConfig,
   guardarImpresoraConfig,
-} from "@/lib/storage/impresora-config";
+} from "@/lib/impresora/impresora-config-service";
 import {
   IMPRESORA_DEFAULT,
   TEST_IMPRESORA_TEXTO,
@@ -25,7 +25,7 @@ export function ImpresoraConfigClient() {
   const [testError, setTestError] = useState(false);
 
   useEffect(() => {
-    setConfig(getImpresoraConfig());
+    void getImpresoraConfig().then(setConfig);
   }, []);
 
   const update = <K extends keyof ImpresoraConfig>(
@@ -36,14 +36,14 @@ export function ImpresoraConfigClient() {
     setGuardado(false);
   };
 
-  const handleGuardar = () => {
-    guardarImpresoraConfig(config);
+  const handleGuardar = async () => {
+    await guardarImpresoraConfig(config);
     setGuardado(true);
     setTimeout(() => setGuardado(false), 2500);
   };
 
   const handleProbar = async () => {
-    guardarImpresoraConfig(config);
+    await guardarImpresoraConfig(config);
     setTestLoading(true);
     setTestMsg(null);
 

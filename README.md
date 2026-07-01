@@ -8,7 +8,7 @@ Comandero web/PWA para **La Taberneta de Ca la Ingrid**. Aplicación pensada par
 - **TypeScript**
 - **Tailwind CSS 4**
 - **PWA** (instalable en móvil/tablet)
-- **Supabase** preparado (sin conectar todavía)
+- **Supabase** — Auth y configuración compartida (Fase 1); comandas aún en localStorage
 - Módulos futuros: impresión Wi-Fi e integración Ágora TPV
 
 ## Requisitos
@@ -30,7 +30,72 @@ Copia las variables de entorno de ejemplo:
 cp .env.example .env.local
 ```
 
-> Supabase no está conectado todavía. Las variables pueden dejarse vacías en esta fase.
+Por defecto la app usa **modo local** (`NEXT_PUBLIC_DATA_BACKEND=local`) y no requiere Supabase.
+
+## Modos de datos
+
+| Modo | Variable | Descripción |
+|------|----------|-------------|
+| **Local** (default) | `NEXT_PUBLIC_DATA_BACKEND=local` | Todo en `localStorage` — comportamiento clásico |
+| **Supabase** | `NEXT_PUBLIC_DATA_BACKEND=supabase` | Auth, carta, menú, mesas e impresora (metadata) en Supabase |
+| **Híbrido** | `NEXT_PUBLIC_DATA_BACKEND=hybrid` | Igual que Supabase en Fase 1 (comandas/postres siguen locales) |
+
+### Modo local
+
+No necesitas configurar Supabase. Usuarios de demo en `src/data/usuarios.ts` (solo desarrollo).
+
+| Usuario  | Contraseña | Rol      |
+|----------|------------|----------|
+| `divarro` | `admin`    | ADMIN    |
+| `david`   | `camarero` | CAMARERO |
+| `ingrid`  | `camarero` | CAMARERO |
+| `cocina`  | `camarero` | CAMARERO |
+
+> Estas contraseñas son **solo para modo local**. En Supabase se gestionan con Auth (ver seed).
+
+### Modo Supabase
+
+En `.env.local`:
+
+```env
+NEXT_PUBLIC_DATA_BACKEND=supabase
+NEXT_PUBLIC_SUPABASE_URL=https://TU_PROYECTO.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+NEXT_PUBLIC_RESTAURANTE_ID=b1c2d3e4-f5a6-4789-a012-3456789abcde
+SUPABASE_SERVICE_ROLE_KEY=eyJ...   # solo servidor — nunca NEXT_PUBLIC_
+```
+
+1. Ejecuta `supabase/schema.sql` en el SQL Editor de Supabase.
+2. Crea usuarios iniciales (ver seed abajo).
+3. Login con username (`divarro`) — internamente usa `divarro@taberneta.local`.
+
+**Importante (Fase 1):** comandas, postres e historial **aún no sincronizan** entre dispositivos. Siguen en `localStorage` de cada móvil. La sincronización operativa llegará en Fase 2.
+
+Si faltan variables con `supabase`/`hybrid`, la app muestra un error claro en lugar de pantalla rota.
+
+### Seed inicial Supabase
+
+```bash
+export NEXT_PUBLIC_SUPABASE_URL="https://..."
+export SUPABASE_SERVICE_ROLE_KEY="eyJ..."
+export NEXT_PUBLIC_RESTAURANTE_ID="b1c2d3e4-f5a6-4789-a012-3456789abcde"
+export SEED_ADMIN_PASSWORD="tu-password-seguro"
+export SEED_CAMARERO_PASSWORD="otra-password"
+
+npm run seed:supabase
+```
+
+Documentación completa: [`docs/supabase/SEED.md`](docs/supabase/SEED.md).
+
+### Volver a modo local
+
+```env
+NEXT_PUBLIC_DATA_BACKEND=local
+```
+
+Reinicia `npm run dev`. La app vuelve a `localStorage` sin errores.
+
+> Supabase puede dejarse vacío en modo local.
 
 ## Ejecución en desarrollo
 
@@ -80,14 +145,9 @@ O ejecuta (una vez, con token de https://vercel.com/account/tokens):
 VERCEL_TOKEN=xxx node scripts/configure-vercel-production.mjs
 ```
 
-### Credenciales de la app
+### Credenciales de la app (modo local)
 
-| Usuario  | Contraseña | Rol      |
-|----------|------------|----------|
-| `divarro` | `admin`    | ADMIN    |
-| `david`   | `camarero` | CAMARERO |
-| `ingrid`  | `camarero` | CAMARERO |
-| `cocina`  | `camarero` | CAMARERO |
+Ver tabla en [Modo local](#modo-local). En Vercel sin Supabase configurado, el modo por defecto es local.
 
 > La impresora física no imprimirá en Vercel (`PRINT_MODE=mock`). En el restaurante se usará el print-server en red local.
 
@@ -115,8 +175,9 @@ comandero-taberneta/
 │   ├── types/
 │   │   └── comanda.ts         # Modelo de datos de comandas
 │   ├── lib/
-│   │   └── supabase/
-│   │       └── client.ts      # Cliente Supabase (preparado)
+│   │   ├── data/              # Selector backend local/supabase
+│   │   ├── supabase/          # Cliente, mappers, admin (servidor)
+│   │   └── auth/              # Repositorios Auth + usuarios
 │   └── modules/
 │       ├── integracion-agora/ # Módulo futuro Ágora TPV
 │       └── impresion-wifi/    # Módulo futuro impresión
@@ -128,24 +189,28 @@ comandero-taberneta/
 
 ## Fases de desarrollo
 
-### Fase 1 (actual) — Comandero propio sin Ágora
+### Fase 0 — Esquema Supabase
 
-- Base del proyecto y PWA
-- Modelo de datos de comandas (cocina y postres)
-- Pantallas: login, mesas, crear comanda, revisar, enviar, panel cocina, historial
-- Persistencia en Supabase
+- SQL, RLS, documentación (`docs/supabase/`)
 
-### Fase 2 — Servidor local e impresión
+### Fase 1 (actual) — Auth + configuración compartida
+
+- Supabase Auth + perfiles/roles
+- Carta, menú del día, mesas, metadata impresora compartidos
+- Comandas/postres **siguen en localStorage** (Fase 2 = sync entre móviles)
+
+### Fase 2 — Comandas sincronizadas
+
+- Comandas cocina y postres en Supabase + tiempo real entre dispositivos
+
+### Fase 3 — Servidor local e impresión
 
 - Servidor en el restaurante (mini PC)
 - Impresión Wi-Fi de tickets cocina/barra/postres
-- Funcionamiento en red local sin depender de internet
 
-### Fase 3 — Integración Ágora TPV
+### Fase 4 — Integración Ágora TPV
 
 - Módulo `integracion-agora` independiente
-- Transformación de comanda interna → formato API Web JSON de Ágora
-- Requiere licencia, token y documentación del proveedor
 
 ## Modelo de comanda (referencia)
 
@@ -197,6 +262,7 @@ C/L + H
 | `npm run build`| Compilar para producción       |
 | `npm start`    | Servidor de producción         |
 | `npm run lint` | Revisar código con ESLint      |
+| `npm run seed:supabase` | Seed usuarios en Supabase (requiere env) |
 
 ## Licencia
 

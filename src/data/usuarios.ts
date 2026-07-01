@@ -1,6 +1,6 @@
 import type { Usuario } from "@/types/auth";
 
-/** Usuarios iniciales — solo si no hay datos en localStorage */
+/** Usuarios iniciales — solo modo local (localStorage). No usar en Supabase Auth. */
 export const usuariosIniciales: Usuario[] = [
   {
     username: "divarro",
