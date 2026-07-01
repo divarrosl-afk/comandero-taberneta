@@ -106,6 +106,15 @@ Reinicia `npm run dev`. La app vuelve a `localStorage` sin errores.
 
 > Supabase puede dejarse vacío en modo local.
 
+## Tests
+
+```bash
+npm run test        # una pasada (Vitest)
+npm run test:watch  # modo watch
+```
+
+Ver [`docs/TESTING.md`](docs/TESTING.md).
+
 ## Ejecución en desarrollo
 
 ```bash
