@@ -1,12 +1,14 @@
 import { buildComandaPersistMeta } from "@/lib/comandas/comanda-persist-meta";
-import type { ComandasRepository } from "@/lib/comandas/comandas-repository";
 import { getComandasRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
+import { getComandasLocales } from "@/lib/storage/comandas-local";
 import {
-  getComandasLocales,
-  guardarComandaLocal,
-} from "@/lib/storage/comandas-local";
-import { addPendingCocina } from "@/lib/sync/emergency-local";
+  addPendingCocina,
+  getPendingCocina,
+  removePendingCocina,
+  updatePendingCocinaEstado,
+} from "@/lib/sync/emergency-local";
+import { mergeOperativa } from "@/lib/sync/merge-operativa";
 import {
   getComandasCache,
   setComandasCache,
@@ -29,10 +31,17 @@ export function getComandasSync(): ComandaCocina[] {
   return getComandasCache();
 }
 
+async function loadComandasMerged(): Promise<ComandaCocina[]> {
+  const remoto = await getComandasRepository().getAll();
+  const merged = usesRemoteData()
+    ? mergeOperativa(remoto, getPendingCocina())
+    : remoto;
+  setComandasCache(merged);
+  return merged;
+}
+
 export async function fetchComandas(): Promise<ComandaCocina[]> {
-  const data = await getComandasRepository().getAll();
-  setComandasCache(data);
-  return data;
+  return loadComandasMerged();
 }
 
 export async function guardarComanda(
@@ -52,13 +61,14 @@ export async function guardarComanda(
       opts?.camareroUsername,
     );
     const guardada = await repo.crear(comanda, meta);
-    await fetchComandas();
+    removePendingCocina(comanda.id);
+    await loadComandasMerged();
     return { data: guardada, synced: true };
   } catch (e) {
     const error = e instanceof Error ? e.message : "Error de sincronización";
-    guardarComandaLocal(comanda);
     addPendingCocina(comanda);
-    setComandasCache([comanda, ...getComandasCache()]);
+    const merged = mergeOperativa(await repo.getAll(), getPendingCocina());
+    setComandasCache(merged);
     return { data: comanda, synced: false, error };
   }
 }
@@ -68,18 +78,35 @@ export async function actualizarEstadoComanda(
   estado: EstadoPanel,
 ): Promise<ComandaCocina | null> {
   const actualizada = await getComandasRepository().actualizarEstado(id, estado);
-  if (usesRemoteData()) await fetchComandas();
-  return actualizada;
+  if (actualizada) {
+    removePendingCocina(id);
+    if (usesRemoteData()) await loadComandasMerged();
+    return actualizada;
+  }
+
+  const pendiente = updatePendingCocinaEstado(id, estado);
+  if (pendiente && usesRemoteData()) {
+    const merged = mergeOperativa(
+      await getComandasRepository().getAll(),
+      getPendingCocina(),
+    );
+    setComandasCache(merged);
+    return pendiente;
+  }
+
+  return null;
 }
 
 export async function eliminarComanda(id: string): Promise<boolean> {
+  const eraPendiente = getPendingCocina().some((c) => c.id === id);
+  removePendingCocina(id);
   const ok = await getComandasRepository().eliminar(id);
-  if (usesRemoteData()) await fetchComandas();
-  return ok;
+  if (usesRemoteData()) await loadComandasMerged();
+  return ok || eraPendiente;
 }
 
 export async function eliminarComandasDelDia(fecha: string): Promise<number> {
   const n = await getComandasRepository().eliminarDelDia(fecha);
-  if (usesRemoteData()) await fetchComandas();
+  if (usesRemoteData()) await loadComandasMerged();
   return n;
 }

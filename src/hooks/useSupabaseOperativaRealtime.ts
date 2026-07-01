@@ -1,11 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { usesRemoteData } from "@/lib/data/backend";
 
 export function useSupabaseOperativaRealtime(onChange: () => void): void {
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
   const [restauranteId, setRestauranteId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -14,7 +17,9 @@ export function useSupabaseOperativaRealtime(onChange: () => void): void {
     setRestauranteId(env?.restauranteId ?? null);
   }, []);
 
-  const stableOnChange = useCallback(onChange, [onChange]);
+  const stableHandler = useCallback(() => {
+    onChangeRef.current();
+  }, []);
 
   useEffect(() => {
     if (!usesRemoteData() || !restauranteId) return;
@@ -32,7 +37,7 @@ export function useSupabaseOperativaRealtime(onChange: () => void): void {
           table: "comandas_cocina",
           filter: `restaurante_id=eq.${restauranteId}`,
         },
-        () => stableOnChange(),
+        stableHandler,
       )
       .on(
         "postgres_changes",
@@ -42,12 +47,12 @@ export function useSupabaseOperativaRealtime(onChange: () => void): void {
           table: "comandas_postres",
           filter: `restaurante_id=eq.${restauranteId}`,
         },
-        () => stableOnChange(),
+        stableHandler,
       )
       .subscribe();
 
     return () => {
       void client.removeChannel(channel);
     };
-  }, [restauranteId, stableOnChange]);
+  }, [restauranteId, stableHandler]);
 }
