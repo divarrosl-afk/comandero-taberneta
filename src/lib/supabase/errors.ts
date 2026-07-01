@@ -8,3 +8,13 @@ export function throwIfSupabaseError(
     throw new Error(`${context}: ${error.message}`);
   }
 }
+
+export function isDuplicateKeyError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message.toLowerCase();
+  return (
+    msg.includes("duplicate key") ||
+    msg.includes("23505") ||
+    msg.includes("already exists")
+  );
+}

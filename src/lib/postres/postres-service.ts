@@ -4,17 +4,19 @@ import { getPostresRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
 import { getPostresLocales } from "@/lib/storage/postres-local";
 import {
-  addPendingPostres,
-  getPendingPostres,
-  removePendingPostres,
-  updatePendingPostresEstado,
-} from "@/lib/sync/emergency-local";
-import { mergeOperativa } from "@/lib/sync/merge-operativa";
-import { mergeOperativaSafe } from "@/lib/sync/merge-cache-safe";
+  enqueuePostresCreate,
+  enqueuePostresEstado,
+  removeOutboxForEntity,
+} from "@/lib/sync/outbox";
 import {
   getPostresCache,
   setPostresCache,
 } from "@/lib/sync/operativa-cache";
+import {
+  loadOperativaMerged,
+  patchPostresInCache,
+} from "@/lib/sync/operativa-read";
+import { flushOutbox } from "@/lib/sync/sync-worker";
 import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
 
@@ -27,17 +29,9 @@ export function getPostresSync(): ComandaPostres[] {
   return getPostresCache();
 }
 
-async function loadPostresMerged(): Promise<ComandaPostres[]> {
-  const remoto = await getPostresRepository().getAll();
-  const merged = usesRemoteData()
-    ? mergeOperativa(remoto, getPendingPostres())
-    : remoto;
-  setPostresCache(merged);
-  return merged;
-}
-
 export async function fetchPostres(): Promise<ComandaPostres[]> {
-  return loadPostresMerged();
+  const { postres } = await loadOperativaMerged();
+  return postres;
 }
 
 export async function guardarPostres(
@@ -51,23 +45,26 @@ export async function guardarPostres(
     return { data: guardada, synced: true };
   }
 
+  const cached = getPostresCache();
+  setPostresCache([comanda, ...cached.filter((c) => c.id !== comanda.id)]);
+
   try {
     const meta = await buildComandaPersistMeta(
       comanda.mesa,
       opts?.camareroUsername,
     );
     const guardada = await repo.crear(comanda, meta);
-    removePendingPostres(comanda.id);
-    await loadPostresMerged();
+    await removeOutboxForEntity(
+      ["postres_create", "postres_estado"],
+      comanda.id,
+    );
+    await loadOperativaMerged();
+    void flushOutbox();
     return { data: guardada, synced: true };
   } catch (e) {
     const error = e instanceof Error ? e.message : "Error de sincronización";
-    addPendingPostres(comanda);
-    await mergeOperativaSafe(
-      () => getPostresRepository().getAll(),
-      getPendingPostres,
-      setPostresCache,
-    );
+    await enqueuePostresCreate(comanda);
+    void flushOutbox();
     return { data: comanda, synced: false, error };
   }
 }
@@ -76,41 +73,52 @@ export async function actualizarEstadoPostres(
   id: string,
   estado: EstadoPanel,
 ): Promise<ComandaPostres | null> {
-  const actualizada = await getPostresRepository().actualizarEstado(id, estado);
-  if (actualizada) {
-    removePendingPostres(id);
-    if (usesRemoteData()) await loadPostresMerged();
-    return actualizada;
+  if (!usesRemoteData()) {
+    return getPostresRepository().actualizarEstado(id, estado);
   }
 
-  const pendiente = updatePendingPostresEstado(id, estado);
-  if (pendiente && usesRemoteData()) {
-    await mergeOperativaSafe(
-      () => getPostresRepository().getAll(),
-      getPendingPostres,
-      setPostresCache,
+  const patched = patchPostresInCache(id, { estadoPanel: estado });
+  if (!patched) return null;
+
+  try {
+    const actualizada = await getPostresRepository().actualizarEstado(
+      id,
+      estado,
     );
-    return pendiente;
+    if (actualizada) {
+      await removeOutboxForEntity(["postres_estado"], id);
+      await loadOperativaMerged();
+      void flushOutbox();
+      return actualizada;
+    }
+  } catch {
+    // offline
   }
 
-  return null;
+  await enqueuePostresEstado(id, estado);
+  void flushOutbox();
+  return patchPostresInCache(id, { estadoPanel: estado });
 }
 
 export async function eliminarPostres(id: string): Promise<boolean> {
-  const eraPendiente = getPendingPostres().some((c) => c.id === id);
-  removePendingPostres(id);
+  const eraPendiente = getPostresCache().some((c) => c.id === id);
+  await removeOutboxForEntity(["postres_create", "postres_estado"], id);
+
+  const filtradas = getPostresCache().filter((c) => c.id !== id);
+  setPostresCache(filtradas);
+
   try {
     await getPostresRepository().eliminar(id);
-    if (usesRemoteData()) await loadPostresMerged();
+    if (usesRemoteData()) await loadOperativaMerged();
     return true;
   } catch {
-    if (eraPendiente && usesRemoteData()) await loadPostresMerged();
+    if (usesRemoteData()) await loadOperativaMerged();
     return eraPendiente;
   }
 }
 
 export async function eliminarPostresDelDia(fecha: string): Promise<number> {
   const n = await getPostresRepository().eliminarDelDia(fecha);
-  if (usesRemoteData()) await loadPostresMerged();
+  if (usesRemoteData()) await loadOperativaMerged();
   return n;
 }

@@ -1,6 +1,9 @@
 import { beforeEach, vi } from "vitest";
 import { resetDataLayerForTests } from "@/lib/data/data-layer";
-import { clearPendingSync } from "@/lib/sync/emergency-local";
+import { resetSyncDbForTests } from "@/lib/sync/idb";
+import { clearOutbox, hydrateOutboxMirror, resetOutboxMirrorForTests } from "@/lib/sync/outbox";
+
+import "fake-indexeddb/auto";
 
 export const STORAGE_KEYS = [
   "comandero-taberneta:comandas",
@@ -24,10 +27,13 @@ export function clearAllStorage(): void {
   }
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.unstubAllEnvs();
   vi.stubEnv("NEXT_PUBLIC_DATA_BACKEND", "local");
   clearAllStorage();
-  clearPendingSync();
   resetDataLayerForTests();
+  resetSyncDbForTests();
+  resetOutboxMirrorForTests();
+  await clearOutbox().catch(() => undefined);
+  await hydrateOutboxMirror().catch(() => undefined);
 });

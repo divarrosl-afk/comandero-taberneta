@@ -28,8 +28,8 @@ tests/
 
 Cada test arranca con:
 
-- `NEXT_PUBLIC_DATA_BACKEND=local`
-- `localStorage` vacío
+- `NEXT_PUBLIC_DATA_BACKEND=local` (tests de sync remoto hacen `vi.stubEnv(..., "supabase")` en su `beforeEach`)
+- `localStorage` vacío + IndexedDB reset (`fake-indexeddb`)
 - `resetDataLayerForTests()`
 
 ## Qué cubre
@@ -39,7 +39,7 @@ Cada test arranca con:
 | Permisos / roles | `unit/auth/permisos.test.ts`, `seguridad-permisos.test.ts` |
 | Auth local | `unit/auth/seguridad.test.ts`, `repos/auth-repository-local.test.ts` |
 | Backend selector | `unit/data/backend.test.ts` |
-| Sync | `unit/sync/*`, `integration/operativa-fetch.test.ts` |
+| Sync | `unit/sync/*`, `integration/operativa-fetch.test.ts`, `integration/operativa-read-offline.test.ts` |
 | Mesas | `unit/mesas/estado-mesa.test.ts` |
 | Catálogo | `unit/catalogo/search.test.ts` |
 | Tickets | `unit/format/format-ticket.test.ts` |
@@ -57,7 +57,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 
 ## Supabase en tests
 
-No se usa Supabase real. Los repositorios remotos se mockean con `vi.mock` (véase `retry-pending.test.ts`).
+No se usa Supabase real. Los repositorios remotos se mockean con `vi.mock` y `vi.stubEnv("NEXT_PUBLIC_DATA_BACKEND", "supabase")` en tests de sync (véase `sync-worker.test.ts`, `outbox-migrate.test.ts`).
 
 Para probar RLS en entorno real: ejecutar migraciones en Supabase y pruebas manuales multi-móvil (ver `docs/supabase/FASE2.md`).
 

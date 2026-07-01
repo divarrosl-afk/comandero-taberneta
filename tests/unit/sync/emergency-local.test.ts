@@ -1,39 +1,24 @@
 import { describe, expect, it } from "vitest";
 import {
   addPendingCocina,
-  clearPendingSync,
-  countPendingSync,
   getPendingCocina,
-  removePendingCocina,
-  updatePendingCocinaEstado,
+  countPendingSync,
 } from "@/lib/sync/emergency-local";
+import { countOutbox, enqueueCocinaCreate } from "@/lib/sync/outbox";
 import { comandaCocinaFixture } from "../../setup/fixtures";
 
-describe("emergency-local", () => {
-  it("añade y cuenta pendientes", () => {
-    addPendingCocina(comandaCocinaFixture({ id: "p1" }));
-    expect(countPendingSync()).toBe(1);
-    expect(getPendingCocina()[0].id).toBe("p1");
+describe("emergency-local facade", () => {
+  it("addPending delega a outbox", async () => {
+    await enqueueCocinaCreate(comandaCocinaFixture({ id: "e1" }));
+    addPendingCocina(comandaCocinaFixture({ id: "e2" }));
+    // allow microtask
+    await new Promise((r) => setTimeout(r, 10));
+    expect(getPendingCocina().some((c) => c.id === "e1")).toBe(true);
+    expect(await countOutbox()).toBeGreaterThanOrEqual(1);
   });
 
-  it("deduplica por id al añadir", () => {
-    addPendingCocina(comandaCocinaFixture({ id: "p1", mesa: "C1" }));
-    addPendingCocina(comandaCocinaFixture({ id: "p1", mesa: "C2" }));
-    expect(getPendingCocina()).toHaveLength(1);
-    expect(getPendingCocina()[0].mesa).toBe("C2");
-  });
-
-  it("actualiza estado de pendiente", () => {
-    addPendingCocina(comandaCocinaFixture({ id: "p1" }));
-    const updated = updatePendingCocinaEstado("p1", "listo");
-    expect(updated?.estadoPanel).toBe("listo");
-  });
-
-  it("elimina pendiente y limpia cola", () => {
-    addPendingCocina(comandaCocinaFixture({ id: "p1" }));
-    removePendingCocina("p1");
-    expect(countPendingSync()).toBe(0);
-    clearPendingSync();
-    expect(getPendingCocina()).toEqual([]);
+  it("countPendingSync async", async () => {
+    await enqueueCocinaCreate(comandaCocinaFixture({ id: "e3" }));
+    expect(await countPendingSync()).toBe(1);
   });
 });

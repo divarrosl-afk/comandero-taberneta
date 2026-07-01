@@ -115,6 +115,8 @@ npm run test:watch  # modo watch
 
 Ver [`docs/TESTING.md`](docs/TESTING.md).
 
+Ver [`docs/supabase/FASE-D-OFFLINE.md`](docs/supabase/FASE-D-OFFLINE.md) para offline serio (IndexedDB + reintento automático).
+
 ## Ejecución en desarrollo
 
 ```bash

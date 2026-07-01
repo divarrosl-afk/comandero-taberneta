@@ -77,12 +77,13 @@ WHERE tablename IN ('comandas_cocina', 'comandas_postres', 'audit_log');
 | Sin tests automatizados | Cobertura 0 | **B** |
 | Historial/cierre sin polling en vivo | Solo refresco al entrar/cambiar fecha | B / D |
 | Estado mesa manual no sincroniza | `mesas-estado` local | D |
-| Offline básico (cola manual) | Sin IndexedDB/outbox | D |
+| Offline básico (cola manual) | **Resuelto en D** — IndexedDB outbox + snapshot + worker | ~~D~~ |
 | `mesa_estados` en Supabase sin usar desde app | Preparado para fase futura | D |
 
 ---
 
 ## Qué sigue
 
-- **Fase B — Tests:** unitarios, repos, simulación multi-móvil.
-- **Fases C–E:** optimización, offline serio, impresora TCP 9100.
+- **Fase B — Tests:** unitarios, repos, simulación multi-móvil. ✓
+- **Fase D — Offline serio:** outbox IndexedDB, snapshot, reintento automático (ver `FASE-D-OFFLINE.md`).
+- **Fases C, E:** optimización, impresora TCP 9100.

@@ -3,17 +3,19 @@ import { getComandasRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
 import { getComandasLocales } from "@/lib/storage/comandas-local";
 import {
-  addPendingCocina,
-  getPendingCocina,
-  removePendingCocina,
-  updatePendingCocinaEstado,
-} from "@/lib/sync/emergency-local";
-import { mergeOperativa } from "@/lib/sync/merge-operativa";
-import { mergeOperativaSafe } from "@/lib/sync/merge-cache-safe";
+  enqueueCocinaCreate,
+  enqueueCocinaEstado,
+  removeOutboxForEntity,
+} from "@/lib/sync/outbox";
 import {
   getComandasCache,
   setComandasCache,
 } from "@/lib/sync/operativa-cache";
+import {
+  loadOperativaMerged,
+  patchCocinaInCache,
+} from "@/lib/sync/operativa-read";
+import { flushOutbox } from "@/lib/sync/sync-worker";
 import type { ComandaCocina } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
 
@@ -32,17 +34,9 @@ export function getComandasSync(): ComandaCocina[] {
   return getComandasCache();
 }
 
-async function loadComandasMerged(): Promise<ComandaCocina[]> {
-  const remoto = await getComandasRepository().getAll();
-  const merged = usesRemoteData()
-    ? mergeOperativa(remoto, getPendingCocina())
-    : remoto;
-  setComandasCache(merged);
-  return merged;
-}
-
 export async function fetchComandas(): Promise<ComandaCocina[]> {
-  return loadComandasMerged();
+  const { cocina } = await loadOperativaMerged();
+  return cocina;
 }
 
 export async function guardarComanda(
@@ -56,23 +50,23 @@ export async function guardarComanda(
     return { data: guardada, synced: true };
   }
 
+  const cached = getComandasCache();
+  setComandasCache([comanda, ...cached.filter((c) => c.id !== comanda.id)]);
+
   try {
     const meta = await buildComandaPersistMeta(
       comanda.mesa,
       opts?.camareroUsername,
     );
     const guardada = await repo.crear(comanda, meta);
-    removePendingCocina(comanda.id);
-    await loadComandasMerged();
+    await removeOutboxForEntity(["cocina_create", "cocina_estado"], comanda.id);
+    await loadOperativaMerged();
+    void flushOutbox();
     return { data: guardada, synced: true };
   } catch (e) {
     const error = e instanceof Error ? e.message : "Error de sincronización";
-    addPendingCocina(comanda);
-    await mergeOperativaSafe(
-      () => getComandasRepository().getAll(),
-      getPendingCocina,
-      setComandasCache,
-    );
+    await enqueueCocinaCreate(comanda);
+    void flushOutbox();
     return { data: comanda, synced: false, error };
   }
 }
@@ -81,41 +75,52 @@ export async function actualizarEstadoComanda(
   id: string,
   estado: EstadoPanel,
 ): Promise<ComandaCocina | null> {
-  const actualizada = await getComandasRepository().actualizarEstado(id, estado);
-  if (actualizada) {
-    removePendingCocina(id);
-    if (usesRemoteData()) await loadComandasMerged();
-    return actualizada;
+  if (!usesRemoteData()) {
+    return getComandasRepository().actualizarEstado(id, estado);
   }
 
-  const pendiente = updatePendingCocinaEstado(id, estado);
-  if (pendiente && usesRemoteData()) {
-    await mergeOperativaSafe(
-      () => getComandasRepository().getAll(),
-      getPendingCocina,
-      setComandasCache,
+  const patched = patchCocinaInCache(id, { estadoPanel: estado });
+  if (!patched) return null;
+
+  try {
+    const actualizada = await getComandasRepository().actualizarEstado(
+      id,
+      estado,
     );
-    return pendiente;
+    if (actualizada) {
+      await removeOutboxForEntity(["cocina_estado"], id);
+      await loadOperativaMerged();
+      void flushOutbox();
+      return actualizada;
+    }
+  } catch {
+    // offline — encolar
   }
 
-  return null;
+  await enqueueCocinaEstado(id, estado, patched);
+  void flushOutbox();
+  return patchCocinaInCache(id, { estadoPanel: estado });
 }
 
 export async function eliminarComanda(id: string): Promise<boolean> {
-  const eraPendiente = getPendingCocina().some((c) => c.id === id);
-  removePendingCocina(id);
+  const eraPendiente = getComandasCache().some((c) => c.id === id);
+  await removeOutboxForEntity(["cocina_create", "cocina_estado"], id);
+
+  const filtradas = getComandasCache().filter((c) => c.id !== id);
+  setComandasCache(filtradas);
+
   try {
     await getComandasRepository().eliminar(id);
-    if (usesRemoteData()) await loadComandasMerged();
+    if (usesRemoteData()) await loadOperativaMerged();
     return true;
   } catch {
-    if (eraPendiente && usesRemoteData()) await loadComandasMerged();
+    if (usesRemoteData()) await loadOperativaMerged();
     return eraPendiente;
   }
 }
 
 export async function eliminarComandasDelDia(fecha: string): Promise<number> {
   const n = await getComandasRepository().eliminarDelDia(fecha);
-  if (usesRemoteData()) await loadComandasMerged();
+  if (usesRemoteData()) await loadOperativaMerged();
   return n;
 }
