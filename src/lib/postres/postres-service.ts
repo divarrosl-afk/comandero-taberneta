@@ -10,6 +10,7 @@ import {
   updatePendingPostresEstado,
 } from "@/lib/sync/emergency-local";
 import { mergeOperativa } from "@/lib/sync/merge-operativa";
+import { mergeOperativaSafe } from "@/lib/sync/merge-cache-safe";
 import {
   getPostresCache,
   setPostresCache,
@@ -62,8 +63,11 @@ export async function guardarPostres(
   } catch (e) {
     const error = e instanceof Error ? e.message : "Error de sincronización";
     addPendingPostres(comanda);
-    const merged = mergeOperativa(await repo.getAll(), getPendingPostres());
-    setPostresCache(merged);
+    await mergeOperativaSafe(
+      () => getPostresRepository().getAll(),
+      getPendingPostres,
+      setPostresCache,
+    );
     return { data: comanda, synced: false, error };
   }
 }
@@ -81,11 +85,11 @@ export async function actualizarEstadoPostres(
 
   const pendiente = updatePendingPostresEstado(id, estado);
   if (pendiente && usesRemoteData()) {
-    const merged = mergeOperativa(
-      await getPostresRepository().getAll(),
-      getPendingPostres(),
+    await mergeOperativaSafe(
+      () => getPostresRepository().getAll(),
+      getPendingPostres,
+      setPostresCache,
     );
-    setPostresCache(merged);
     return pendiente;
   }
 

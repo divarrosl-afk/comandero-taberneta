@@ -22,7 +22,22 @@ async function postPrintRequest(
   const payload: PrintTicketRequest = { ...request, impresora };
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (usesRemoteData()) {
+  const isAppApi = endpoint.startsWith("/api/");
+  if (usesRemoteData() && isAppApi) {
+    const token = await getSupabaseAccessToken();
+    if (!token) {
+      return {
+        ok: false,
+        mode,
+        destino: request.destino,
+        tipo: request.tipo,
+        message: "Sesión requerida para imprimir — inicia sesión de nuevo",
+        simulated: false,
+        timestamp,
+      };
+    }
+    headers.Authorization = `Bearer ${token}`;
+  } else if (usesRemoteData()) {
     const token = await getSupabaseAccessToken();
     if (token) headers.Authorization = `Bearer ${token}`;
   }

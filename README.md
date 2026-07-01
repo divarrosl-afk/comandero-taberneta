@@ -71,7 +71,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...   # solo servidor — nunca NEXT_PUBLIC_
 
 **Importante (Fase 2):** comandas y postres se sincronizan entre móviles (Realtime + polling 5 s). Si falla la red al enviar, se guarda en cola local de emergencia con banner y botón «Reintentar sincronización». Ver [`docs/supabase/FASE2.md`](docs/supabase/FASE2.md).
 
-**Hardening (Fase A):** tras Fase 2, ejecutar `supabase/migrations/20250702_rls_hardening.sql`. Ver [`docs/supabase/HARDENING.md`](docs/supabase/HARDENING.md).
+**Hardening (Fase A):** ejecutar migraciones en orden — ver [`docs/supabase/HARDENING.md`](docs/supabase/HARDENING.md) (incluye `20250702_rls_hardening.sql` y `20250703_drop_ct_is_camarero.sql`).
 
 **Realtime** (opcional pero recomendado):
 
