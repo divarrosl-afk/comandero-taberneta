@@ -32,6 +32,10 @@ export function puedeEditarCarta(rol: Rol): boolean {
   return esAdmin(rol);
 }
 
+export function puedeAccederCierre(rol: Rol): boolean {
+  return esAdmin(rol);
+}
+
 export function puedeBorrarHistorial(rol: Rol): boolean {
   return esAdmin(rol);
 }
