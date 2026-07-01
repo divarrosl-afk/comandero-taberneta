@@ -14,7 +14,13 @@ export function cargarBorradorPostres(): PostresFormState | null {
   try {
     const raw = localStorage.getItem(BORRADOR_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as PostresFormState;
+    const form = JSON.parse(raw) as PostresFormState & {
+      mesa?: string | number | null;
+    };
+    if (form.mesa !== null && form.mesa !== undefined && typeof form.mesa === "number") {
+      form.mesa = String(form.mesa);
+    }
+    return form;
   } catch {
     return null;
   }

@@ -7,6 +7,7 @@ import { PrintStatusBanner } from "@/components/impresion/PrintStatusBanner";
 import { PostresTicketPreview } from "@/components/postres/nueva/PostresTicketPreview";
 import { imprimirComandaPostres } from "@/modules/impresion-wifi";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi";
+import { getNombreMesa } from "@/lib/storage/mesas";
 import type { ComandaPostres } from "@/types/postres";
 
 interface PostresEnviadaViewProps {
@@ -55,7 +56,7 @@ export function PostresEnviadaView({
           {PRINT_MESSAGES.enviada}
         </p>
         <h1 className="mt-2 text-3xl font-bold text-primary">
-          MESA {comanda.mesa}
+          MESA {getNombreMesa(String(comanda.mesa))}
         </h1>
         <p className="mt-1 text-muted">
           Guardado en este dispositivo · modo local

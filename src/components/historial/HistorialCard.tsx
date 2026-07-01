@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getNombreMesa } from "@/lib/storage/mesas";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EstadoPanelBadge } from "@/components/panel/EstadoPanelBadge";
@@ -37,8 +38,8 @@ export function HistorialCard({
           onClick={() => setExpandido((v) => !v)}
           className="flex w-full items-center gap-3 p-4 text-left"
         >
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-xl font-bold text-primary-foreground">
-            {comanda.mesa}
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
+            {getNombreMesa(String(comanda.mesa))}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -87,7 +88,7 @@ export function HistorialCard({
       <ConfirmDialog
         open={confirmDelete}
         title="¿Eliminar del historial?"
-        message={`Se eliminará la comanda de MESA ${comanda.mesa} (${tipoLabel(entrada.tipo)}).`}
+        message={`Se eliminará la comanda de ${getNombreMesa(String(comanda.mesa))} (${tipoLabel(entrada.tipo)}).`}
         confirmLabel="Eliminar"
         onConfirm={() => {
           onEliminar();

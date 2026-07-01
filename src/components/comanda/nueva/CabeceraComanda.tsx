@@ -1,14 +1,16 @@
 "use client";
 
 import { getCamareroNombre } from "@/data/camareros";
+import { getNombreMesa } from "@/lib/storage/mesas";
 
 interface CabeceraComandaProps {
-  mesa: number | null;
+  mesa: string | null;
   camareroId: string | null;
 }
 
 export function CabeceraComanda({ mesa, camareroId }: CabeceraComandaProps) {
   const camarero = getCamareroNombre(camareroId);
+  const mesaLabel = getNombreMesa(mesa);
 
   if (!mesa && !camarero) return null;
 
@@ -18,7 +20,7 @@ export function CabeceraComanda({ mesa, camareroId }: CabeceraComandaProps) {
         {mesa ? (
           <div className="rounded-xl bg-primary px-4 py-2 text-primary-foreground">
             <span className="text-xs font-medium uppercase opacity-80">Mesa</span>
-            <p className="text-2xl font-bold leading-none">{mesa}</p>
+            <p className="text-2xl font-bold leading-none">{mesaLabel}</p>
           </div>
         ) : (
           <div className="rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-2 text-amber-800">

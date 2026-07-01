@@ -17,6 +17,7 @@ import {
   puedeAccederConfigMenuDia,
   puedeAccederCierre,
   puedeAdministrarUsuarios,
+  puedeConfigurarMesas,
   puedeBorrarHistorial,
   puedeCambiarCamarero,
 } from "@/lib/auth/permisos";
@@ -33,6 +34,7 @@ interface AuthContextValue {
   puedeConfigMenuDia: boolean;
   puedeCierre: boolean;
   puedeAdminUsuarios: boolean;
+  puedeConfigMesas: boolean;
   puedeConfigImpresora: boolean;
   puedeBorrarHistorial: boolean;
   puedeCambiarCamarero: boolean;
@@ -80,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       puedeAdminUsuarios: sesion
         ? puedeAdministrarUsuarios(sesion.rol)
         : false,
+      puedeConfigMesas: sesion ? puedeConfigurarMesas(sesion.rol) : false,
       puedeConfigImpresora: sesion
         ? puedeAccederConfigImpresora(sesion.rol)
         : false,

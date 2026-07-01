@@ -7,7 +7,7 @@ export type FiltroEstadoCierre = "todos" | EstadoPanel;
 export interface FiltrosCierre {
   fecha: string;
   camarero: string;
-  mesa: number | null;
+  mesa: string | null;
   tipo: FiltroTipoCierre;
   estado: FiltroEstadoCierre;
 }
@@ -23,7 +23,7 @@ export interface ConteoCamarero {
 }
 
 export interface ConteoMesa {
-  mesa: number;
+  mesa: string;
   cantidad: number;
 }
 
@@ -42,7 +42,7 @@ export interface ResumenCierre {
 export interface EntradaCierre {
   tipo: HistorialTipo;
   id: string;
-  mesa: number;
+  mesa: string;
   camarero: string;
   creadaEn: string;
   estadoPanel: EstadoPanel;

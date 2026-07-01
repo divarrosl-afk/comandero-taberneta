@@ -13,7 +13,11 @@ export function cargarBorrador(): ComandaFormState | null {
   try {
     const raw = localStorage.getItem(BORRADOR_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as ComandaFormState;
+    const form = JSON.parse(raw) as ComandaFormState & { mesa?: string | number | null };
+    if (form.mesa !== null && form.mesa !== undefined && typeof form.mesa === "number") {
+      form.mesa = String(form.mesa);
+    }
+    return form;
   } catch {
     return null;
   }

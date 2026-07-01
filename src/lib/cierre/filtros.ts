@@ -95,10 +95,10 @@ export function getCamarerosDelDia(fecha: string): string[] {
   return [...set].sort((a, b) => a.localeCompare(b, "es"));
 }
 
-export function getMesasDelDia(fecha: string): number[] {
-  const set = new Set<number>();
+export function getMesasDelDia(fecha: string): string[] {
+  const set = new Set<string>();
   for (const e of getEntradasDelDia(fecha)) {
     set.add(e.mesa);
   }
-  return [...set].sort((a, b) => a - b);
+  return [...set].sort((a, b) => a.localeCompare(b, "es"));
 }

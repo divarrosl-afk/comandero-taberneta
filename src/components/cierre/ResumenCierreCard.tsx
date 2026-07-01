@@ -1,6 +1,7 @@
 "use client";
 
 import { getEstadoPanelLabel } from "@/types/panel";
+import { getNombreMesa } from "@/lib/storage/mesas";
 import type { ResumenCierre } from "@/types/cierre";
 
 interface ResumenCierreCardProps {
@@ -113,7 +114,7 @@ export function ResumenCierreCard({ resumen }: ResumenCierreCardProps) {
                 key={m.mesa}
                 className="rounded-full border border-border bg-background px-3 py-1 text-sm"
               >
-                M{m.mesa}: <strong>{m.cantidad}</strong>
+                {getNombreMesa(m.mesa)}: <strong>{m.cantidad}</strong>
               </span>
             ))}
           </div>

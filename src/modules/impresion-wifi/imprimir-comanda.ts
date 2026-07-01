@@ -74,7 +74,7 @@ export async function imprimirComandaPostres(
 export async function reimprimirTicket(
   ticket: string,
   destino: "cocina" | "barra" | "postres",
-  meta?: { comandaId?: string; mesa?: number; camarero?: string },
+  meta?: { comandaId?: string; mesa?: string; camarero?: string },
 ): Promise<PrintBatchResult> {
   const result = await printTicket(ticket, destino, {
     tipo: "reimpresion",

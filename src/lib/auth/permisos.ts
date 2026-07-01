@@ -36,6 +36,14 @@ export function puedeAccederCierre(rol: Rol): boolean {
   return esAdmin(rol);
 }
 
+export function puedeConfigurarMesas(rol: Rol): boolean {
+  return esAdmin(rol);
+}
+
+export function puedeVerMesas(rol: Rol): boolean {
+  return rol === "ADMIN" || rol === "CAMARERO";
+}
+
 export function puedeAdministrarUsuarios(rol: Rol): boolean {
   return esAdmin(rol);
 }

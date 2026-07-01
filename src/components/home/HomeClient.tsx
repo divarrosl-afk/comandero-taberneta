@@ -6,6 +6,13 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const accionesBase = [
   {
+    titulo: "Mesas",
+    descripcion: "Mapa de mesas por zonas",
+    href: "/mesas",
+    disponible: true,
+    adminOnly: false,
+  },
+  {
     titulo: "Nueva comanda",
     descripcion: "Crear pedido de cocina y barra",
     href: "/comanda/nueva",
@@ -32,6 +39,14 @@ const accionesBase = [
     href: "/historial",
     disponible: true,
     adminOnly: false,
+  },
+  {
+    titulo: "Configurar mesas",
+    descripcion: "Zonas, códigos y mesas B en Rambla",
+    href: "/configuracion/mesas",
+    disponible: true,
+    adminOnly: true,
+    permiso: "mesas" as const,
   },
   {
     titulo: "Usuarios",
@@ -83,10 +98,12 @@ export function HomeClient() {
     puedeConfigImpresora,
     puedeCierre,
     puedeAdminUsuarios,
+    puedeConfigMesas,
   } = useAuth();
 
   const acciones = accionesBase.filter((accion) => {
     if (!accion.adminOnly) return true;
+    if (accion.permiso === "mesas") return puedeConfigMesas;
     if (accion.permiso === "usuarios") return puedeAdminUsuarios;
     if (accion.permiso === "cierre") return puedeCierre;
     if (accion.permiso === "carta") return puedeConfigCarta;

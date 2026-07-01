@@ -1,6 +1,7 @@
 "use client";
 
 import { formatFechaHora } from "@/lib/historial/items";
+import { getNombreMesa } from "@/lib/storage/mesas";
 import { getEstadoPanelLabel } from "@/types/panel";
 import type { EntradaCierre } from "@/types/cierre";
 
@@ -29,7 +30,7 @@ export function ListaEntradasCierre({ entradas }: ListaEntradasCierreProps) {
             className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
-              {e.mesa}
+              {getNombreMesa(e.mesa)}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
