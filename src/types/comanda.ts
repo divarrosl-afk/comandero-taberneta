@@ -85,19 +85,6 @@ export interface ComandaCocina {
   enviada: boolean;
 }
 
-export type EstadoPostre = "sin_postre" | "pendiente" | "marcado";
-
-export interface ComandaPostres {
-  id: string;
-  mesa: number;
-  postres: string[];
-  estadoX: EstadoPostre;
-  clH: string;
-  observaciones: string;
-  creadaEn: string;
-  enviada: boolean;
-}
-
 export interface Camarero {
   id: string;
   nombre: string;
