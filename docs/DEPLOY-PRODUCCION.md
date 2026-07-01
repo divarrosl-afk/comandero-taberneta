@@ -16,27 +16,35 @@ Móvil (HTTPS)  →  Vercel /api/impresion  →  Supabase print_jobs
 
 ## Automatización (recomendado)
 
-Con los secretos configurados en GitHub (**Settings → Secrets → Actions**):
+### Opción A — Un comando (local o Cloud Agent con secretos)
+
+```bash
+SUPABASE_DB_URL="postgresql://postgres.vhlzbfrzmqljngwegbde:[PASSWORD]@..." \
+SUPABASE_SERVICE_ROLE_KEY="eyJ..." \
+VERCEL_TOKEN="..." \
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_..." \
+npm run setup:all
+```
+
+Hace: bootstrap DB → (opcional seed) → Vercel env + redeploy → health check → `print-server/.env`.
+
+### Opción B — SQL manual + Vercel
+
+1. Pegar `supabase/bootstrap-all.sql` en Supabase SQL Editor
+2. Variables Vercel (ver abajo) + Redeploy
+
+### Opción C — GitHub Actions
+
+Con secretos en **Settings → Secrets → Actions**, ejecutar **Deploy cloud print**.
 
 | Secreto | Uso |
 |---------|-----|
-| `SUPABASE_DB_URL` | Migración `print_jobs` |
+| `SUPABASE_DB_URL` | Bootstrap DB |
 | `VERCEL_TOKEN` | Variables + redeploy |
-| `VERCEL_PROJECT_ID` | Proyecto Vercel |
-| `NEXT_PUBLIC_SUPABASE_URL` | Vercel env |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Vercel env |
-| `SUPABASE_SERVICE_ROLE_KEY` | Vercel env |
-| `NEXT_PUBLIC_RESTAURANTE_ID` | Vercel env |
-
-**GitHub Actions → Deploy cloud print → Run workflow**
-
-O en local:
-
-```bash
-npm run deploy:cloud-print
-```
-
-(mismas variables de entorno que arriba)
+| `SUPABASE_SERVICE_ROLE_KEY` | Vercel + cola print_jobs |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://vhlzbfrzmqljngwegbde.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` o `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Cliente Supabase |
+| `NEXT_PUBLIC_RESTAURANTE_ID` | `b1c2d3e4-f5a6-4789-a012-3456789abcde` |
 
 ---
 
