@@ -19,6 +19,7 @@ interface ComandaEditViewProps {
   form: ComandaFormActions["form"];
   borradorRecuperado: boolean;
   esValido: boolean;
+  puedeCambiarCamarero: boolean;
   onSetMesa: ComandaFormActions["setMesa"];
   onSetCamarero: ComandaFormActions["setCamarero"];
   onUpdatePlato: ComandaFormActions["updatePlato"];
@@ -48,6 +49,7 @@ export function ComandaEditView({
   form,
   borradorRecuperado,
   esValido,
+  puedeCambiarCamarero,
   onSetMesa,
   onSetCamarero,
   onUpdatePlato,
@@ -105,6 +107,7 @@ export function ComandaEditView({
             <CamareroSelector
               camareroSeleccionado={form.camareroId}
               onSelect={onSetCamarero}
+              soloLectura={!puedeCambiarCamarero}
             />
           </div>
         )}

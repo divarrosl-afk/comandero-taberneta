@@ -31,7 +31,22 @@ const estadoInicial: PostresFormState = {
 
 const DEBOUNCE_MS = 400;
 
-export function usePostresForm() {
+function aplicarCamareroFijo(
+  form: PostresFormState,
+  camareroFijo: string | null | undefined,
+): PostresFormState {
+  if (!camareroFijo) return form;
+  return { ...form, camareroId: camareroFijo };
+}
+
+function estadoConCamarero(
+  camareroFijo: string | null | undefined,
+): PostresFormState {
+  if (!camareroFijo) return estadoInicial;
+  return { ...estadoInicial, camareroId: camareroFijo };
+}
+
+export function usePostresForm(camareroFijo?: string | null) {
   const [form, setForm] = useState<PostresFormState>(estadoInicial);
   const [step, setStep] = useState<PostresFormStep>("editar");
   const [borradorRecuperado, setBorradorRecuperado] = useState(false);
@@ -43,10 +58,12 @@ export function usePostresForm() {
 
     const borrador = cargarBorradorPostres();
     if (borrador && borradorPostresTieneDatos(borrador)) {
-      setForm(borrador);
+      setForm(aplicarCamareroFijo(borrador, camareroFijo));
       setBorradorRecuperado(true);
+    } else if (camareroFijo) {
+      setForm(estadoConCamarero(camareroFijo));
     }
-  }, []);
+  }, [camareroFijo]);
 
   useEffect(() => {
     if (!inicializado.current) return;
@@ -188,16 +205,16 @@ export function usePostresForm() {
 
   const reset = useCallback(() => {
     limpiarBorradorPostres();
-    setForm(estadoInicial);
+    setForm(estadoConCamarero(camareroFijo));
     setStep("editar");
     setBorradorRecuperado(false);
-  }, []);
+  }, [camareroFijo]);
 
   const descartarBorrador = useCallback(() => {
     limpiarBorradorPostres();
-    setForm(estadoInicial);
+    setForm(estadoConCamarero(camareroFijo));
     setBorradorRecuperado(false);
-  }, []);
+  }, [camareroFijo]);
 
   const esValido = formPostresEsValido(form);
 

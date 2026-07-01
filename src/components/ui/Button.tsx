@@ -33,12 +33,13 @@ export function Button({
   size = "md",
   fullWidth = false,
   className = "",
+  type = "button",
   children,
   ...props
 }: ButtonProps) {
   return (
     <button
-      type="button"
+      type={type}
       className={[
         "inline-flex items-center justify-center rounded-xl font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],

@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/Button";
 import { HistorialCard } from "@/components/historial/HistorialCard";
+import { useAuth } from "@/contexts/AuthContext";
 import { useHistorial } from "@/hooks/useHistorial";
 import type { HistorialTipo } from "@/types/panel";
 
 type FiltroTipo = "todos" | HistorialTipo;
 
 export function HistorialClient() {
+  const { puedeBorrarHistorial } = useAuth();
   const { entradas, recargar, eliminar, reimprimir, reimpresionMsg, reimpresionError } =
     useHistorial();
   const [filtro, setFiltro] = useState<FiltroTipo>("todos");
@@ -20,7 +23,8 @@ export function HistorialClient() {
       : entradas.filter((e) => e.tipo === filtro);
 
   return (
-    <main className="mx-auto min-h-dvh max-w-lg px-4 py-4">
+    <RequireAuth>
+      <main className="mx-auto min-h-dvh max-w-lg px-4 py-4">
       <header className="mb-4">
         <Link
           href="/"
@@ -90,10 +94,12 @@ export function HistorialClient() {
               entrada={entrada}
               onReimprimir={() => reimprimir(entrada)}
               onEliminar={() => eliminar(entrada)}
+              puedeEliminar={puedeBorrarHistorial}
             />
           ))}
         </div>
       )}
-    </main>
+      </main>
+    </RequireAuth>
   );
 }

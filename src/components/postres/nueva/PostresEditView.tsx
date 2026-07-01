@@ -28,6 +28,7 @@ interface PostresEditViewProps {
   form: PostresFormActions["form"];
   borradorRecuperado: boolean;
   esValido: boolean;
+  puedeCambiarCamarero: boolean;
   onSetMesa: PostresFormActions["setMesa"];
   onSetCamarero: PostresFormActions["setCamarero"];
   onUpdatePostre: PostresFormActions["updatePostre"];
@@ -56,6 +57,7 @@ export function PostresEditView({
   form,
   borradorRecuperado,
   esValido,
+  puedeCambiarCamarero,
   onSetMesa,
   onSetCamarero,
   onUpdatePostre,
@@ -132,6 +134,7 @@ export function PostresEditView({
             <CamareroSelector
               camareroSeleccionado={form.camareroId}
               onSelect={onSetCamarero}
+              soloLectura={!puedeCambiarCamarero}
             />
           </div>
         )}
