@@ -1,8 +1,9 @@
+import { createId } from "@/lib/id/create-id";
 import type { PlatoFormItem } from "@/types/comanda";
 
 export function crearPlatoVacio(): PlatoFormItem {
   return {
-    id: crypto.randomUUID(),
+    id: createId(),
     nombre: "",
     cantidad: 1,
     modificaciones: [],
@@ -13,7 +14,7 @@ export function crearPlatoVacio(): PlatoFormItem {
 export function duplicarPlato(plato: PlatoFormItem): PlatoFormItem {
   return {
     ...plato,
-    id: crypto.randomUUID(),
+    id: createId(),
     salsas: plato.salsas.map((s) => ({ ...s })),
     modificaciones: [...plato.modificaciones],
   };

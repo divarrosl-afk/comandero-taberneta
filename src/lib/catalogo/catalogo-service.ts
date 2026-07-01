@@ -1,4 +1,5 @@
 import { migrarProducto } from "@/lib/carta/migrate-producto";
+import { createId } from "@/lib/id/create-id";
 import { getCatalogoRepository } from "@/lib/data/data-layer";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 
@@ -6,7 +7,7 @@ export function crearProductoVacio(
   seccion: SeccionCatalogo,
 ): ProductoCatalogo {
   return migrarProducto({
-    id: crypto.randomUUID(),
+    id: createId(),
     nombre: "",
     seccion,
     tipo: seccion === "extras" || seccion === "salsas" ? "carta" : "ambos",

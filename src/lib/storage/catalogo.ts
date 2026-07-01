@@ -1,5 +1,6 @@
 import { crearCatalogoDefault } from "@/data/catalogo-default";
 import { migrarProducto } from "@/lib/carta/migrate-producto";
+import { createId } from "@/lib/id/create-id";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 
 const STORAGE_KEY = "comandero-taberneta:catalogo";
@@ -70,7 +71,7 @@ export function crearProductoVacio(
   seccion: SeccionCatalogo,
 ): ProductoCatalogo {
   return normalizar({
-    id: crypto.randomUUID(),
+    id: createId(),
     nombre: "",
     seccion,
     tipo: seccion === "extras" || seccion === "salsas" ? "carta" : "ambos",

@@ -1,3 +1,4 @@
+import { createId } from "@/lib/id/create-id";
 import type { ProductoCatalogo, SeccionCatalogo, TipoProducto } from "@/types/catalogo";
 
 function inferirTipo(
@@ -29,7 +30,7 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
   const tipo = inferirTipo(seccion, suplemento, raw.tipo);
 
   return {
-    id: raw.id ?? crypto.randomUUID(),
+    id: raw.id ?? createId(),
     nombre: (raw.nombre ?? "").trim(),
     nombreCorto: raw.nombreCorto?.trim() || undefined,
     seccion,

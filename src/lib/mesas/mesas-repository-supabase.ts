@@ -1,4 +1,5 @@
 import { crearMesasDefault } from "@/data/mesas-default";
+import { createId } from "@/lib/id/create-id";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { mesaToRow, rowToMesa, type DbMesa } from "@/lib/supabase/mappers";
@@ -48,7 +49,7 @@ export const mesasRepositorySupabase: MesasRepository = {
 
     const nueva: MesaConfig = {
       ...mesa,
-      id: mesa.id || crypto.randomUUID(),
+      id: mesa.id || createId(),
     };
     const row = mesaToRow(nueva, env.restauranteId);
     const { data, error } = await client
@@ -96,7 +97,7 @@ export const mesasRepositorySupabase: MesasRepository = {
 
     const defaults = crearMesasDefault().map((m) => ({
       ...m,
-      id: crypto.randomUUID(),
+      id: createId(),
     }));
 
     const codigoToId = new Map(defaults.map((m) => [m.codigo, m.id]));
