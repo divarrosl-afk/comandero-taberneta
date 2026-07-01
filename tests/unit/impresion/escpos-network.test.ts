@@ -4,14 +4,19 @@ import { EventEmitter } from "node:events";
 function createMockSocket() {
   const socket = Object.assign(new EventEmitter(), {
     setTimeout: vi.fn(),
-    write: vi.fn((buf: Buffer, cb: (err?: Error) => void) => {
-      cb();
-      queueMicrotask(() => socket.emit("close"));
+    setNoDelay: vi.fn(),
+    write: vi.fn((buf: Buffer, cb?: (err?: Error) => void) => {
+      cb?.();
+      return true;
     }),
     end: vi.fn(() => {
       queueMicrotask(() => socket.emit("close"));
     }),
     destroy: vi.fn(),
+    once: vi.fn((event: string, handler: () => void) => {
+      if (event === "drain") queueMicrotask(handler);
+      return socket;
+    }),
   });
   return socket;
 }
@@ -37,15 +42,17 @@ describe("escpos-network", () => {
     vi.clearAllMocks();
   });
 
-  it("testPrinter devuelve success tras socket conectado", async () => {
+  it("testPrinter devuelve success tras envío completo", async () => {
     const result = await testPrinter("192.168.1.100", 9100);
     expect(result.success).toBe(true);
+    expect(mockSocket.setNoDelay).toHaveBeenCalledWith(true);
     expect(mockSocket.write).toHaveBeenCalled();
+    expect(mockSocket.end).toHaveBeenCalled();
   });
 
   it("probePrinter no devuelve success si write falla", async () => {
-    mockSocket.write = vi.fn((_buf: Buffer, cb: (err?: Error) => void) => {
-      cb(new Error("ECONNREFUSED"));
+    mockSocket.write = vi.fn(() => {
+      throw new Error("ECONNREFUSED");
     }) as typeof mockSocket.write;
 
     const result = await probePrinter("192.168.1.100", 9100);

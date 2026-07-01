@@ -1,18 +1,37 @@
 import type { AnchoPapel } from "@/types/impresora";
+import { encodeToCp858 } from "@/lib/impresion/escpos-cp858";
 import {
-  CMD_ALIGN_CENTER,
+  CHARS_PER_LINE_80MM,
   CMD_ALIGN_LEFT,
-  CMD_CUT,
+  CMD_CODEPAGE_CP858,
   CMD_INIT,
   CMD_LF,
   cutPaper,
+  feedAndCutPartial,
 } from "@/lib/impresion/escpos-commands";
 
+export const ADVANCED_TEST_TICKET_TEXT = `--------------------------------
+LA TABERNETA
+TEST ESC/POS
+
+Mesa C1
+
+2 x Coca-Cola
+
+1 x Hamburguesa Angus
+  - Sin cebolla
+  - Extra queso
+
+TOTAL ............ 24,50 €
+
+Gracias
+--------------------------------`;
+
 export function charsPerLine(anchoPapel: AnchoPapel = "80mm"): number {
-  return anchoPapel === "58mm" ? 32 : 48;
+  return anchoPapel === "58mm" ? 32 : CHARS_PER_LINE_80MM;
 }
 
-function wrapLine(line: string, width: number): string[] {
+export function wrapLine(line: string, width: number): string[] {
   if (line.length <= width) return [line];
   const parts: string[] = [];
   let rest = line;
@@ -26,83 +45,142 @@ function wrapLine(line: string, width: number): string[] {
   return parts;
 }
 
-function appendText(chunks: Buffer[], text: string): void {
-  for (const rawLine of text.split(/\r?\n/)) {
-    for (const line of wrapLine(rawLine, 48)) {
-      chunks.push(Buffer.from(line, "latin1"));
-      chunks.push(CMD_LF);
-    }
+function centerLine(line: string, width: number): string {
+  const trimmed = line.trim();
+  if (!trimmed) return "";
+  if (trimmed.length >= width) return trimmed.slice(0, width);
+  const pad = Math.floor((width - trimmed.length) / 2);
+  return `${" ".repeat(pad)}${trimmed}`;
+}
+
+function normalizeSeparator(line: string, width: number): string {
+  const t = line.trim();
+  if (/^[-=]+$/.test(t)) {
+    return "-".repeat(width);
+  }
+  return line;
+}
+
+function isCenteredLine(line: string, index: number): boolean {
+  const t = line.trim();
+  if (!t) return false;
+  if (index === 0) return true;
+  if (/^MESA\s/i.test(t)) return true;
+  if (/TABERNETA/i.test(t)) return true;
+  if (/^TEST ESC\/POS$/i.test(t)) return true;
+  if (/^Gracias$/i.test(t)) return true;
+  return false;
+}
+
+function appendLine(chunks: Buffer[], line: string, width: number): void {
+  for (const wrapped of wrapLine(line, width)) {
+    chunks.push(encodeToCp858(wrapped));
+    chunks.push(CMD_LF);
   }
 }
 
-/** Texto plano → buffer ESC/POS con corte. */
-export function encodePlainTicket(
-  text: string,
-  anchoPapel: AnchoPapel = "80mm",
-): Buffer {
-  const width = charsPerLine(anchoPapel);
-  const chunks: Buffer[] = [CMD_INIT];
-
-  for (const rawLine of text.split(/\r?\n/)) {
-    for (const line of wrapLine(rawLine, width)) {
-      chunks.push(Buffer.from(line, "latin1"));
-      chunks.push(CMD_LF);
-    }
-  }
-
-  chunks.push(CMD_LF, CMD_LF, CMD_LF, CMD_CUT);
-  return Buffer.concat(chunks);
+function ticketPreamble(chunks: Buffer[]): void {
+  chunks.push(CMD_INIT, CMD_CODEPAGE_CP858, CMD_ALIGN_LEFT);
 }
 
-/** Ticket de prueba (centrado + corte). */
-export function buildTestTicketBuffer(): Buffer {
-  const chunks: Buffer[] = [CMD_INIT, CMD_ALIGN_CENTER];
-  appendText(chunks, "TEST IMPRESORA\n\nLA TABERNETA\n\nOK\n");
-  chunks.push(CMD_ALIGN_LEFT, CMD_LF, CMD_LF, CMD_CUT);
-  return Buffer.concat(chunks);
+function ticketEpilogue(chunks: Buffer[]): void {
+  chunks.push(CMD_LF, CMD_LF, CMD_LF, cutPaper());
 }
 
-/** Formatea ticket operativo (cabecera centrada + cuerpo). */
-export function buildTicketBuffer(
+/** Construye buffer ESC/POS a partir de líneas de texto plano. */
+export function buildEscPosBuffer(
   ticketText: string,
   anchoPapel: AnchoPapel = "80mm",
 ): Buffer {
   const width = charsPerLine(anchoPapel);
+  const chunks: Buffer[] = [];
+  ticketPreamble(chunks);
+
   const lines = ticketText.split(/\r?\n/);
-  const chunks: Buffer[] = [CMD_INIT];
-
-  const separator = "=".repeat(Math.min(width, 32));
-
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const isHeader =
-      i === 0 ||
-      line.startsWith("MESA") ||
-      line.startsWith("Mesa") ||
-      line.includes("TABERNETA");
-
-    if (isHeader && line.trim()) {
-      chunks.push(CMD_ALIGN_CENTER);
-      for (const wrapped of wrapLine(line, width)) {
-        chunks.push(Buffer.from(wrapped, "latin1"));
-        chunks.push(CMD_LF);
-      }
-      chunks.push(CMD_ALIGN_LEFT);
-      continue;
-    }
-
-    if (line.trim() === separator || line.trim().match(/^[-=]+$/)) {
-      chunks.push(Buffer.from(separator, "latin1"));
+    const raw = lines[i];
+    if (!raw.trim()) {
       chunks.push(CMD_LF);
       continue;
     }
 
-    for (const wrapped of wrapLine(line, width)) {
-      chunks.push(Buffer.from(wrapped, "latin1"));
-      chunks.push(CMD_LF);
-    }
+    const line = normalizeSeparator(raw, width);
+    const output = isCenteredLine(line, i) ? centerLine(line, width) : line;
+    appendLine(chunks, output, width);
   }
 
-  chunks.push(CMD_LF, CMD_LF, cutPaper());
+  ticketEpilogue(chunks);
   return Buffer.concat(chunks);
 }
+
+/** Texto plano → buffer ESC/POS con corte parcial. */
+export function encodePlainTicket(
+  text: string,
+  anchoPapel: AnchoPapel = "80mm",
+): Buffer {
+  return buildEscPosBuffer(text, anchoPapel);
+}
+
+/** Ticket de prueba simple (centrado por software, sin ESC a intercalados). */
+export function buildTestTicketBuffer(): Buffer {
+  return buildEscPosBuffer("TEST IMPRESORA\n\nLA TABERNETA\n\nOK\n", "80mm");
+}
+
+/** Ticket de prueba avanzado — alineación, acentos, euro, líneas largas. */
+export function buildAdvancedTestTicketBuffer(): Buffer {
+  return buildEscPosBuffer(ADVANCED_TEST_TICKET_TEXT, "80mm");
+}
+
+/** Alias operativo — misma ruta que comandas reales. */
+export function buildTicketBuffer(
+  ticketText: string,
+  anchoPapel: AnchoPapel = "80mm",
+): Buffer {
+  return buildEscPosBuffer(ticketText, anchoPapel);
+}
+
+/** Versión legible del buffer (para logs DEBUG). */
+export function bufferToDebugText(buffer: Buffer): string {
+  const parts: string[] = [];
+  let textRun = "";
+  for (let i = 0; i < buffer.length; i++) {
+    const b = buffer[i];
+    if (b === 0x0a) {
+      if (textRun) parts.push(textRun);
+      parts.push("\n");
+      textRun = "";
+    } else if (b >= 0x20 && b < 0x7f) {
+      textRun += String.fromCharCode(b);
+    } else if (b >= 0xa0) {
+      textRun += String.fromCharCode(b);
+    } else if (b === 0x1b) {
+      if (textRun) parts.push(textRun);
+      textRun = "";
+      parts.push("[ESC]");
+      i += 1;
+      if (buffer[i] === 0x40) parts.push("@");
+      else if (buffer[i] === 0x74) {
+        parts.push(` t ${buffer[i + 1] ?? "?"}`);
+        i += 1;
+      } else if (buffer[i] === 0x61) {
+        parts.push(` a ${buffer[i + 1] ?? "?"}`);
+        i += 1;
+      }
+    } else if (b === 0x1d && buffer[i + 1] === 0x56) {
+      if (textRun) parts.push(textRun);
+      textRun = "";
+      const m = buffer[i + 2];
+      if (m === 0x42) {
+        parts.push(`[GS V feed ${buffer[i + 3] ?? 0} + cut]`);
+        i += 3;
+      } else {
+        parts.push(`[GS V ${m ?? "?"}]`);
+        i += 2;
+      }
+    }
+  }
+  if (textRun) parts.push(textRun);
+  return parts.join("");
+}
+
+export { feedAndCutPartial };

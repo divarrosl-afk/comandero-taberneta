@@ -136,8 +136,44 @@ export async function printTicketNetwork(
   };
 }
 
+export async function forwardTestPrintToPrintServer(
+  impresora: ImpresoraConfig,
+  advanced = false,
+): Promise<{ success: boolean; error?: string; message: string } | null> {
+  const serverUrl = getPrintServerUrl();
+  if (!serverUrl) return null;
+
+  try {
+    const response = await fetch(
+      `${serverUrl.replace(/\/$/, "")}/test-print?advanced=${advanced ? "1" : "0"}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ impresora }),
+      },
+    );
+    const data = (await response.json()) as {
+      ok: boolean;
+      message: string;
+    };
+    return {
+      success: data.ok,
+      error: data.ok ? undefined : data.message,
+      message: data.ok ? "Impresora conectada" : data.message,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error de red";
+    return {
+      success: false,
+      error: msg,
+      message: `No se alcanza el print-server: ${msg}`,
+    };
+  }
+}
+
 export async function testPrinterNetwork(
   impresora: ImpresoraConfig,
+  options?: { advanced?: boolean },
 ): Promise<{ success: boolean; error?: string; message: string }> {
   if (!impresora.ip?.trim()) {
     return {
@@ -147,23 +183,9 @@ export async function testPrinterNetwork(
     };
   }
 
-  const testTicket = "TEST IMPRESORA\n\nLA TABERNETA\n\nOK\n";
-  const forwarded = await forwardToPrintServer({
-    ticket: testTicket,
-    destino: "cocina",
-    tipo: "reimpresion",
-    impresora,
-  });
-
-  if (forwarded) {
-    return {
-      success: forwarded.ok,
-      error: forwarded.ok ? undefined : forwarded.message,
-      message: forwarded.ok
-        ? "Impresora conectada"
-        : forwarded.message,
-    };
-  }
+  const advanced = options?.advanced ?? false;
+  const viaServer = await forwardTestPrintToPrintServer(impresora, advanced);
+  if (viaServer) return viaServer;
 
   if (isVercelRuntime()) {
     return {
@@ -174,7 +196,7 @@ export async function testPrinterNetwork(
     };
   }
 
-  const result = await testPrinter(impresora.ip, impresora.puerto);
+  const result = await testPrinter(impresora.ip, impresora.puerto, advanced);
   return {
     success: result.success,
     error: result.error,

@@ -43,6 +43,7 @@ export async function POST(req: Request) {
 
     const url = new URL(req.url);
     const probeOnly = url.searchParams.get("probe") === "1";
+    const advanced = url.searchParams.get("advanced") === "1";
 
     if (!impresora.activa) {
       return NextResponse.json({
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const result = await testPrinterNetwork(impresora);
+    const result = await testPrinterNetwork(impresora, { advanced });
 
     return NextResponse.json(
       {

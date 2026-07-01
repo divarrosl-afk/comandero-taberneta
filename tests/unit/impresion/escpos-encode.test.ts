@@ -1,35 +1,69 @@
 import { describe, expect, it } from "vitest";
 import {
+  ADVANCED_TEST_TICKET_TEXT,
+  buildAdvancedTestTicketBuffer,
+  buildEscPosBuffer,
   buildTestTicketBuffer,
   charsPerLine,
   encodePlainTicket,
+  wrapLine,
 } from "@/lib/impresion/escpos-encode";
+import { encodeToCp858 } from "@/lib/impresion/escpos-cp858";
 
 describe("escpos-encode", () => {
-  it("calcula ancho por papel", () => {
-    expect(charsPerLine("58mm")).toBe(32);
+  it("calcula ancho 48 para 80mm", () => {
     expect(charsPerLine("80mm")).toBe(48);
+    expect(charsPerLine("58mm")).toBe(32);
   });
 
-  it("genera bytes con init y corte", () => {
-    const buf = encodePlainTicket("Hola\nMundo", "80mm");
+  it("inicializa con ESC @ y selecciona CP858", () => {
+    const buf = encodePlainTicket("Hola", "80mm");
     expect(buf[0]).toBe(0x1b);
     expect(buf[1]).toBe(0x40);
-    expect(buf.includes(0x1d)).toBe(true);
+    expect(buf[2]).toBe(0x1b);
+    expect(buf[3]).toBe(0x74);
+    expect(buf[4]).toBe(19);
     expect(buf.toString("latin1")).toContain("Hola");
   });
 
-  it("ticket de prueba incluye texto LA TABERNETA", () => {
+  it("codifica euro en CP858", () => {
+    const buf = encodeToCp858("24,50 €");
+    expect(buf.includes(0xd5)).toBe(true);
+  });
+
+  it("ticket de prueba incluye LA TABERNETA", () => {
     const buf = buildTestTicketBuffer();
     expect(buf.toString("latin1")).toContain("LA TABERNETA");
     expect(buf.toString("latin1")).toContain("TEST IMPRESORA");
   });
 
-  it("envuelve líneas largas", () => {
-    const long = "A".repeat(60);
-    const buf = encodePlainTicket(long, "58mm");
+  it("ticket avanzado incluye líneas de comanda simuladas", () => {
+    const buf = buildAdvancedTestTicketBuffer();
     const text = buf.toString("latin1");
-    const lines = text.split("\n").filter((l) => l.includes("A"));
-    expect(lines.length).toBeGreaterThan(1);
+    expect(text).toContain("Hamburguesa Angus");
+    expect(text).toContain("Sin cebolla");
+    expect(text).toContain("24,50");
+    expect(ADVANCED_TEST_TICKET_TEXT).toContain("Mesa C1");
+  });
+
+  it("normaliza separadores a 48 guiones en 80mm", () => {
+    const buf = buildEscPosBuffer("--------------------------------\n", "80mm");
+    const text = buf.toString("latin1");
+    const matches = text.match(/-{48}/);
+    expect(matches).not.toBeNull();
+  });
+
+  it("envuelve líneas largas a 48 caracteres", () => {
+    const long = "A".repeat(60);
+    const wrapped = wrapLine(long, 48);
+    expect(wrapped.length).toBeGreaterThan(1);
+    expect(wrapped.every((l) => l.length <= 48)).toBe(true);
+  });
+
+  it("termina con corte parcial GS V", () => {
+    const buf = buildTestTicketBuffer();
+    expect(buf.includes(0x1d)).toBe(true);
+    const gsIndex = buf.lastIndexOf(0x1d);
+    expect(buf[gsIndex + 1]).toBe(0x56);
   });
 });

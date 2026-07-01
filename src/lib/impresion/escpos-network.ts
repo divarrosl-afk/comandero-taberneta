@@ -1,15 +1,19 @@
 import net from "node:net";
 import {
+  buildAdvancedTestTicketBuffer,
   buildTestTicketBuffer,
   buildTicketBuffer,
   encodePlainTicket,
 } from "@/lib/impresion/escpos-encode";
+import { writeEscPosDebugLog } from "@/lib/impresion/escpos-debug";
 import { CMD_INIT, cutPaper, openDrawer } from "@/lib/impresion/escpos-commands";
 import type { AnchoPapel } from "@/types/impresora";
 
 export { cutPaper, openDrawer };
 
-const TCP_TIMEOUT_MS = 3000;
+const TCP_CONNECT_TIMEOUT_MS = 4000;
+const TCP_PRINT_TIMEOUT_MS = 20_000;
+const TCP_CHUNK_SIZE = 1024;
 
 export interface TcpPrintResult {
   success: boolean;
@@ -33,11 +37,43 @@ function friendlySocketError(err: NodeJS.ErrnoException): string {
   }
 }
 
+/** Escribe el buffer completo respetando backpressure (drain) antes de cerrar. */
+function writeBufferToSocket(socket: net.Socket, buffer: Buffer): Promise<void> {
+  return new Promise((resolve, reject) => {
+    socket.setNoDelay(true);
+    let offset = 0;
+
+    const writeNext = (): void => {
+      if (offset >= buffer.length) {
+        resolve();
+        return;
+      }
+
+      const chunk = buffer.subarray(
+        offset,
+        Math.min(offset + TCP_CHUNK_SIZE, buffer.length),
+      );
+      offset += chunk.length;
+
+      try {
+        const canContinue = socket.write(chunk);
+        if (canContinue) writeNext();
+        else socket.once("drain", writeNext);
+      } catch (err) {
+        reject(err);
+      }
+    };
+
+    writeNext();
+  });
+}
+
 function tcpSendBuffer(
   ip: string,
   port: number,
   buffer: Buffer,
-  timeoutMs = TCP_TIMEOUT_MS,
+  plainText?: string,
+  timeoutMs = TCP_PRINT_TIMEOUT_MS,
 ): Promise<TcpPrintResult> {
   return new Promise((resolve) => {
     let connected = false;
@@ -50,36 +86,41 @@ function tcpSendBuffer(
     };
 
     const socket = net.createConnection({ host: ip, port }, () => {
-      connected = true;
-      socket.write(buffer, (writeErr) => {
-        if (writeErr) {
+      void (async () => {
+        connected = true;
+        try {
+          writeEscPosDebugLog(buffer, plainText);
+          await writeBufferToSocket(socket, buffer);
+          socket.end();
+        } catch (writeErr) {
           socket.destroy();
           finish({
             success: false,
             error: friendlySocketError(writeErr as NodeJS.ErrnoException),
           });
-          return;
         }
-        socket.end();
-      });
+      })();
     });
 
     socket.setTimeout(timeoutMs);
+
     socket.on("timeout", () => {
       socket.destroy();
       finish({
         success: false,
-        error: `Timeout (${timeoutMs}ms) al conectar con ${ip}:${port}`,
+        error: `Timeout (${timeoutMs}ms) al enviar a ${ip}:${port}`,
       });
     });
+
     socket.on("error", (err) => {
-      if (!connected || !finished) {
+      if (!finished) {
         finish({
           success: false,
           error: friendlySocketError(err as NodeJS.ErrnoException),
         });
       }
     });
+
     socket.on("close", () => {
       if (connected && !finished) {
         finish({ success: true });
@@ -93,6 +134,7 @@ export async function printTicket(
   ip: string,
   port: number,
   buffer: Buffer,
+  plainText?: string,
 ): Promise<TcpPrintResult> {
   const host = ip.trim();
   if (!host) {
@@ -100,10 +142,10 @@ export async function printTicket(
   }
 
   const safePort = port > 0 ? port : 9100;
-  const first = await tcpSendBuffer(host, safePort, buffer);
+  const first = await tcpSendBuffer(host, safePort, buffer, plainText);
   if (first.success) return first;
 
-  const second = await tcpSendBuffer(host, safePort, buffer);
+  const second = await tcpSendBuffer(host, safePort, buffer, plainText);
   return second;
 }
 
@@ -118,7 +160,7 @@ export async function printTicketText(
   const buffer = formatted
     ? buildTicketBuffer(text, anchoPapel)
     : encodePlainTicket(text, anchoPapel);
-  return printTicket(ip, port, buffer);
+  return printTicket(ip, port, buffer, text);
 }
 
 /** Solo comprueba socket (ESC @), sin imprimir ticket completo. */
@@ -129,11 +171,14 @@ export async function probePrinter(
   return printTicket(ip, port, CMD_INIT);
 }
 
-/** Prueba real: ticket TEST + corte (timeout 3s). */
+/** Prueba real: ticket TEST + corte parcial. */
 export async function testPrinter(
   ip: string,
   port: number,
+  advanced = false,
 ): Promise<TcpPrintResult> {
-  const buffer = buildTestTicketBuffer();
+  const buffer = advanced
+    ? buildAdvancedTestTicketBuffer()
+    : buildTestTicketBuffer();
   return printTicket(ip, port, buffer);
 }

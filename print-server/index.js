@@ -2,7 +2,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { tcpConnectTest } from "./lib/escpos.js";
+import { tcpConnectTest, printTestTicket } from "./lib/escpos.js";
 import {
   enqueueJob,
   getJob,
@@ -144,6 +144,26 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/test-print") {
+    try {
+      const raw = await readBody(req);
+      const body = raw ? JSON.parse(raw) : {};
+      const imp = body.impresora ?? {};
+      const advanced = url.searchParams.get("advanced") === "1";
+      const result = await printTestTicket(imp, advanced);
+      json(res, result.ok ? 200 : 502, {
+        ...result,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      json(res, 500, {
+        ok: false,
+        message: error instanceof Error ? error.message : "Error",
+      });
+    }
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/print") {
     try {
       const raw = await readBody(req);
@@ -218,6 +238,10 @@ server.listen(PORT, HOST, () => {
   console.info(`   Health:  http://localhost:${PORT}/health`);
   console.info(`   Print:   POST http://localhost:${PORT}/print`);
   console.info(`   Test:    POST http://localhost:${PORT}/test-connection`);
+  console.info(`   TestPrint POST http://localhost:${PORT}/test-print?advanced=1`);
   console.info(`   Log:     ${LOG_FILE}`);
+  if (process.env.PRINT_DEBUG === "1") {
+    console.info(`   Debug:   ${path.join(LOG_DIR, "last-ticket.bin")}`);
+  }
   if (API_KEY) console.info("   Auth:    X-Print-Key requerido");
 });
