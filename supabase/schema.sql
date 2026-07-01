@@ -533,8 +533,14 @@ CREATE POLICY comandas_cocina_insert ON comandas_cocina
 
 CREATE POLICY comandas_cocina_update ON comandas_cocina
   FOR UPDATE TO authenticated
-  USING (restaurante_id = ct_current_restaurante_id())
-  WITH CHECK (restaurante_id = ct_current_restaurante_id());
+  USING (
+    restaurante_id = ct_current_restaurante_id()
+    AND deleted_at IS NULL
+  )
+  WITH CHECK (
+    restaurante_id = ct_current_restaurante_id()
+    AND (ct_is_admin() OR deleted_at IS NULL)
+  );
 
 CREATE POLICY comandas_cocina_admin_delete ON comandas_cocina
   FOR DELETE TO authenticated
@@ -557,8 +563,14 @@ CREATE POLICY comandas_postres_insert ON comandas_postres
 
 CREATE POLICY comandas_postres_update ON comandas_postres
   FOR UPDATE TO authenticated
-  USING (restaurante_id = ct_current_restaurante_id())
-  WITH CHECK (restaurante_id = ct_current_restaurante_id());
+  USING (
+    restaurante_id = ct_current_restaurante_id()
+    AND deleted_at IS NULL
+  )
+  WITH CHECK (
+    restaurante_id = ct_current_restaurante_id()
+    AND (ct_is_admin() OR deleted_at IS NULL)
+  );
 
 CREATE POLICY comandas_postres_admin_delete ON comandas_postres
   FOR DELETE TO authenticated
@@ -583,7 +595,10 @@ CREATE POLICY audit_log_admin_select ON audit_log
 
 CREATE POLICY audit_log_insert ON audit_log
   FOR INSERT TO authenticated
-  WITH CHECK (restaurante_id = ct_current_restaurante_id());
+  WITH CHECK (
+    restaurante_id = ct_current_restaurante_id()
+    AND ct_is_admin()
+  );
 
 -- =============================================================================
 -- CONFIG IMPRESORA (metadata compartida — Fase 1)

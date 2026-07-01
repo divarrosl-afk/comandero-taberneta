@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchComandas } from "@/lib/comandas/comandas-service";
-import { fetchPostres } from "@/lib/postres/postres-service";
+import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { usesRemoteData } from "@/lib/data/backend";
 import { hoyFecha } from "@/lib/cierre/fecha";
 import {
@@ -46,7 +45,9 @@ export function useCierre(sesion: Sesion | null) {
 
   useEffect(() => {
     if (!usesRemoteData()) return;
-    void Promise.all([fetchComandas(), fetchPostres()]).then(() => recargar());
+    void fetchOperativaData()
+      .then(() => recargar())
+      .catch((e) => console.error("[cierre] Error al cargar operativa:", e));
   }, [filtros.fecha, recargar]);
 
   const entradasDia: EntradaCierre[] = useMemo(() => {

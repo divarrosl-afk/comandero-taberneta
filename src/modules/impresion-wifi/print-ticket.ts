@@ -8,6 +8,8 @@ import {
   getPrintServerUrl,
   resolveImpresoraConfig,
 } from "@/modules/impresion-wifi/config";
+import { getSupabaseAccessToken } from "@/lib/supabase/client";
+import { usesRemoteData } from "@/lib/data/backend";
 
 async function postPrintRequest(
   request: PrintTicketRequest,
@@ -19,10 +21,16 @@ async function postPrintRequest(
 
   const payload: PrintTicketRequest = { ...request, impresora };
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (usesRemoteData()) {
+    const token = await getSupabaseAccessToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+
   try {
     const response = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
     });
 
