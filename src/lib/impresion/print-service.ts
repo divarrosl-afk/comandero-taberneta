@@ -2,8 +2,12 @@ import {
   printTicketText,
   testPrinter,
 } from "@/lib/impresion/escpos-network";
-import { enqueueCloudPrintJob } from "@/lib/print/print-jobs-repository";
+import {
+  enqueueCloudPrintJob,
+  getCloudPrintStatus,
+} from "@/lib/print/print-jobs-repository";
 import type { ImpresoraConfig } from "@/types/impresora";
+import { TEST_IMPRESORA_TEXTO } from "@/types/impresora";
 import type { PrintTicketRequest, PrintResult } from "@/modules/impresion-wifi/types";
 
 function isVercelRuntime(): boolean {
@@ -214,27 +218,53 @@ export async function forwardTestPrintToPrintServer(
   }
 }
 
+export async function probePrinterCloud(): Promise<{
+  success: boolean;
+  error?: string;
+  message: string;
+}> {
+  const status = await getCloudPrintStatus();
+  return {
+    success: status.ready,
+    error: status.error,
+    message: status.message,
+  };
+}
+
 export async function testPrinterNetwork(
   impresora: ImpresoraConfig,
   options?: { advanced?: boolean },
 ): Promise<{ success: boolean; error?: string; message: string }> {
-  if (!impresora.ip?.trim()) {
-    return {
-      success: false,
-      error: "IP no configurada",
-      message: "Configure la IP de la impresora",
-    };
-  }
-
   const advanced = options?.advanced ?? false;
   const viaServer = await forwardTestPrintToPrintServer(impresora, advanced);
   if (viaServer) return viaServer;
 
   if (isVercelRuntime()) {
+    const cloud = await enqueueCloudPrint({
+      ticket: TEST_IMPRESORA_TEXTO,
+      destino: "cocina",
+      tipo: "reimpresion",
+      impresora,
+    });
+    if (!cloud.ok) {
+      return {
+        success: false,
+        error: cloud.message,
+        message: cloud.message,
+      };
+    }
+    const shortId = cloud.jobId?.slice(0, 8) ?? "—";
     return {
       success: true,
-      message:
-        "Modo nube: la prueba de impresión se hará cuando el print-server recoja el ticket encolado.",
+      message: `Ticket de prueba encolado (#${shortId}) — el Lenovo lo imprimirá en breve.`,
+    };
+  }
+
+  if (!impresora.ip?.trim()) {
+    return {
+      success: false,
+      error: "IP no configurada",
+      message: "Configure la IP de la impresora",
     };
   }
 

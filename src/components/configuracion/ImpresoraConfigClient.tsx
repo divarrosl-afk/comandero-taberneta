@@ -50,7 +50,28 @@ export function ImpresoraConfigClient() {
     void getImpresoraConfig().then(setConfig);
     setPrintServer(getPrintServerConfig());
     setDeployCtx(detectDeployContext());
-    setTransport(resolvePrintTransport());
+    const t = resolvePrintTransport();
+    setTransport(t);
+
+    if (t === "cloud-queue") {
+      void fetch("/api/print-jobs/health")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((health) => {
+          if (!health) return;
+          const ready =
+            health.supabase?.serviceRoleConfigured === true &&
+            health.printJobs?.tableExists === true;
+          setServerMsg(
+            ready
+              ? `✅ Cola nube lista${health.printJobs?.pendingCount ? ` · ${health.printJobs.pendingCount} pendiente(s)` : ""}`
+              : `⚠️ Cola nube incompleta — ${health.printJobs?.tableError ?? "revise variables Vercel y migración print_jobs"}`,
+          );
+          setServerError(!ready);
+        })
+        .catch(() => {
+          /* health opcional al cargar */
+        });
+    }
   }, []);
 
   const update = <K extends keyof ImpresoraConfig>(
@@ -91,12 +112,10 @@ export function ImpresoraConfigClient() {
     setConnMsg(null);
     try {
       const result = await probarConexionImpresora(config);
-      setConnMsg(
-        result.ok ? PRINT_MESSAGES.impresoraConectada : PRINT_MESSAGES.impresoraNoConecta,
-      );
+      setConnMsg(result.message);
       setConnError(!result.ok);
     } catch {
-      setConnMsg("No se pudo probar la conexión");
+      setConnMsg("❌ No se pudo probar la conexión");
       setConnError(true);
     } finally {
       setConnLoading(false);
@@ -338,9 +357,15 @@ export function ImpresoraConfigClient() {
           fullWidth
           size="lg"
           onClick={handleProbarConexion}
-          disabled={connLoading || !config.ip}
+          disabled={connLoading || (transport !== "cloud-queue" && !config.ip)}
         >
-          {connLoading ? "Probando conexión…" : "Probar conexión TCP"}
+          {connLoading
+            ? transport === "cloud-queue"
+              ? "Comprobando cola nube…"
+              : "Probando conexión…"
+            : transport === "cloud-queue"
+              ? "Comprobar cola nube"
+              : "Probar conexión TCP"}
         </Button>
         <Button
           variant="secondary"
@@ -352,6 +377,13 @@ export function ImpresoraConfigClient() {
           Probar impresión
         </Button>
       </div>
+
+      {transport === "cloud-queue" && (
+        <p className="mt-4 text-xs text-muted">
+          En Vercel no se prueba TCP a la impresora: los tickets van a Supabase y el
+          Lenovo en el restaurante imprime por LAN.
+        </p>
+      )}
 
       <p className="mt-6 text-center text-xs text-muted">
         Producción: la app en Vercel encola tickets en Supabase.

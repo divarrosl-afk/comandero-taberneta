@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyAuthenticatedRequest } from "@/lib/supabase/api-auth";
 import {
   forwardTestToPrintServer,
+  probePrinterCloud,
   testPrinterNetwork,
 } from "@/lib/impresion/print-service";
 import { probePrinter } from "@/lib/impresion/escpos-network";
@@ -66,6 +67,19 @@ export async function POST(req: Request) {
             timestamp: new Date().toISOString(),
           },
           { status: viaServer.success ? 200 : 502 },
+        );
+      }
+
+      if (process.env.VERCEL === "1") {
+        const cloud = await probePrinterCloud();
+        return NextResponse.json(
+          {
+            success: cloud.success,
+            error: cloud.error,
+            message: cloud.message,
+            timestamp: new Date().toISOString(),
+          },
+          { status: cloud.success ? 200 : 502 },
         );
       }
 
