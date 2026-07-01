@@ -16,11 +16,18 @@ async function authHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
-/** Prueba TCP real vía API (ticket TEST + corte). */
+/** Prueba impresión: TCP real en modo network, simulación en modo mock. */
 export async function probarImpresora(impresora?: ImpresoraConfig) {
   const config = impresora ?? resolveImpresoraConfig();
-  const headers = await authHeaders();
 
+  if (config.modo === "mock") {
+    return printTicket(TEST_IMPRESORA_TEXTO, "cocina", {
+      tipo: "reimpresion",
+      impresora: config,
+    });
+  }
+
+  const headers = await authHeaders();
   const testRes = await fetch("/api/impresion/test", {
     method: "POST",
     headers,
@@ -46,10 +53,16 @@ export async function probarImpresora(impresora?: ImpresoraConfig) {
     };
   }
 
-  return printTicket(TEST_IMPRESORA_TEXTO, "cocina", {
-    tipo: "reimpresion",
-    impresora: config,
-  });
+  return {
+    ok: true,
+    mode: "network" as const,
+    destino: "cocina" as const,
+    tipo: "reimpresion" as const,
+    message: "✅ Impresora conectada",
+    simulated: false,
+    timestamp: new Date().toISOString(),
+    status: "printed" as const,
+  };
 }
 
 export async function probarConexionImpresora(impresora?: ImpresoraConfig) {
