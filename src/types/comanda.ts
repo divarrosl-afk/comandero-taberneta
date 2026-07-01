@@ -1,3 +1,5 @@
+import type { EstadoPanel } from "@/types/panel";
+
 export type TipoServicio = "menu" | "carta" | "mixto";
 
 export type TipoPlato = "menu" | "menu_suplemento" | "carta";
@@ -83,6 +85,7 @@ export interface ComandaCocina {
   observaciones: string[];
   creadaEn: string;
   enviada: boolean;
+  estadoPanel: EstadoPanel;
 }
 
 export interface Camarero {
