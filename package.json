@@ -7,7 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "print-server": "node print-server/index.js",
+    "print-server:dev": "node --watch print-server/index.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",

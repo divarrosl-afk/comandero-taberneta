@@ -1,21 +1,56 @@
 # Módulo de impresión Wi-Fi
 
-Este módulo se implementará en una fase posterior para imprimir tickets en impresoras de cocina/barra vía red local.
+Impresión de tickets vía **servidor local**. Los móviles nunca imprimen directamente.
 
-## Arquitectura prevista
+## Arquitectura
 
 ```
-Móviles (comandero PWA)
+Móviles (PWA comandero)
+        ↓  printTicket()
+API interna (/api/impresion)  o  PRINT_SERVER_URL
         ↓
-Servidor local en el restaurante
+Servidor local (print-server/)
         ↓
-Impresora Wi-Fi/Ethernet (cocina / barra / postres)
+Impresora ESC/POS Wi-Fi/Ethernet (futuro)
 ```
 
-## Tipos de ticket previstos
+## Destinos
 
-- **Cocina**: comanda completa con secciones (entrantes, primeros, segundos, bebidas, observaciones)
-- **Barra**: bebidas y observaciones relevantes
-- **Postres**: ticket separado sin copia de cocina (mesa, postres, X, C/L+H)
+| Destino | Ticket |
+|---------|--------|
+| `cocina` | Entrantes, primeros, segundos, extras, observaciones |
+| `barra` | Bebidas, extras de barra, observaciones |
+| `postres` | Ticket postres separado (sin copia cocina) |
+| `reimpresion` | Desde historial |
 
-Los móviles no imprimirán directamente; enviarán la comanda al servidor local, que gestionará la impresión.
+## Modos
+
+- **mock** (`PRINT_MODE=mock`): registra ticket en consola y `print-server/logs/tickets.log`
+- **network** (`PRINT_MODE=network`): preparado para ESC/POS — pendiente modelo/IP impresora
+
+## Uso en código
+
+```typescript
+import { imprimirComandaCocina, printTicket } from "@/modules/impresion-wifi";
+
+await imprimirComandaCocina(comanda); // cocina + barra si hay bebidas
+await printTicket(texto, "postres", { tipo: "postres", mesa: 4 });
+```
+
+## Servidor local
+
+```bash
+cd print-server
+cp .env.example .env
+npm start
+```
+
+## Variables (.env)
+
+Ver `.env.example` en la raíz del proyecto.
+
+## Próximo paso (impresión física)
+
+1. Confirmar modelo impresora (80mm ESC/POS, Wi-Fi o Ethernet)
+2. IP fija de cada impresora
+3. Implementar driver TCP puerto 9100 en `drivers/escpos.ts`
