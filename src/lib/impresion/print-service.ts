@@ -34,22 +34,24 @@ async function enqueueCloudPrint(
   request: PrintTicketRequest,
 ): Promise<PrintResult> {
   const timestamp = new Date().toISOString();
-  const job = await enqueueCloudPrintJob(request);
+  const { job, error } = await enqueueCloudPrintJob(request);
 
   if (!job) {
+    const detail = error ?? "Error desconocido";
+    console.error("[cloud-print] No se pudo encolar:", detail);
     return {
       ok: false,
       mode: "network",
       destino: request.destino,
       tipo: request.tipo,
-      message:
-        "No se pudo encolar el ticket — compruebe Supabase y la migración print_jobs.",
+      message: `No se pudo encolar el ticket: ${detail}`,
       simulated: false,
       timestamp,
       status: "error",
     };
   }
 
+  console.info(`[cloud-print] Job encolado ${job.id} · destino=${request.destino}`);
   return {
     ok: true,
     mode: "network",

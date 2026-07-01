@@ -24,10 +24,21 @@ export interface PrintJobRow {
 
 export async function enqueueCloudPrintJob(
   request: PrintTicketRequest,
-): Promise<PrintJobRow | null> {
+): Promise<{ job: PrintJobRow | null; error?: string }> {
   const admin = getSupabaseAdminClient();
   const env = getSupabaseEnv();
-  if (!admin || !env?.restauranteId) return null;
+  if (!admin) {
+    return {
+      job: null,
+      error: "SUPABASE_SERVICE_ROLE_KEY no configurada en el servidor (Vercel)",
+    };
+  }
+  if (!env?.restauranteId) {
+    return {
+      job: null,
+      error: "NEXT_PUBLIC_RESTAURANTE_ID no configurado",
+    };
+  }
 
   const { data, error } = await admin
     .from("print_jobs")
@@ -45,8 +56,17 @@ export async function enqueueCloudPrintJob(
     .select("*")
     .single();
 
-  if (error || !data) return null;
-  return data as PrintJobRow;
+  if (error) {
+    const hint = error.message.includes("print_jobs")
+      ? " — ejecute supabase/migrations/20250704_print_jobs.sql"
+      : "";
+    console.error("[print_jobs] INSERT falló:", error.message);
+    return { job: null, error: `${error.message}${hint}` };
+  }
+  if (!data) {
+    return { job: null, error: "INSERT sin datos devueltos" };
+  }
+  return { job: data as PrintJobRow };
 }
 
 export async function fetchPendingPrintJobs(

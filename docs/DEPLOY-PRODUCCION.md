@@ -1,63 +1,110 @@
 # Despliegue en producción — Comandero Taberneta v1.0
 
-Arquitectura objetivo:
+## Flujo cloud (Vercel)
 
 ```
-Móviles (HTTPS)  →  Vercel (Comandero PWA)
-                         │
-                         ▼
-                   Supabase (print_jobs)
-                         │
-                         ▼
-Lenovo (print-server)  →  TCP 9100  →  Impresora APPPOS
+Móvil (HTTPS)  →  Vercel /api/impresion  →  Supabase print_jobs
+                                                    │
+                                                    ▼
+                              Lenovo print-server (cloud-poller cada 3s)
+                                                    │
+                                                    ▼
+                                            Impresora TCP 9100
 ```
-
-El Lenovo **no sirve la app** a los camareros. Solo imprime dentro de la LAN del restaurante.
 
 ---
 
-## 1. Desplegar en Vercel
+## Checklist antes de probar desde Vercel
 
-### Variables de entorno en Vercel
+### 1. Supabase — migración `print_jobs`
+
+Ejecutar en SQL Editor el contenido de:
+
+`supabase/migrations/20250704_print_jobs.sql`
+
+Comprobar:
+
+```sql
+SELECT count(*) FROM print_jobs;
+```
+
+### 2. Vercel — variables de entorno
 
 | Variable | Obligatoria |
 |----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Sí |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Sí |
-| `SUPABASE_SERVICE_ROLE_KEY` | Sí (cola impresión) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Sí — **sin esto no se encolan tickets** |
 | `NEXT_PUBLIC_DATA_BACKEND` | `supabase` |
-| `NEXT_PUBLIC_RESTAURANTE_ID` | Sí |
+| `NEXT_PUBLIC_RESTAURANTE_ID` | Sí — UUID del restaurante |
 
-> No use `NEXT_PUBLIC_PRINT_SERVER_URL` con `http://192.168.x.x` — mixed-content bloqueado desde HTTPS.
+Redeploy tras cambiar variables.
 
-### Despliegue
+### 3. Lenovo — `print-server/.env`
 
-Push a `main` despliega automáticamente en Vercel, o `npx vercel --prod`.
+```env
+PORT=3100
+PRINTER_IP=192.168.1.100
+PRINTER_PORT=9100
+PRINT_MODE=network
 
----
+NEXT_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+SUPABASE_RESTAURANTE_ID=mismo-uuid-que-NEXT_PUBLIC_RESTAURANTE_ID
+CLOUD_POLL_MS=3000
+```
 
-## 2. Configurar el Lenovo
+Arrancar:
 
 ```bash
-cp print-server/.env.example print-server/.env
-# Editar PRINTER_IP, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_RESTAURANTE_ID
 npm run print-server
 ```
 
+Debe mostrar:
+
+```
+[cloud-poller] ACTIVO · cada 3000ms
+```
+
+Si muestra `INACTIVO — faltan variables`, revisar el `.env`.
+
+### 4. Diagnóstico
+
+**Vercel (API):**
+
+```
+GET https://comandero-taberneta.vercel.app/api/print-jobs/health
+```
+
+Debe indicar `printJobs.tableExists: true` y `serviceRoleConfigured: true`.
+
+**Lenovo:**
+
+```bash
+curl http://localhost:3100/health
+```
+
+Debe incluir `"cloudPolling": true`.
+
 ---
 
-## 3. Móviles
+## Qué falta si no imprime desde Vercel
 
-Abrir `https://comandero-taberneta.vercel.app`, login, añadir a pantalla de inicio.
+| Síntoma | Causa probable | Solución |
+|---------|----------------|----------|
+| `cloudPolling: false` en Lenovo | Falta `.env` Supabase | Añadir las 3 variables y reiniciar |
+| `tableExists: false` en Vercel | Migración no aplicada | Ejecutar `20250704_print_jobs.sql` |
+| Error al encolar en móvil | Sin `SUPABASE_SERVICE_ROLE_KEY` en Vercel | Añadir en dashboard Vercel + redeploy |
+| Jobs en Supabase pero no imprimen | Lenovo apagado o poller inactivo | `npm run print-server` + logs `[cloud-poller]` |
+| Poller activo, error TCP | IP impresora incorrecta | `PRINTER_IP` en `.env` |
 
 ---
 
-## 4. Cambiar IP impresora
+## Local vs Vercel
 
-Editar `PRINTER_IP` en `print-server/.env` y en Configuración → Impresora en la app.
+| Entorno | Flujo |
+|---------|-------|
+| `http://192.168.x.x:3000` | Directo o print-server LAN |
+| `https://*.vercel.app` | Siempre cola Supabase → cloud-poller |
 
----
-
-## 5. Comprobador
-
-Configuración → Impresora → **Comprobar print-server**.
+No configure `NEXT_PUBLIC_PRINT_SERVER_URL=http://192.168.x.x` en Vercel (mixed-content bloqueado).

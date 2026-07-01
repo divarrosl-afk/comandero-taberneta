@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tcpConnectTest, printTestTicket } from "./lib/escpos.js";
-import { startCloudPoller } from "./lib/cloud-poller.js";
+import { startCloudPoller, getCloudPollerStatus } from "./lib/cloud-poller.js";
 import {
   enqueueJob,
   getJob,
@@ -101,6 +101,7 @@ const server = http.createServer(async (req, res) => {
     const pending = listJobs(200).filter(
       (j) => j.status === "queued" || j.status === "error" || j.status === "printing",
     );
+    const cloud = getCloudPollerStatus();
     json(res, 200, {
       ok: true,
       service: "comandero-print-server",
@@ -108,6 +109,15 @@ const server = http.createServer(async (req, res) => {
       impresora: "principal-unica",
       queuePending: pending.length,
       authRequired: Boolean(API_KEY),
+      cloudPolling: cloud.cloudPolling,
+      cloud: {
+        pollIntervalMs: cloud.pollIntervalMs,
+        restauranteIdConfigured: cloud.restauranteIdConfigured,
+        supabaseUrlConfigured: cloud.supabaseUrlConfigured,
+        serviceRoleConfigured: cloud.serviceRoleConfigured,
+        missingEnv: cloud.missingEnv,
+        stats: cloud.stats,
+      },
     });
     return;
   }
