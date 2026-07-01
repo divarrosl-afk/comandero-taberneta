@@ -426,6 +426,24 @@ CREATE POLICY perfiles_admin_all ON perfiles
   USING (restaurante_id = ct_current_restaurante_id() AND ct_is_admin())
   WITH CHECK (restaurante_id = ct_current_restaurante_id() AND ct_is_admin());
 
+-- Actualizar ultimo_acceso propio sin abrir UPDATE general a no-admin
+CREATE OR REPLACE FUNCTION ct_touch_ultimo_acceso()
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE perfiles
+  SET ultimo_acceso = NOW()
+  WHERE auth_user_id = auth.uid()
+    AND activo = TRUE
+    AND deleted_at IS NULL;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION ct_touch_ultimo_acceso() TO authenticated;
+
 -- =============================================================================
 -- RLS — mesas
 -- =============================================================================

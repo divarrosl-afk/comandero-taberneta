@@ -82,16 +82,11 @@ export const usuariosRepositorySupabase: UsuariosRepository = {
     return body.usuario ?? null;
   },
 
-  async registrarAcceso(username) {
+  async registrarAcceso() {
     const client = getSupabaseClient();
-    const env = getSupabaseEnv();
-    if (!client || !env) return;
+    if (!client) return;
 
-    await client
-      .from("perfiles")
-      .update({ ultimo_acceso: new Date().toISOString() })
-      .eq("restaurante_id", env.restauranteId)
-      .eq("username", username.trim().toLowerCase());
+    await client.rpc("ct_touch_ultimo_acceso");
   },
 
   async restaurarIniciales() {

@@ -22,16 +22,11 @@ async function fetchPerfil(authUserId: string): Promise<DbPerfil | null> {
   return data as DbPerfil;
 }
 
-async function registrarAcceso(username: string): Promise<void> {
+async function registrarAcceso(): Promise<void> {
   const client = getSupabaseClient();
-  const env = getSupabaseEnv();
-  if (!client || !env) return;
+  if (!client) return;
 
-  await client
-    .from("perfiles")
-    .update({ ultimo_acceso: new Date().toISOString() })
-    .eq("restaurante_id", env.restauranteId)
-    .eq("username", username.trim().toLowerCase());
+  await client.rpc("ct_touch_ultimo_acceso");
 }
 
 export const authRepositorySupabase: AuthRepository = {
@@ -53,7 +48,7 @@ export const authRepositorySupabase: AuthRepository = {
       return null;
     }
 
-    await registrarAcceso(perfil.username);
+    await registrarAcceso();
     const sesion = perfilToSesion(perfil);
     guardarSesion(sesion);
     return sesion;
