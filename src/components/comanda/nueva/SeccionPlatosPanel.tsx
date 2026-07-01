@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { ProductosRapidosGrid } from "@/components/catalogo/ProductosRapidosGrid";
+import { CatalogoBuscadorRapido } from "@/components/catalogo/CatalogoBuscadorRapido";
 import { PlatoCard } from "@/components/comanda/nueva/PlatoCard";
 import type { SeccionCatalogo } from "@/types/catalogo";
 import type {
@@ -21,12 +22,21 @@ const SECCION_A_CATALOGO: Record<SeccionPlatos, SeccionCatalogo> = {
   bebidas: "bebidas",
 };
 
+const ALCANCE_COMANDA: SeccionCatalogo[] = [
+  "entrantes",
+  "primeros",
+  "segundos",
+  "bebidas",
+];
+
 interface SeccionPlatosPanelProps {
   titulo: string;
   seccion: SeccionPlatos;
   platos: PlatoFormItem[];
   conTipo?: boolean;
   active?: boolean;
+  busqueda?: string;
+  onBusquedaChange?: (value: string) => void;
   onUpdate: (id: string, cambios: Partial<PlatoFormItem>) => void;
   onAdd: () => void;
   onSelectCatalogo: (producto: ProductoCatalogo) => void;
@@ -43,6 +53,8 @@ export function SeccionPlatosPanel({
   platos,
   conTipo = false,
   active = false,
+  busqueda = "",
+  onBusquedaChange,
   onUpdate,
   onAdd,
   onSelectCatalogo,
@@ -75,9 +87,19 @@ export function SeccionPlatosPanel({
           </div>
         }
       >
+        {onBusquedaChange && (
+          <CatalogoBuscadorRapido
+            value={busqueda}
+            onChange={onBusquedaChange}
+            className="mb-4"
+          />
+        )}
+
         <ProductosRapidosGrid
           seccion={SECCION_A_CATALOGO[seccion]}
           seccionPlatos={seccion}
+          alcanceSecciones={ALCANCE_COMANDA}
+          busqueda={busqueda}
           onSelect={onSelectCatalogo}
         />
 

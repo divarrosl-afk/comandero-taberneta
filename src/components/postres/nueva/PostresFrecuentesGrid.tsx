@@ -4,14 +4,19 @@ import { ProductosRapidosGrid } from "@/components/catalogo/ProductosRapidosGrid
 import type { ProductoCatalogo } from "@/types/catalogo";
 
 interface PostresFrecuentesGridProps {
+  busqueda?: string;
   onSelect: (producto: ProductoCatalogo) => void;
 }
 
-export function PostresFrecuentesGrid({ onSelect }: PostresFrecuentesGridProps) {
+export function PostresFrecuentesGrid({
+  busqueda = "",
+  onSelect,
+}: PostresFrecuentesGridProps) {
   return (
     <ProductosRapidosGrid
       seccion="postres"
-      titulo="Postres frecuentes"
+      alcanceSecciones={["postres"]}
+      busqueda={busqueda}
       onSelect={onSelect}
     />
   );
