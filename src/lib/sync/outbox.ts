@@ -1,3 +1,4 @@
+import { createId } from "@/lib/id/create-id";
 import type { ComandaCocina } from "@/types/comanda";
 import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
@@ -39,7 +40,7 @@ async function writeEntries(entries: OutboxEntry[]): Promise<void> {
 }
 
 function newOpId(): string {
-  return crypto.randomUUID();
+  return createId();
 }
 
 function sortEntries(entries: OutboxEntry[]): OutboxEntry[] {

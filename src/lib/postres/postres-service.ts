@@ -1,4 +1,5 @@
 import { buildComandaPersistMeta } from "@/lib/comandas/comanda-persist-meta";
+import { createId } from "@/lib/id/create-id";
 import type { PersistResult } from "@/lib/comandas/comandas-service";
 import { getPostresRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
@@ -21,7 +22,7 @@ import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
 
 export function generarIdPostres(): string {
-  return crypto.randomUUID();
+  return createId();
 }
 
 export function getPostresSync(): ComandaPostres[] {

@@ -1,3 +1,4 @@
+import { createId } from "@/lib/id/create-id";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 
 function item(
@@ -23,7 +24,7 @@ function item(
 ): ProductoCatalogo {
   const precioCarta = opts?.precioCarta ?? opts?.precio;
   return {
-    id: crypto.randomUUID(),
+    id: createId(),
     nombre,
     nombreCorto: opts?.nombreCorto,
     seccion,

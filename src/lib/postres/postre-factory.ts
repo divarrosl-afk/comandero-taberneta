@@ -1,8 +1,9 @@
+import { createId } from "@/lib/id/create-id";
 import type { PostreFormItem } from "@/types/postres";
 
 export function crearPostreVacio(): PostreFormItem {
   return {
-    id: crypto.randomUUID(),
+    id: createId(),
     nombre: "",
     cantidad: 1,
   };
@@ -11,7 +12,7 @@ export function crearPostreVacio(): PostreFormItem {
 export function duplicarPostre(postre: PostreFormItem): PostreFormItem {
   return {
     ...postre,
-    id: crypto.randomUUID(),
+    id: createId(),
   };
 }
 

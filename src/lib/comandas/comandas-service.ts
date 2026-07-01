@@ -1,4 +1,5 @@
 import { buildComandaPersistMeta } from "@/lib/comandas/comanda-persist-meta";
+import { createId } from "@/lib/id/create-id";
 import { getComandasRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
 import { getComandasLocales } from "@/lib/storage/comandas-local";
@@ -26,7 +27,7 @@ export interface PersistResult<T> {
 }
 
 export function generarIdComanda(): string {
-  return crypto.randomUUID();
+  return createId();
 }
 
 export function getComandasSync(): ComandaCocina[] {
