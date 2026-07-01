@@ -2,12 +2,23 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { tcpConnectTest } from "./lib/escpos.js";
+import {
+  enqueueJob,
+  getJob,
+  jobToPrintResult,
+  listJobs,
+  loadQueue,
+  processQueue,
+} from "./lib/queue.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOG_DIR = path.join(__dirname, "logs");
 const LOG_FILE = path.join(LOG_DIR, "tickets.log");
 
 const PORT = Number(process.env.PORT ?? 3100);
+const HOST = process.env.PRINT_SERVER_HOST ?? "0.0.0.0";
+const API_KEY = process.env.PRINT_API_KEY?.trim() || "";
 
 function ensureLogDir() {
   if (!fs.existsSync(LOG_DIR)) {
@@ -21,75 +32,22 @@ function logTicket(request, result) {
   const entry = [
     `\n${"=".repeat(60)}`,
     `[${result.timestamp}] ${imp.nombre ?? "Impresora principal"}`,
-    `Destino lógico: ${request.destino} · Tipo: ${request.tipo}`,
-    `IP: ${imp.ip || "—"}:${imp.puerto ?? 9100} · Papel: ${imp.anchoPapel ?? "80mm"}`,
-    `Mesa: ${request.mesa ?? "—"} | Mode: ${result.mode} | OK: ${result.ok}`,
+    `Job: ${result.jobId ?? "—"} · Estado: ${result.status ?? "—"}`,
+    `Destino: ${request.destino} · Tipo: ${request.tipo}`,
+    `IP: ${imp.ip || "—"}:${imp.puerto ?? 9100} · OK: ${result.ok}`,
   ].join("\n");
 
   fs.appendFileSync(LOG_FILE, `${entry}\n${request.ticket}\n`, "utf8");
   console.info(entry);
-  console.info(request.ticket);
 }
 
-async function printEscPosStub(request) {
-  const imp = request.impresora ?? {};
-  if (!imp.ip) {
-    return {
-      ok: false,
-      mode: "network",
-      destino: request.destino,
-      tipo: request.tipo,
-      message: "Configure la IP de la impresora principal",
-      simulated: false,
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  return {
-    ok: false,
-    mode: "network",
-    destino: request.destino,
-    tipo: request.tipo,
-    message: `ESC/POS pendiente (${imp.nombre} @ ${imp.ip}:${imp.puerto ?? 9100})`,
-    simulated: false,
-    timestamp: new Date().toISOString(),
-  };
-}
-
-function printMock(request) {
-  const timestamp = new Date().toISOString();
-  const imp = request.impresora ?? {};
-  return {
-    ok: true,
-    mode: "mock",
-    destino: request.destino,
-    tipo: request.tipo,
-    message: `Ticket simulado → ${imp.nombre ?? "Impresora principal"}`,
-    simulated: true,
-    timestamp,
-  };
-}
-
-async function handlePrint(request) {
-  const imp = request.impresora ?? {};
-  const modo = imp.modo === "network" ? "network" : "mock";
-
-  if (!imp.activa) {
-    return {
-      ok: true,
-      mode: "mock",
-      destino: request.destino,
-      tipo: request.tipo,
-      message: "Impresora inactiva — ticket no enviado",
-      simulated: true,
-      timestamp: new Date().toISOString(),
-    };
-  }
-
-  if (modo === "network") {
-    return printEscPosStub(request);
-  }
-  return printMock(request);
+function checkAuth(req, res) {
+  if (!API_KEY) return true;
+  const key = req.headers["x-print-key"];
+  if (key === API_KEY) return true;
+  res.writeHead(401, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ ok: false, message: "No autorizado" }));
+  return false;
 }
 
 function readBody(req) {
@@ -101,10 +59,18 @@ function readBody(req) {
   });
 }
 
+function json(res, status, body) {
+  res.writeHead(status, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(body));
+}
+
 const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, X-Print-Key, Authorization",
+  );
 
   if (req.method === "OPTIONS") {
     res.writeHead(204);
@@ -112,52 +78,146 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === "GET" && req.url === "/health") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ ok: true, impresora: "principal-unica" }));
+  const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+
+  if (req.method === "GET" && url.pathname === "/health") {
+    const pending = listJobs(200).filter(
+      (j) => j.status === "queued" || j.status === "error" || j.status === "printing",
+    );
+    json(res, 200, {
+      ok: true,
+      service: "comandero-print-server",
+      version: 2,
+      impresora: "principal-unica",
+      queuePending: pending.length,
+      authRequired: Boolean(API_KEY),
+    });
     return;
   }
 
-  if (req.method === "POST" && req.url === "/print") {
+  if (!checkAuth(req, res)) return;
+
+  if (req.method === "GET" && url.pathname === "/jobs") {
+    const limit = Number(url.searchParams.get("limit") ?? 50);
+    const items = listJobs(limit).map(jobToPrintResult);
+    json(res, 200, { ok: true, jobs: items });
+    return;
+  }
+
+  const jobMatch = url.pathname.match(/^\/jobs\/([^/]+)$/);
+  if (req.method === "GET" && jobMatch) {
+    const job = getJob(jobMatch[1]);
+    if (!job) {
+      json(res, 404, { ok: false, message: "Trabajo no encontrado" });
+      return;
+    }
+    json(res, 200, { ok: true, job: jobToPrintResult(job) });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/test-connection") {
+    try {
+      const raw = await readBody(req);
+      const body = raw ? JSON.parse(raw) : {};
+      const imp = body.impresora ?? {};
+      const host = imp.ip?.trim() || process.env.PRINTER_IP?.trim();
+      const port = Number(imp.puerto ?? process.env.PRINTER_PORT ?? 9100);
+
+      if (!host) {
+        json(res, 400, { ok: false, message: "IP de impresora requerida" });
+        return;
+      }
+
+      const test = await tcpConnectTest(host, port);
+      json(res, test.ok ? 200 : 502, {
+        ...test,
+        host,
+        port,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      json(res, 500, {
+        ok: false,
+        message: error instanceof Error ? error.message : "Error",
+      });
+    }
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/print") {
     try {
       const raw = await readBody(req);
       const request = JSON.parse(raw);
 
       if (!request.ticket || !request.destino) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ ok: false, message: "Datos inválidos" }));
+        json(res, 400, { ok: false, message: "Datos inválidos" });
         return;
       }
 
       if (!request.tipo) request.tipo = request.destino;
 
-      const result = await handlePrint(request);
+      const job = enqueueJob(request);
+      const result = jobToPrintResult(job);
       logTicket(request, result);
 
-      res.writeHead(result.ok ? 200 : 502, {
-        "Content-Type": "application/json",
-      });
-      res.end(JSON.stringify(result));
-    } catch (error) {
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(
-        JSON.stringify({
+      const waitSync = url.searchParams.get("sync") === "1";
+      if (waitSync) {
+        const deadline = Date.now() + 90_000;
+        while (Date.now() < deadline) {
+          const current = getJob(job.id);
+          if (!current || current.status === "printed") {
+            const finalJob = current ?? job;
+            const finalResult = jobToPrintResult({
+              ...finalJob,
+              status: "printed",
+            });
+            json(res, finalResult.ok ? 200 : 502, finalResult);
+            return;
+          }
+          if (current.status === "error" && current.attempts >= current.maxAttempts) {
+            json(res, 502, jobToPrintResult(current));
+            return;
+          }
+          await new Promise((r) => setTimeout(r, 400));
+          await processQueue();
+        }
+        json(res, 504, {
           ok: false,
-          message: "Error de impresión",
-          error: error.message,
-        }),
-      );
+          jobId: job.id,
+          status: "error",
+          message: "Timeout esperando impresión",
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      json(res, 202, result);
+    } catch (error) {
+      json(res, 500, {
+        ok: false,
+        message: "Error de impresión",
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
     return;
   }
 
-  res.writeHead(404, { "Content-Type": "application/json" });
-  res.end(JSON.stringify({ ok: false, message: "Not found" }));
+  json(res, 404, { ok: false, message: "Not found" });
 });
 
-server.listen(PORT, () => {
+loadQueue();
+void processQueue();
+
+setInterval(() => {
+  void processQueue();
+}, 5000);
+
+server.listen(PORT, HOST, () => {
   ensureLogDir();
-  console.info(`🖨️  Print server · puerto ${PORT} · impresora principal única`);
-  console.info(`   Health: http://localhost:${PORT}/health`);
-  console.info(`   Log:    ${LOG_FILE}`);
+  console.info(`🖨️  Comandero print-server v2 · ${HOST}:${PORT}`);
+  console.info(`   Health:  http://localhost:${PORT}/health`);
+  console.info(`   Print:   POST http://localhost:${PORT}/print`);
+  console.info(`   Test:    POST http://localhost:${PORT}/test-connection`);
+  console.info(`   Log:     ${LOG_FILE}`);
+  if (API_KEY) console.info("   Auth:    X-Print-Key requerido");
 });

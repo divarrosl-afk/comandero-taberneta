@@ -85,5 +85,6 @@ WHERE tablename IN ('comandas_cocina', 'comandas_postres', 'audit_log');
 ## Qué sigue
 
 - **Fase B — Tests:** unitarios, repos, simulación multi-móvil. ✓
-- **Fase D — Offline serio:** outbox IndexedDB, snapshot, reintento automático (ver `FASE-D-OFFLINE.md`).
-- **Fases C, E:** optimización, impresora TCP 9100.
+- **Fase D — Offline serio:** outbox IndexedDB, snapshot, reintento automático (ver `FASE-D-OFFLINE.md`). ✓
+- **Fase E — Impresión real:** print-server, cola, TCP 9100 ESC/POS (ver `FASE-E-IMPRESION.md`). ✓
+- **Fase C:** optimización (polling, bundle).

@@ -1,32 +1,22 @@
-# Módulo de impresión Wi-Fi
-
-Impresión de tickets vía **servidor local** y **una impresora principal**.
+# Impresión Wi-Fi — Comandero Taberneta
 
 ## Arquitectura
 
 ```
-Móviles (PWA) → printTicket() → /api/impresion o print-server
-                                        ↓
-                              Impresora principal (única)
+PWA (móvil) → printTicket() → print-server (portátil) → TCP 9100 → impresora
 ```
 
-## Destinos lógicos (futuro multi-impresora)
-
-Internamente se distinguen `cocina`, `barra`, `postres`, `reimpresion`.
-**Físicamente todos salen por la misma impresora** configurada en `/configuracion/impresora`.
+Los navegadores **no pueden** abrir TCP 9100. La impresión real pasa siempre por el print-server en la LAN.
 
 ## Configuración
 
-- App: `/configuracion/impresora` → localStorage
-- Campos: nombre, IP, puerto (9100), ancho (58/80mm), activa, modo mock/network
+- `NEXT_PUBLIC_PRINT_SERVER_URL` — URL del portátil (ej. `http://192.168.1.50:3100`)
+- Impresora: `/configuracion/impresora` → modo **network**, IP, puerto 9100
 
-## Modos
+## Arranque print-server
 
-- **mock**: simula impresión (consola + log)
-- **network**: preparado ESC/POS — pendiente implementación real
+```bash
+npm run print-server:dev
+```
 
-## Próximo paso
-
-1. Modelo impresora ESC/POS confirmado
-2. Implementar TCP en `drivers/escpos.ts`
-3. Más adelante: soporte multi-impresora si se añaden
+Documentación completa: [`docs/supabase/FASE-E-IMPRESION.md`](../../docs/supabase/FASE-E-IMPRESION.md)

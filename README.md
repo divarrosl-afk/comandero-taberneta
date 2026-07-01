@@ -117,6 +117,8 @@ Ver [`docs/TESTING.md`](docs/TESTING.md).
 
 Ver [`docs/supabase/FASE-D-OFFLINE.md`](docs/supabase/FASE-D-OFFLINE.md) para offline serio (IndexedDB + reintento automático).
 
+Ver [`docs/supabase/FASE-E-IMPRESION.md`](docs/supabase/FASE-E-IMPRESION.md) para impresión real (print-server + TCP 9100).
+
 ## Ejecución en desarrollo
 
 ```bash

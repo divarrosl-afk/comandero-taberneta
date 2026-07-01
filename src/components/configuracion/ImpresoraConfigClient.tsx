@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { PrintStatusBanner } from "@/components/impresion/PrintStatusBanner";
-import { probarImpresora } from "@/modules/impresion-wifi";
+import { probarConexionImpresora, probarImpresora } from "@/modules/impresion-wifi";
 import {
   getImpresoraConfig,
   guardarImpresoraConfig,
@@ -21,8 +21,11 @@ export function ImpresoraConfigClient() {
   const [config, setConfig] = useState<ImpresoraConfig>(IMPRESORA_DEFAULT);
   const [guardado, setGuardado] = useState(false);
   const [testLoading, setTestLoading] = useState(false);
+  const [connLoading, setConnLoading] = useState(false);
   const [testMsg, setTestMsg] = useState<string | null>(null);
+  const [connMsg, setConnMsg] = useState<string | null>(null);
   const [testError, setTestError] = useState(false);
+  const [connError, setConnError] = useState(false);
 
   useEffect(() => {
     void getImpresoraConfig().then(setConfig);
@@ -40,6 +43,22 @@ export function ImpresoraConfigClient() {
     await guardarImpresoraConfig(config);
     setGuardado(true);
     setTimeout(() => setGuardado(false), 2500);
+  };
+
+  const handleProbarConexion = async () => {
+    await guardarImpresoraConfig(config);
+    setConnLoading(true);
+    setConnMsg(null);
+    try {
+      const result = await probarConexionImpresora(config);
+      setConnMsg(result.message);
+      setConnError(!result.ok);
+    } catch {
+      setConnMsg("No se pudo probar la conexión");
+      setConnError(true);
+    } finally {
+      setConnLoading(false);
+    }
   };
 
   const handleProbar = async () => {
@@ -192,6 +211,12 @@ export function ImpresoraConfigClient() {
       </div>
 
       <PrintStatusBanner
+        summary={connMsg}
+        loading={connLoading}
+        error={connError}
+      />
+
+      <PrintStatusBanner
         summary={testMsg}
         loading={testLoading}
         error={testError}
@@ -205,6 +230,15 @@ export function ImpresoraConfigClient() {
           variant="secondary"
           fullWidth
           size="lg"
+          onClick={handleProbarConexion}
+          disabled={connLoading || !config.ip}
+        >
+          {connLoading ? "Probando conexión…" : "Probar conexión TCP"}
+        </Button>
+        <Button
+          variant="secondary"
+          fullWidth
+          size="lg"
           onClick={handleProbar}
           disabled={testLoading}
         >
@@ -213,9 +247,9 @@ export function ImpresoraConfigClient() {
       </div>
 
       <p className="mt-6 text-center text-xs text-muted">
-        Todos los tickets (cocina, barra, postres) salen por esta impresora.
+        Los móviles envían tickets al servidor del portátil (print-server).
         <br />
-        Los tipos internos se conservan para ampliar a varias impresoras más adelante.
+        El portátil imprime por TCP 9100 en la red local del restaurante.
       </p>
     </main>
   );

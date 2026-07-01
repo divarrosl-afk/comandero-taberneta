@@ -1,8 +1,8 @@
 import type { ImpresoraConfig } from "@/types/impresora";
 
 /**
- * Driver ESC/POS — stub para impresora principal única.
- * Próximo paso: TCP a ip:puerto (típico 9100).
+ * En producción (Vercel) no hay TCP a la LAN.
+ * La impresión real la hace print-server en el portátil del restaurante.
  */
 export interface EscPosPrintOptions {
   impresora: ImpresoraConfig;
@@ -22,8 +22,20 @@ export async function printEscPos(
     };
   }
 
+  const serverUrl =
+    process.env.PRINT_SERVER_URL?.trim() ||
+    process.env.NEXT_PUBLIC_PRINT_SERVER_URL?.trim();
+
+  if (!serverUrl) {
+    return {
+      ok: false,
+      message:
+        "Impresión TCP solo disponible vía print-server local. Configure PRINT_SERVER_URL en el portátil del restaurante.",
+    };
+  }
+
   return {
     ok: false,
-    message: `ESC/POS pendiente (${impresora.nombre} @ ${impresora.ip}:${impresora.puerto}). Usa modo mock mientras tanto.`,
+    message: `No se pudo alcanzar el print-server (${serverUrl}). Compruebe que está en marcha.`,
   };
 }

@@ -17,7 +17,7 @@ function requiresPrintAuth(): boolean {
 
 async function forwardToPrintServer(
   request: PrintTicketRequest,
-): Promise<PrintResult | null> {
+): Promise<{ result: PrintResult; status: number } | null> {
   const serverUrl = process.env.PRINT_SERVER_URL?.trim();
   if (!serverUrl) return null;
 
@@ -27,7 +27,8 @@ async function forwardToPrintServer(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request),
     });
-    return (await response.json()) as PrintResult;
+    const result = (await response.json()) as PrintResult;
+    return { result, status: response.status };
   } catch {
     return null;
   }
@@ -107,7 +108,11 @@ export async function POST(req: Request) {
 
     if (mode === "network") {
       const forwarded = await forwardToPrintServer(body);
-      if (forwarded) return NextResponse.json(forwarded);
+      if (forwarded) {
+        return NextResponse.json(forwarded.result, {
+          status: forwarded.status === 202 ? 202 : forwarded.result.ok ? 200 : 502,
+        });
+      }
 
       const escpos = await printEscPos({
         impresora,

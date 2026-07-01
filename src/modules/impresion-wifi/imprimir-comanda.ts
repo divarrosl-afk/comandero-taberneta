@@ -12,8 +12,12 @@ import type { ComandaPostres } from "@/types/postres";
 function buildSummary(results: Awaited<ReturnType<typeof printTicket>>[]): string {
   if (results.every((r) => r.ok)) {
     const simulated = results.some((r) => r.simulated);
-    return simulated
-      ? `${PRINT_MESSAGES.enviada} · ${PRINT_MESSAGES.ticketSimulado}`
+    if (simulated) {
+      return `${PRINT_MESSAGES.enviada} · ${PRINT_MESSAGES.ticketSimulado}`;
+    }
+    const printed = results.every((r) => r.status === "printed" || !r.status);
+    return printed
+      ? `${PRINT_MESSAGES.enviada} · ${PRINT_MESSAGES.impreso}`
       : PRINT_MESSAGES.enviada;
   }
   const failed = results.filter((r) => !r.ok).map((r) => r.destino);

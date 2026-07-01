@@ -6,6 +6,13 @@ export type TipoImpresion = "cocina" | "barra" | "postres" | "reimpresion";
 
 export type PrintMode = "mock" | "network";
 
+/** Estado del trabajo en el print-server (cola local). */
+export type PrintJobStatus =
+  | "queued"
+  | "printing"
+  | "printed"
+  | "error";
+
 export interface PrintTicketRequest {
   ticket: string;
   destino: DestinoImpresion;
@@ -25,6 +32,10 @@ export interface PrintResult {
   message: string;
   simulated: boolean;
   timestamp: string;
+  /** ID en print-server (modo red local) */
+  jobId?: string;
+  status?: PrintJobStatus;
+  attempts?: number;
 }
 
 export interface PrintBatchResult {
@@ -38,6 +49,17 @@ export const PRINT_MESSAGES = {
   ticketSimulado: "Ticket simulado",
   error: "Error de impresión",
   enviando: "Enviando a impresora...",
+  imprimiendo: "Imprimiendo...",
+  enCola: "En cola de impresión",
+  impreso: "Impreso",
   impresoraInactiva: "Impresora inactiva — ticket no enviado",
   impresoraNoConfigurada: "Configure la impresora en Ajustes",
+  sinPrintServer: "Configure el servidor de impresión (URL del portátil)",
 } as const;
+
+export const PRINT_STATUS_LABELS: Record<PrintJobStatus, string> = {
+  queued: "En cola",
+  printing: "Imprimiendo",
+  printed: "Impreso",
+  error: "Error",
+};

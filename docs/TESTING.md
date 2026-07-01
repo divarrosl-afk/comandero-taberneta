@@ -40,6 +40,7 @@ Cada test arranca con:
 | Auth local | `unit/auth/seguridad.test.ts`, `repos/auth-repository-local.test.ts` |
 | Backend selector | `unit/data/backend.test.ts` |
 | Sync | `unit/sync/*`, `integration/operativa-fetch.test.ts`, `integration/operativa-read-offline.test.ts` |
+| Impresión | `unit/print/*` (ESC/POS encode, estados print-server) |
 | Mesas | `unit/mesas/estado-mesa.test.ts` |
 | Catálogo | `unit/catalogo/search.test.ts` |
 | Tickets | `unit/format/format-ticket.test.ts` |

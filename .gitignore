@@ -49,3 +49,4 @@ public/fallback-*.js.map
 
 # Print server logs
 print-server/logs/
+print-server/data/
