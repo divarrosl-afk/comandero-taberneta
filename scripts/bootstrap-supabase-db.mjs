@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Bootstrap completo de la base de datos Supabase:
- * 1. schema.sql (tablas base + restaurante seed)
- * 2. Todas las migraciones en orden cronológico
+ * Bootstrap idempotente de Supabase:
+ * - Helpers + tabla de control
+ * - schema.sql + migraciones (re-ejecutables sin error)
  *
  * Uso:
- *   SUPABASE_DB_URL="postgresql://postgres.[ref]:[PASSWORD]@..." \
- *     npm run db:bootstrap
+ *   SUPABASE_DB_URL="postgresql://..." npm run db:bootstrap
  */
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,6 +16,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
 
 const FILES = [
+  "supabase/idempotent_helpers.sql",
+  "supabase/migrations/00000_migrations_local.sql",
   "supabase/schema.sql",
   "supabase/migrations/20250630_config_impresora.sql",
   "supabase/migrations/20250630_touch_ultimo_acceso.sql",
@@ -43,6 +45,58 @@ try {
   process.exit(1);
 }
 
+function checksum(content) {
+  return crypto.createHash("sha256").update(content).digest("hex");
+}
+
+async function recordMigration(client, filename, sum) {
+  await client.query(
+    `INSERT INTO supabase_migrations_local (filename, checksum, executed_at)
+     VALUES ($1, $2, NOW())
+     ON CONFLICT (filename) DO UPDATE
+       SET checksum = EXCLUDED.checksum,
+           executed_at = EXCLUDED.executed_at`,
+    [filename, sum],
+  );
+}
+
+async function applyFile(client, rel, { force = false } = {}) {
+  const sqlPath = path.join(ROOT, rel);
+  const sql = fs.readFileSync(sqlPath, "utf8");
+  const sum = checksum(sql);
+
+  const hasTable = await client.query(`
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'supabase_migrations_local'
+  `);
+
+  if (hasTable.rowCount > 0 && !force) {
+    const { rows } = await client.query(
+      "SELECT checksum FROM supabase_migrations_local WHERE filename = $1",
+      [rel],
+    );
+    if (rows[0]?.checksum === sum) {
+      console.log(`  ⏭ ${rel} (sin cambios)`);
+      return;
+    }
+  }
+
+  console.log(`→ Aplicando ${rel}...`);
+  await client.query(sql);
+
+  if (rel !== "supabase/migrations/00000_migrations_local.sql") {
+    const tracked = await client.query(`
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'supabase_migrations_local'
+    `);
+    if (tracked.rowCount > 0) {
+      await recordMigration(client, rel, sum);
+    }
+  }
+
+  console.log(`  ✓ ${rel}\n`);
+}
+
 const client = new pg.Client({
   connectionString: dbUrl,
   ssl: { rejectUnauthorized: false },
@@ -53,11 +107,7 @@ try {
   console.log("Conectado a Supabase Postgres.\n");
 
   for (const rel of FILES) {
-    const sqlPath = path.join(ROOT, rel);
-    const sql = fs.readFileSync(sqlPath, "utf8");
-    console.log(`→ Aplicando ${rel}...`);
-    await client.query(sql);
-    console.log(`  ✓ ${rel}\n`);
+    await applyFile(client, rel);
   }
 
   const checks = [
@@ -70,8 +120,7 @@ try {
     console.log(`${name}: ${rows[0].n} fila(s)`);
   }
 
-  console.log("\n✓ Bootstrap Supabase OK.");
-  console.log("Siguiente: npm run seed:supabase (usuarios) y variables en Vercel.");
+  console.log("\n✓ Bootstrap Supabase OK (idempotente).");
 } catch (e) {
   const { sanitizeLogMessage } = await import("./ci/sanitize.mjs");
   console.error("Error:", sanitizeLogMessage(e.message ?? e));

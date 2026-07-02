@@ -40,6 +40,9 @@ try {
   await client.connect();
   console.log("Conectado a Supabase Postgres.\n");
 
+  const helpersPath = path.join(__dirname, "..", "supabase", "idempotent_helpers.sql");
+  await client.query(fs.readFileSync(helpersPath, "utf8"));
+
   const sqlPath = path.join(__dirname, "..", "supabase", "migrations", MIGRATION);
   const sql = fs.readFileSync(sqlPath, "utf8");
   console.log(`→ Aplicando ${MIGRATION}...`);
@@ -50,7 +53,8 @@ try {
   console.log(`SELECT count(*) FROM print_jobs → ${rows[0].n}`);
   console.log("\n✓ Migración print_jobs OK.");
 } catch (e) {
-  console.error("Error:", e.message ?? e);
+  const { sanitizeLogMessage } = await import("./ci/sanitize.mjs");
+  console.error("Error:", sanitizeLogMessage(e.message ?? e));
   process.exit(1);
 } finally {
   await client.end();

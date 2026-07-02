@@ -40,6 +40,8 @@ Hace: bootstrap DB → (opcional seed) → Vercel env + redeploy → health chec
 
 Ejecuta en orden: migración Supabase → variables Vercel → redeploy → health check.
 
+Las migraciones son **idempotentes** — el workflow puede reejecutarse sin error si el schema ya está aplicado.
+
 Workflows individuales: `Supabase migrate`, `Vercel configure`, `Vercel redeploy`, `Verify print health`.
 
 ---

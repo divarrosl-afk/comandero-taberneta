@@ -6,20 +6,21 @@
  *   SUPABASE_DB_URL="postgresql://postgres.[ref]:[PASSWORD]@..." \
  *     node scripts/apply-migrations.mjs
  *
- * Migraciones aplicadas en orden:
- *   20250702_rls_hardening.sql
- *   20250703_drop_ct_is_camarero.sql
- *   20250704_print_jobs.sql
+ * Migraciones aplicadas en orden (idempotentes; requiere helpers):
+ *   idempotent_helpers + 20250702 … 20250704
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(__dirname, "..");
+
 const MIGRATIONS = [
-  "20250702_rls_hardening.sql",
-  "20250703_drop_ct_is_camarero.sql",
-  "20250704_print_jobs.sql",
+  "supabase/idempotent_helpers.sql",
+  "supabase/migrations/20250702_rls_hardening.sql",
+  "supabase/migrations/20250703_drop_ct_is_camarero.sql",
+  "supabase/migrations/20250704_print_jobs.sql",
 ];
 
 const dbUrl =
@@ -53,17 +54,18 @@ try {
   await client.connect();
   console.log("Conectado a Supabase Postgres.\n");
 
-  for (const file of MIGRATIONS) {
-    const sqlPath = path.join(__dirname, "..", "supabase", "migrations", file);
+  for (const rel of MIGRATIONS) {
+    const sqlPath = path.join(ROOT, rel);
     const sql = fs.readFileSync(sqlPath, "utf8");
-    console.log(`→ Aplicando ${file}...`);
+    console.log(`→ Aplicando ${rel}...`);
     await client.query(sql);
-    console.log(`  ✓ ${file}\n`);
+    console.log(`  ✓ ${rel}\n`);
   }
 
   console.log("Migraciones aplicadas correctamente.");
 } catch (e) {
-  console.error("Error al aplicar migraciones:", e.message ?? e);
+  const { sanitizeLogMessage } = await import("./ci/sanitize.mjs");
+  console.error("Error al aplicar migraciones:", sanitizeLogMessage(e.message ?? e));
   process.exit(1);
 } finally {
   await client.end();
