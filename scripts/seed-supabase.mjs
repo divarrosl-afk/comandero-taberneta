@@ -102,7 +102,24 @@ async function ensureRestaurante() {
   console.log("✓ Restaurante creado");
 }
 
+async function findAuthUserByEmail(targetEmail) {
+  let page = 1;
+  while (page <= 10) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) throw new Error(`listUsers: ${error.message}`);
+    const found = data.users.find(
+      (u) => u.email?.toLowerCase() === targetEmail.toLowerCase(),
+    );
+    if (found) return found;
+    if (data.users.length < 200) break;
+    page += 1;
+  }
+  return null;
+}
+
 async function ensureUsuario(u) {
+  const authEmail = email(u.username);
+
   const { data: existente } = await supabase
     .from("perfiles")
     .select("id, auth_user_id")
@@ -115,19 +132,50 @@ async function ensureUsuario(u) {
     return;
   }
 
-  const { data: authData, error: authError } =
-    await supabase.auth.admin.createUser({
-      email: email(u.username),
-      password: u.password,
-      email_confirm: true,
-    });
+  let authUserId = existente?.auth_user_id ?? null;
 
-  if (authError || !authData.user) {
-    throw new Error(`${u.username} Auth: ${authError?.message}`);
+  if (!authUserId) {
+    const { data: authData, error: authError } =
+      await supabase.auth.admin.createUser({
+        email: authEmail,
+        password: u.password,
+        email_confirm: true,
+      });
+
+    if (authError) {
+      const duplicate =
+        authError.message.includes("already been registered") ||
+        authError.message.includes("already exists");
+      if (!duplicate) {
+        throw new Error(`${u.username} Auth: ${authError.message}`);
+      }
+      const existing = await findAuthUserByEmail(authEmail);
+      if (!existing) {
+        throw new Error(`${u.username} Auth duplicado pero no encontrado`);
+      }
+      authUserId = existing.id;
+      console.log(`· Usuario Auth ${u.username} ya existía — enlazando perfil`);
+    } else if (authData.user) {
+      authUserId = authData.user.id;
+    }
+  }
+
+  if (!authUserId) {
+    throw new Error(`${u.username}: no se pudo resolver auth_user_id`);
+  }
+
+  if (existente?.id) {
+    const { error: linkError } = await supabase
+      .from("perfiles")
+      .update({ auth_user_id: authUserId, activo: true })
+      .eq("id", existente.id);
+    if (linkError) throw new Error(`${u.username} enlace: ${linkError.message}`);
+    console.log(`✓ Usuario ${u.username} enlazado a Auth`);
+    return;
   }
 
   const { error: perfilError } = await supabase.from("perfiles").insert({
-    auth_user_id: authData.user.id,
+    auth_user_id: authUserId,
     restaurante_id: restauranteId,
     username: u.username,
     nombre: u.nombre,
@@ -137,7 +185,6 @@ async function ensureUsuario(u) {
   });
 
   if (perfilError) {
-    await supabase.auth.admin.deleteUser(authData.user.id);
     throw new Error(`${u.username} perfil: ${perfilError.message}`);
   }
 

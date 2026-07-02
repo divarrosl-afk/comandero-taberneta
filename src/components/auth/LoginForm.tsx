@@ -1,10 +1,23 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
+import type { LoginError } from "@/lib/auth/auth-repository";
 import { getActiveBackendLabel } from "@/lib/data/data-layer";
+
+function loginErrorMessage(error: LoginError | undefined): string {
+  switch (error) {
+    case "no_perfil":
+      return "El usuario existe en Auth pero no tiene perfil. Ejecuta el seed de usuarios (GitHub Actions → Supabase seed).";
+    case "inactive":
+      return "Usuario desactivado. Contacta con el administrador.";
+    case "credentials":
+    default:
+      return "Usuario o contraseña incorrectos";
+  }
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -13,7 +26,24 @@ export function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [seedHint, setSeedHint] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+
+  useEffect(() => {
+    if (!usaSupabase) return;
+    void fetch("/api/auth/status")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.seedRequired) {
+          setSeedHint(
+            "Aún no hay usuarios en Supabase. Ejecuta el workflow Supabase seed en GitHub Actions.",
+          );
+        }
+      })
+      .catch(() => {
+        /* opcional */
+      });
+  }, [usaSupabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,9 +51,9 @@ export function LoginForm() {
     setCargando(true);
 
     try {
-      const ok = await iniciarSesion(username, password);
-      if (!ok) {
-        setError("Usuario o contraseña incorrectos");
+      const result = await iniciarSesion(username, password);
+      if (!result.sesion) {
+        setError(loginErrorMessage(result.error));
         return;
       }
 
@@ -38,6 +68,12 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {seedHint && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {seedHint}
+        </p>
+      )}
+
       <div>
         <label
           htmlFor="username"

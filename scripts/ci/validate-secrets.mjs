@@ -19,11 +19,18 @@ const STEPS = {
   ],
   "vercel-redeploy": ["VERCEL_TOKEN"],
   health: [],
+  seed: [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "NEXT_PUBLIC_RESTAURANTE_ID",
+    "SEED_ADMIN_PASSWORD",
+    "SEED_CAMARERO_PASSWORD",
+  ],
 };
 
 const step = process.argv[2];
 if (!step || !STEPS[step]) {
-  console.error("Uso: node scripts/ci/validate-secrets.mjs <migrate|vercel-env|vercel-redeploy|health>");
+  console.error("Uso: node scripts/ci/validate-secrets.mjs <migrate|vercel-env|vercel-redeploy|health|seed>");
   process.exit(1);
 }
 

@@ -5,9 +5,9 @@ import { getSesion, guardarSesion, limpiarSesion } from "@/lib/storage/sesion";
 export const authRepositoryLocal: AuthRepository = {
   async login(username, password) {
     const sesion = autenticarUsuario(username, password);
-    if (!sesion) return null;
+    if (!sesion) return { sesion: null, error: "credentials" };
     guardarSesion(sesion);
-    return sesion;
+    return { sesion };
   },
 
   async logout() {

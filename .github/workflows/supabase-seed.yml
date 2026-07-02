@@ -1,0 +1,39 @@
+name: Supabase seed
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-seed
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    name: Crear usuarios Auth + perfiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Validate secrets
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_RESTAURANTE_ID: ${{ secrets.NEXT_PUBLIC_RESTAURANTE_ID }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          SEED_CAMARERO_PASSWORD: ${{ secrets.SEED_CAMARERO_PASSWORD }}
+        run: node scripts/ci/validate-secrets.mjs seed
+      - name: Seed usuarios
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_RESTAURANTE_ID: ${{ secrets.NEXT_PUBLIC_RESTAURANTE_ID }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          SEED_CAMARERO_PASSWORD: ${{ secrets.SEED_CAMARERO_PASSWORD }}
+        run: node scripts/seed-supabase.mjs
