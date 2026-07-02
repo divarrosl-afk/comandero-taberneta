@@ -67,8 +67,14 @@ function PostresNuevoForm() {
           onRemovePostre={formActions.removePostre}
           onDuplicatePostre={formActions.duplicatePostre}
           onClearPostres={formActions.clearPostres}
+          onUpdateCafe={formActions.updateCafe}
+          onAddCafe={formActions.addCafe}
+          onAddCafeRapido={formActions.addCafeRapido}
+          onRemoveCafe={formActions.removeCafe}
+          onDuplicateCafe={formActions.duplicateCafe}
+          onClearCafes={formActions.clearCafes}
           onSetEstadoX={formActions.setEstadoX}
-          onToggleClH={formActions.toggleClH}
+          onSetEstadoXCafe={formActions.setEstadoXCafe}
           onSetObservacion={formActions.setObservacion}
           onAddObservacion={formActions.addObservacion}
           onRemoveObservacion={formActions.removeObservacion}

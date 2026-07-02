@@ -1,17 +1,11 @@
+import { normalizeComandaPostres } from "@/lib/postres/normalize-comanda";
 import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
-import { normalizeEstadoPanel } from "@/types/panel";
 
 const STORAGE_KEY = "comandero-taberneta:postres";
 
 function normalizarPostres(comanda: ComandaPostres): ComandaPostres {
-  return {
-    ...comanda,
-    mesa: typeof comanda.mesa === "number" ? String(comanda.mesa) : comanda.mesa,
-    postres: comanda.postres ?? [],
-    observaciones: comanda.observaciones ?? [],
-    estadoPanel: normalizeEstadoPanel(comanda.estadoPanel),
-  };
+  return normalizeComandaPostres(comanda);
 }
 
 export function getPostresLocales(): ComandaPostres[] {

@@ -1,4 +1,4 @@
-import type { EstadoPostreX } from "@/types/postres";
+import type { EstadoPostreX, EstadoCafeX } from "@/types/postres";
 
 export const POSTRES_FRECUENTES = [
   "Tarta de queso",
@@ -36,4 +36,12 @@ export const OBSERVACIONES_POSTRES_RAPIDAS = [
 
 export function getEstadoXLabel(estado: EstadoPostreX): string {
   return ESTADOS_X.find((e) => e.id === estado)?.label ?? estado;
+}
+
+export const ESTADO_X_CAFE: { id: EstadoCafeX; label: string }[] = [
+  { id: "sin_cafe", label: "Sin café" },
+];
+
+export function getEstadoXCafeLabel(estado: EstadoCafeX): string {
+  return ESTADO_X_CAFE.find((e) => e.id === estado)?.label ?? estado;
 }

@@ -1,7 +1,8 @@
 import type { ComandaCocina, TipoServicio } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
 import { normalizeEstadoPanel } from "@/types/panel";
-import type { ComandaPostres, EstadoPostreX } from "@/types/postres";
+import type { ComandaPostres, EstadoCafeX, EstadoPostreX } from "@/types/postres";
+import { normalizeComandaPostres } from "@/lib/postres/normalize-comanda";
 
 export interface ComandaPersistMeta {
   camareroUsername?: string | null;
@@ -37,7 +38,9 @@ export interface DbComandaPostres {
   camarero_username: string | null;
   camarero_nombre: string;
   postres: ComandaPostres["postres"];
+  cafes: ComandaPostres["cafes"];
   estado_x: EstadoPostreX | null;
+  estado_x_cafe: EstadoCafeX | null;
   cl_h: boolean;
   observaciones: string[];
   estado_panel: EstadoPanel;
@@ -106,19 +109,21 @@ export function comandaToRow(
 }
 
 export function rowToComandaPostres(row: DbComandaPostres): ComandaPostres {
-  return {
+  return normalizeComandaPostres({
     id: row.id,
     mesa: row.mesa_id ?? row.mesa_codigo,
     mesaCodigo: row.mesa_codigo,
     camarero: row.camarero_nombre,
     postres: row.postres ?? [],
+    cafes: row.cafes ?? [],
     estadoX: row.estado_x,
+    estadoXCafe: row.estado_x_cafe,
     clH: row.cl_h,
     observaciones: Array.isArray(row.observaciones) ? row.observaciones : [],
     creadaEn: row.creada_en,
     enviada: row.enviada ?? true,
-    estadoPanel: normalizeEstadoPanel(row.estado_panel),
-  };
+    estadoPanel: row.estado_panel,
+  });
 }
 
 export function comandaPostresToRow(
@@ -138,7 +143,9 @@ export function comandaPostresToRow(
     camarero_username: meta?.camareroUsername ?? null,
     camarero_nombre: comanda.camarero,
     postres: comanda.postres,
+    cafes: comanda.cafes,
     estado_x: comanda.estadoX,
+    estado_x_cafe: comanda.estadoXCafe,
     cl_h: comanda.clH,
     observaciones: comanda.observaciones,
     estado_panel: comanda.estadoPanel,

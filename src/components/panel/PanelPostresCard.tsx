@@ -1,6 +1,6 @@
 "use client";
 
-import { getEstadoXLabel } from "@/data/postres-catalogo";
+import { getEstadoXCafeLabel, getEstadoXLabel } from "@/data/postres-catalogo";
 import { formatHora } from "@/lib/historial/items";
 import { resolveNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { EstadoPanelBadge } from "@/components/panel/EstadoPanelBadge";
@@ -34,27 +34,49 @@ export function PanelPostresCard({
         <EstadoPanelBadge estado={comanda.estadoPanel} />
       </header>
 
-      <div className="mb-4 space-y-2 rounded-xl bg-background p-3">
-        <p className="text-xs font-bold uppercase tracking-wide text-accent">
-          Postres
-        </p>
-        <ul className="space-y-1">
-          {comanda.postres.map((p) => (
-            <li key={p.id} className="text-sm">
-              · {p.nombre}
-              {p.cantidad > 1 && ` x${p.cantidad}`}
-              {p.nota && ` · ${p.nota}`}
-            </li>
-          ))}
-        </ul>
-
-        {(comanda.estadoX || comanda.clH) && (
-          <div className="mt-2 border-t border-border pt-2 text-sm">
-            <p className="font-mono text-muted">---------</p>
+      <div className="mb-4 space-y-3 rounded-xl bg-background p-3">
+        {(comanda.postres.length > 0 || comanda.estadoX) && (
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-accent">
+              Postres
+            </p>
+            <ul className="space-y-1">
+              {comanda.postres.map((p) => (
+                <li key={p.id} className="text-sm">
+                  · {p.nombre}
+                  {p.cantidad > 1 && ` x${p.cantidad}`}
+                  {p.nota && ` · ${p.nota}`}
+                </li>
+              ))}
+            </ul>
             {comanda.estadoX && (
-              <p className="font-semibold">X: {getEstadoXLabel(comanda.estadoX)}</p>
+              <p className="text-sm font-semibold">
+                X: {getEstadoXLabel(comanda.estadoX)}
+              </p>
             )}
-            {comanda.clH && <p className="font-semibold">C/L + H</p>}
+          </div>
+        )}
+
+        {(comanda.cafes?.length > 0 || comanda.estadoXCafe || comanda.clH) && (
+          <div className="space-y-2 border-t border-border pt-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-accent">
+              Cafés
+            </p>
+            {comanda.estadoXCafe && (
+              <p className="text-sm font-semibold">
+                X: {getEstadoXCafeLabel(comanda.estadoXCafe)}
+              </p>
+            )}
+            <ul className="space-y-1">
+              {(comanda.cafes ?? []).map((c) => (
+                <li key={c.id} className="text-sm">
+                  · {c.nombre}
+                  {c.cantidad > 1 && ` x${c.cantidad}`}
+                  {c.nota && ` · ${c.nota}`}
+                </li>
+              ))}
+            </ul>
+            {comanda.clH && <p className="text-sm font-semibold">C/L + H</p>}
           </div>
         )}
 

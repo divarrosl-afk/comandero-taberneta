@@ -1,6 +1,6 @@
 "use client";
 
-import { getEstadoXLabel } from "@/data/postres-catalogo";
+import { getEstadoXCafeLabel, getEstadoXLabel } from "@/data/postres-catalogo";
 import { getEstadoPanelLabel } from "@/types/panel";
 import type { ComandaPostres } from "@/types/postres";
 
@@ -22,13 +22,21 @@ export function PostresMarcaBanner({ comanda }: PostresMarcaBannerProps) {
             · X: {getEstadoXLabel(comanda.estadoX)}
           </span>
         )}
-        {comanda.clH && (
-          <span className="font-medium text-purple-700"> · C/L + H</span>
+        {comanda.estadoXCafe && (
+          <span className="font-medium text-purple-700">
+            {" "}
+            · X café: {getEstadoXCafeLabel(comanda.estadoXCafe)}
+          </span>
         )}
       </p>
       {comanda.postres.length > 0 && (
         <p className="mt-1 text-xs text-purple-800">
-          {comanda.postres.map((p) => p.nombre).join(" · ")}
+          Postres: {comanda.postres.map((p) => p.nombre).join(" · ")}
+        </p>
+      )}
+      {(comanda.cafes?.length ?? 0) > 0 && (
+        <p className="mt-1 text-xs text-purple-800">
+          Cafés: {(comanda.cafes ?? []).map((c) => c.nombre).join(" · ")}
         </p>
       )}
     </div>

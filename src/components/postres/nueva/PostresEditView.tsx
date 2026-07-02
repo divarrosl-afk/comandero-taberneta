@@ -6,20 +6,20 @@ import { Button } from "@/components/ui/Button";
 import { BottomBar } from "@/components/ui/BottomBar";
 import { MesaSelector } from "@/components/comanda/MesaSelector";
 import { CabeceraComanda } from "@/components/comanda/nueva/CabeceraComanda";
-import { ClHButton } from "@/components/postres/nueva/ClHButton";
 import { EstadoXSelector } from "@/components/postres/nueva/EstadoXSelector";
+import { CafesSeccionPanel } from "@/components/postres/nueva/CafesSeccionPanel";
 import { PostresObservacionesSection } from "@/components/postres/nueva/PostresObservacionesSection";
 import { PostresSeccionPanel } from "@/components/postres/nueva/PostresSeccionPanel";
 import type { usePostresForm } from "@/hooks/usePostresForm";
 
 type PostresFormActions = ReturnType<typeof usePostresForm>;
 
-type TabPostres = "mesa" | "postres" | "opciones" | "observaciones";
+type TabPostres = "mesa" | "postres" | "cafes" | "observaciones";
 
 const TABS: { id: TabPostres; label: string }[] = [
   { id: "mesa", label: "Mesa" },
   { id: "postres", label: "Postres" },
-  { id: "opciones", label: "X / C/L" },
+  { id: "cafes", label: "Cafés" },
   { id: "observaciones", label: "Obs." },
 ];
 
@@ -34,8 +34,14 @@ interface PostresEditViewProps {
   onRemovePostre: PostresFormActions["removePostre"];
   onDuplicatePostre: PostresFormActions["duplicatePostre"];
   onClearPostres: PostresFormActions["clearPostres"];
+  onUpdateCafe: PostresFormActions["updateCafe"];
+  onAddCafe: PostresFormActions["addCafe"];
+  onAddCafeRapido: PostresFormActions["addCafeRapido"];
+  onRemoveCafe: PostresFormActions["removeCafe"];
+  onDuplicateCafe: PostresFormActions["duplicateCafe"];
+  onClearCafes: PostresFormActions["clearCafes"];
   onSetEstadoX: PostresFormActions["setEstadoX"];
-  onToggleClH: PostresFormActions["toggleClH"];
+  onSetEstadoXCafe: PostresFormActions["setEstadoXCafe"];
   onSetObservacion: PostresFormActions["setObservacion"];
   onAddObservacion: PostresFormActions["addObservacion"];
   onRemoveObservacion: PostresFormActions["removeObservacion"];
@@ -46,7 +52,7 @@ interface PostresEditViewProps {
 
 function getValidationHint(form: PostresFormActions["form"]): string | undefined {
   if (!form.mesa) return "Selecciona una mesa";
-  return "Añade al menos un postre, X o C/L + H";
+  return "Añade al menos un postre, café o X";
 }
 
 export function PostresEditView({
@@ -60,8 +66,14 @@ export function PostresEditView({
   onRemovePostre,
   onDuplicatePostre,
   onClearPostres,
+  onUpdateCafe,
+  onAddCafe,
+  onAddCafeRapido,
+  onRemoveCafe,
+  onDuplicateCafe,
+  onClearCafes,
   onSetEstadoX,
-  onToggleClH,
+  onSetEstadoXCafe,
   onSetObservacion,
   onAddObservacion,
   onRemoveObservacion,
@@ -135,6 +147,7 @@ export function PostresEditView({
         {tab === "postres" && (
           <PostresSeccionPanel
             postres={form.postres}
+            estadoX={form.estadoX}
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
             onUpdate={onUpdatePostre}
@@ -143,14 +156,22 @@ export function PostresEditView({
             onRemove={onRemovePostre}
             onDuplicate={onDuplicatePostre}
             onClear={onClearPostres}
+            onSetEstadoX={onSetEstadoX}
           />
         )}
 
-        {tab === "opciones" && (
-          <div className="space-y-4">
-            <EstadoXSelector value={form.estadoX} onChange={onSetEstadoX} />
-            <ClHButton active={form.clH} onToggle={onToggleClH} />
-          </div>
+        {tab === "cafes" && (
+          <CafesSeccionPanel
+            cafes={form.cafes}
+            estadoXCafe={form.estadoXCafe}
+            onUpdate={onUpdateCafe}
+            onAdd={onAddCafe}
+            onAddRapido={onAddCafeRapido}
+            onRemove={onRemoveCafe}
+            onDuplicate={onDuplicateCafe}
+            onClear={onClearCafes}
+            onSetEstadoXCafe={onSetEstadoXCafe}
+          />
         )}
 
         {tab === "observaciones" && (

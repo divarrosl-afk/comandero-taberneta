@@ -36,8 +36,9 @@ export function borradorPostresTieneDatos(form: PostresFormState): boolean {
     form.mesa !== null ||
     form.camareroId !== null ||
     form.postres.some(postreTieneContenido) ||
+    form.cafes.some(postreTieneContenido) ||
     form.estadoX !== null ||
-    form.clH ||
+    form.estadoXCafe !== null ||
     form.observaciones.some((o) => o.trim().length > 0)
   );
 }

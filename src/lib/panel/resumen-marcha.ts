@@ -53,9 +53,15 @@ export function lineasMarchaPostres(
   comanda: ComandaPostres,
   max = 3,
 ): string[] {
-  return comanda.postres
-    .map((p) => (p.cantidad > 1 ? `${p.nombre} x${p.cantidad}` : p.nombre))
-    .slice(0, max);
+  const lineas = [
+    ...comanda.postres.map((p) =>
+      p.cantidad > 1 ? `${p.nombre} x${p.cantidad}` : p.nombre,
+    ),
+    ...(comanda.cafes ?? []).map((c) =>
+      c.cantidad > 1 ? `${c.nombre} x${c.cantidad}` : c.nombre,
+    ),
+  ];
+  return lineas.slice(0, max);
 }
 
 export function totalPlatosCocina(comanda: ComandaCocina): number {

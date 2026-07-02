@@ -14,6 +14,7 @@ import {
 } from "@/lib/storage/borrador-postres";
 import type { ProductoCatalogo } from "@/types/catalogo";
 import type {
+  EstadoCafeX,
   EstadoPostreX,
   PostreFormItem,
   PostresFormState,
@@ -24,7 +25,9 @@ const estadoInicial: PostresFormState = {
   mesa: null,
   camareroId: null,
   postres: [crearPostreVacio()],
+  cafes: [crearPostreVacio()],
   estadoX: null,
+  estadoXCafe: null,
   clH: false,
   observaciones: [""],
 };
@@ -70,7 +73,18 @@ export function usePostresForm(
 
     const borrador = cargarBorradorPostres();
     if (borrador && borradorPostresTieneDatos(borrador)) {
-      setForm(aplicarCamareroFijo(borrador, camareroFijo));
+      setForm(
+        aplicarCamareroFijo(
+          {
+            ...borrador,
+            cafes: borrador.cafes?.length
+              ? borrador.cafes
+              : [crearPostreVacio()],
+            estadoXCafe: borrador.estadoXCafe ?? null,
+          },
+          camareroFijo,
+        ),
+      );
       setBorradorRecuperado(true);
     } else {
       const base = camareroFijo
@@ -174,10 +188,84 @@ export function usePostresForm(
     setForm((prev) => ({ ...prev, postres: [crearPostreVacio()] }));
   }, []);
 
+  const updateCafe = useCallback(
+    (id: string, cambios: Partial<PostreFormItem>) => {
+      setForm((prev) => ({
+        ...prev,
+        cafes: prev.cafes.map((c) =>
+          c.id === id ? { ...c, ...cambios } : c,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const addCafe = useCallback((nombre?: string) => {
+    setForm((prev) => ({
+      ...prev,
+      cafes: [
+        ...prev.cafes,
+        { ...crearPostreVacio(), nombre: nombre ?? "" },
+      ],
+    }));
+  }, []);
+
+  const addCafeRapido = useCallback((nombre: string) => {
+    setForm((prev) => {
+      const vacio = prev.cafes.find((c) => !c.nombre.trim());
+      const datos = { nombre };
+      if (vacio) {
+        return {
+          ...prev,
+          cafes: prev.cafes.map((c) =>
+            c.id === vacio.id ? { ...c, ...datos } : c,
+          ),
+        };
+      }
+      return {
+        ...prev,
+        cafes: [...prev.cafes, { ...crearPostreVacio(), ...datos }],
+      };
+    });
+  }, []);
+
+  const removeCafe = useCallback((id: string) => {
+    setForm((prev) => {
+      const lista = prev.cafes.filter((c) => c.id !== id);
+      return {
+        ...prev,
+        cafes: lista.length ? lista : [crearPostreVacio()],
+      };
+    });
+  }, []);
+
+  const duplicateCafe = useCallback((id: string) => {
+    setForm((prev) => {
+      const index = prev.cafes.findIndex((c) => c.id === id);
+      if (index === -1) return prev;
+
+      const copia = duplicarPostre(prev.cafes[index]);
+      const lista = [...prev.cafes];
+      lista.splice(index + 1, 0, copia);
+      return { ...prev, cafes: lista };
+    });
+  }, []);
+
+  const clearCafes = useCallback(() => {
+    setForm((prev) => ({ ...prev, cafes: [crearPostreVacio()] }));
+  }, []);
+
   const setEstadoX = useCallback((estado: EstadoPostreX | null) => {
     setForm((prev) => ({
       ...prev,
       estadoX: prev.estadoX === estado ? null : estado,
+    }));
+  }, []);
+
+  const setEstadoXCafe = useCallback((estado: EstadoCafeX | null) => {
+    setForm((prev) => ({
+      ...prev,
+      estadoXCafe: prev.estadoXCafe === estado ? null : estado,
     }));
   }, []);
 
@@ -249,7 +337,14 @@ export function usePostresForm(
     removePostre,
     duplicatePostre,
     clearPostres,
+    updateCafe,
+    addCafe,
+    addCafeRapido,
+    removeCafe,
+    duplicateCafe,
+    clearCafes,
     setEstadoX,
+    setEstadoXCafe,
     toggleClH,
     setObservacion,
     addObservacion,
