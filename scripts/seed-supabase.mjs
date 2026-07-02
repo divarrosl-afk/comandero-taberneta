@@ -128,7 +128,12 @@ async function ensureUsuario(u) {
     .maybeSingle();
 
   if (existente?.auth_user_id) {
-    console.log(`✓ Usuario ${u.username} ya existe`);
+    const { error } = await supabase.auth.admin.updateUserById(existente.auth_user_id, {
+      password: u.password,
+      email_confirm: true,
+    });
+    if (error) throw new Error(`${u.username} password: ${error.message}`);
+    console.log(`✓ Usuario ${u.username} — contraseña sincronizada`);
     return;
   }
 

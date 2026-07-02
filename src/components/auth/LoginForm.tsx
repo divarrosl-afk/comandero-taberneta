@@ -10,10 +10,11 @@ import { getActiveBackendLabel } from "@/lib/data/data-layer";
 function loginErrorMessage(error: LoginError | undefined): string {
   switch (error) {
     case "no_perfil":
-      return "El usuario existe en Auth pero no tiene perfil. Ejecuta el seed de usuarios (GitHub Actions → Supabase seed).";
+      return "El usuario existe en Auth pero no tiene perfil. Ejecuta Supabase seed en GitHub Actions.";
     case "inactive":
       return "Usuario desactivado. Contacta con el administrador.";
     case "credentials":
+      return "Usuario o contraseña incorrectos. En producción usa la contraseña de SEED_ADMIN_PASSWORD (GitHub Secrets), no «admin» del modo local.";
     default:
       return "Usuario o contraseña incorrectos";
   }
@@ -127,6 +128,13 @@ export function LoginForm() {
         Backend: {getActiveBackendLabel()}
         {usaSupabase ? " · Supabase Auth" : " · acceso local"}
       </p>
+
+      {usaSupabase && (
+        <p className="text-center text-xs text-muted">
+          Usuario <strong>divarro</strong> · contraseña = la de{" "}
+          <code className="text-[10px]">SEED_ADMIN_PASSWORD</code> en GitHub Secrets
+        </p>
+      )}
     </form>
   );
 }
