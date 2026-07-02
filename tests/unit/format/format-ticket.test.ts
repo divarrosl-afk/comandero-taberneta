@@ -5,6 +5,7 @@ import {
   resolveMesaDisplay,
   sectionHeader,
   stripTicketMarkers,
+  toTicketUpper,
 } from "@/lib/comanda/ticket-kitchen";
 import { comandaToTicketBarra, comandaToTicketCocina } from "@/modules/impresion-wifi/format-tickets";
 import { comandaPostresToTexto } from "@/lib/postres/format-ticket";
@@ -86,6 +87,11 @@ describe("format-ticket", () => {
 });
 
 describe("ticket-kitchen", () => {
+  it("toTicketUpper preserva acentos españoles", () => {
+    expect(toTicketUpper("sin láctosa")).toBe("SIN LÁCTOSA");
+    expect(toTicketUpper("jalapeño")).toBe("JALAPEÑO");
+  });
+
   it("sectionHeader centra título en mayúsculas", () => {
     const line = sectionHeader("ENTRANTES", 48);
     expect(line).toContain("ENTRANTES");

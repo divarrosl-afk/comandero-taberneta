@@ -5,8 +5,28 @@ import { TICKET_WIDTH_80MM } from "@/lib/comanda/ticket-kitchen";
 import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import type { ComandaCocina } from "@/types/comanda";
 
-/** Ancho visual 80 mm ≈ 48 caracteres monospace a ~8px/char */
 const TICKET_PREVIEW_CH = `${TICKET_WIDTH_80MM}ch`;
+
+function isDetailLine(line: string): boolean {
+  const t = line.trimStart();
+  return t.startsWith("- ") || t.startsWith("+") || t.startsWith("SUPL.");
+}
+
+function TicketLine({ line }: { line: string }) {
+  if (!line) return <span className="block h-[0.6em]" aria-hidden />;
+  const detail = isDetailLine(line);
+  return (
+    <span
+      className={
+        detail
+          ? "block text-[17px] font-bold leading-[1.35] tracking-tight"
+          : "block text-[15px] font-semibold leading-[1.45]"
+      }
+    >
+      {line}
+    </span>
+  );
+}
 
 interface ComandaTicketPreviewProps {
   comanda: ComandaCocina;
@@ -16,6 +36,7 @@ export function ComandaTicketPreview({ comanda }: ComandaTicketPreviewProps) {
   const texto = comandaToTexto(comanda, {
     nombreMesa: getNombreMesaComanda(comanda),
   });
+  const lineas = texto.split("\n");
 
   return (
     <div className="mx-auto w-full max-w-none rounded-2xl border-2 border-stone-700 shadow-lg">
@@ -24,16 +45,18 @@ export function ComandaTicketPreview({ comanda }: ComandaTicketPreviewProps) {
           Vista previa · Ticket cocina/barra · 80 mm
         </p>
       </div>
-      <pre
-        className="mx-auto whitespace-pre-wrap break-words bg-stone-900 px-2 py-4 font-mono text-[15px] font-semibold leading-[1.45] text-stone-100"
+      <div
+        className="mx-auto bg-stone-900 px-1 py-4 font-mono text-stone-100"
         style={{
           width: TICKET_PREVIEW_CH,
           maxWidth: "100%",
           minWidth: "min(100%, 288px)",
         }}
       >
-        {texto}
-      </pre>
+        {lineas.map((line, i) => (
+          <TicketLine key={`${i}-${line.slice(0, 12)}`} line={line} />
+        ))}
+      </div>
     </div>
   );
 }

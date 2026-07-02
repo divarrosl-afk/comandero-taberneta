@@ -9,6 +9,7 @@ import {
   CMD_CODEPAGE_CP858,
   CMD_DOUBLE_OFF,
   CMD_DOUBLE_ON,
+  CMD_DOUBLE_HEIGHT_ON,
   CMD_INIT,
   CMD_LF,
   cutPaper,
@@ -17,6 +18,7 @@ import {
 } from "@/lib/impresion/escpos-commands";
 import {
   MARK_CENTER,
+  MARK_DETAIL,
   MARK_DISH,
   MARK_INDENT,
   MARK_SECTION,
@@ -98,6 +100,7 @@ type LineStyle = {
   center: boolean;
   bold: boolean;
   double: boolean;
+  doubleHeight: boolean;
   width: number;
 };
 
@@ -105,21 +108,21 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
   if (raw === MARK_SEP) {
     return {
       text: "=".repeat(paperWidth),
-      style: { center: false, bold: false, double: false, width: paperWidth },
+      style: { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth },
     };
   }
 
   if (raw.startsWith(MARK_CENTER)) {
     return {
       text: raw.slice(MARK_CENTER.length),
-      style: { center: true, bold: true, double: false, width: paperWidth },
+      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
     };
   }
 
   if (raw.startsWith(MARK_SECTION)) {
     return {
       text: raw.slice(MARK_SECTION.length),
-      style: { center: true, bold: true, double: false, width: paperWidth },
+      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
     };
   }
 
@@ -127,27 +130,52 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     const text = raw.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
     return {
       text,
-      style: { center: true, bold: true, double: true, width: Math.floor(paperWidth / 2) },
+      style: {
+        center: true,
+        bold: true,
+        double: true,
+        doubleHeight: false,
+        width: Math.floor(paperWidth / 2),
+      },
     };
   }
 
   if (raw.startsWith(MARK_DISH)) {
     return {
       text: raw.slice(MARK_DISH.length),
-      style: { center: false, bold: true, double: true, width: Math.floor(paperWidth / 2) },
+      style: {
+        center: false,
+        bold: true,
+        double: true,
+        doubleHeight: false,
+        width: Math.floor(paperWidth / 2),
+      },
+    };
+  }
+
+  if (raw.startsWith(MARK_DETAIL)) {
+    return {
+      text: raw.slice(MARK_DETAIL.length),
+      style: {
+        center: false,
+        bold: true,
+        double: false,
+        doubleHeight: true,
+        width: paperWidth,
+      },
     };
   }
 
   if (raw.startsWith(MARK_INDENT)) {
     return {
       text: raw.slice(MARK_INDENT.length),
-      style: { center: false, bold: false, double: false, width: paperWidth },
+      style: { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth },
     };
   }
 
   return {
     text: raw,
-    style: { center: false, bold: false, double: false, width: paperWidth },
+    style: { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth },
   };
 }
 
@@ -163,11 +191,12 @@ function appendStyledLine(chunks: Buffer[], text: string, style: LineStyle): voi
 
     if (style.bold) chunks.push(CMD_BOLD_ON);
     if (style.double) chunks.push(CMD_DOUBLE_ON);
+    else if (style.doubleHeight) chunks.push(CMD_DOUBLE_HEIGHT_ON);
 
     chunks.push(encodeToCp858(line));
     chunks.push(CMD_LF);
 
-    if (style.double) chunks.push(CMD_DOUBLE_OFF);
+    if (style.double || style.doubleHeight) chunks.push(CMD_DOUBLE_OFF);
     if (style.bold) chunks.push(CMD_BOLD_OFF);
     chunks.push(CMD_ALIGN_LEFT);
   }
@@ -192,7 +221,12 @@ function ticketEpilogue(chunks: Buffer[]): void {
 }
 
 function hasTicketMarkers(text: string): boolean {
-  return text.includes("@C@") || text.includes("@D@") || text.includes("@S@");
+  return (
+    text.includes("@C@") ||
+    text.includes("@D@") ||
+    text.includes("@M@") ||
+    text.includes("@S@")
+  );
 }
 
 /** Construye buffer ESC/POS a partir de líneas de texto plano. */

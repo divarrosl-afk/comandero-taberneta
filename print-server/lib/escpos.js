@@ -23,6 +23,7 @@ const CMD_ALIGN_CENTER = Buffer.from([ESC, 0x61, 0x01]);
 const CMD_BOLD_ON = Buffer.from([ESC, 0x45, 0x01]);
 const CMD_BOLD_OFF = Buffer.from([ESC, 0x45, 0x00]);
 const CMD_DOUBLE_ON = Buffer.from([GS, 0x21, 0x11]);
+const CMD_DOUBLE_HEIGHT_ON = Buffer.from([GS, 0x21, 0x01]);
 const CMD_DOUBLE_OFF = Buffer.from([GS, 0x21, 0x00]);
 const CMD_LF = Buffer.from([0x0a]);
 
@@ -31,9 +32,22 @@ const MARK_SEP = "@S@";
 const MARK_SECTION = "@T@";
 const MARK_URGENT = "@U@";
 const MARK_DISH = "@D@";
+const MARK_DETAIL = "@M@";
 const MARK_INDENT = "@I@";
 
-const UNICODE_TO_CP858 = { 0x20ac: 0xd5 };
+const UNICODE_TO_CP858 = {
+  0x20ac: 0xd5,
+  0x00c7: 0x80, 0x00fc: 0x81, 0x00e9: 0x82, 0x00e2: 0x83, 0x00e4: 0x84,
+  0x00e0: 0x85, 0x00e5: 0x86, 0x00e7: 0x87, 0x00ea: 0x88, 0x00eb: 0x89,
+  0x00e8: 0x8a, 0x00ef: 0x8b, 0x00ee: 0x8c, 0x00ec: 0x8d, 0x00c4: 0x8e,
+  0x00c5: 0x8f, 0x00c9: 0x90, 0x00e6: 0x91, 0x00c6: 0x92, 0x00f4: 0x93,
+  0x00f6: 0x94, 0x00f2: 0x95, 0x00fb: 0x96, 0x00f9: 0x97, 0x00ff: 0x98,
+  0x00d6: 0x99, 0x00dc: 0x9a, 0x00f8: 0x9b, 0x00a3: 0x9c, 0x00d8: 0x9d,
+  0x00d7: 0x9e, 0x00e1: 0xa0, 0x00ed: 0xa1, 0x00f3: 0xa2, 0x00fa: 0xa3,
+  0x00f1: 0xa4, 0x00d1: 0xa5, 0x00aa: 0xa6, 0x00ba: 0xa7, 0x00bf: 0xa8,
+  0x00ae: 0xa9, 0x00ac: 0xac, 0x00a1: 0xad, 0x00ab: 0xae, 0x00bb: 0xaf,
+  0x00c1: 0xb5, 0x00cd: 0xd6, 0x00d3: 0xe0, 0x00da: 0xe9,
+};
 
 export const ADVANCED_TEST_TICKET_TEXT = `--------------------------------
 LA TABERNETA
@@ -121,51 +135,49 @@ function isLegacyCenteredLine(line, index) {
 }
 
 function hasTicketMarkers(text) {
-  return text.includes("@C@") || text.includes("@D@") || text.includes("@S@");
+  return text.includes("@C@") || text.includes("@D@") || text.includes("@M@") || text.includes("@S@");
 }
 
 function parseTicketLine(raw, paperWidth) {
+  const normal = { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth };
   if (raw === MARK_SEP) {
-    return {
-      text: "=".repeat(paperWidth),
-      style: { center: false, bold: false, double: false, width: paperWidth },
-    };
+    return { text: "=".repeat(paperWidth), style: { ...normal } };
   }
   if (raw.startsWith(MARK_CENTER)) {
     return {
       text: raw.slice(MARK_CENTER.length),
-      style: { center: true, bold: true, double: false, width: paperWidth },
+      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
     };
   }
   if (raw.startsWith(MARK_SECTION)) {
     return {
       text: raw.slice(MARK_SECTION.length),
-      style: { center: true, bold: true, double: false, width: paperWidth },
+      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
     };
   }
   if (raw.startsWith(MARK_URGENT)) {
     const text = raw.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
     return {
       text,
-      style: { center: true, bold: true, double: true, width: Math.floor(paperWidth / 2) },
+      style: { center: true, bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
     };
   }
   if (raw.startsWith(MARK_DISH)) {
     return {
       text: raw.slice(MARK_DISH.length),
-      style: { center: false, bold: true, double: true, width: Math.floor(paperWidth / 2) },
+      style: { center: false, bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
+    };
+  }
+  if (raw.startsWith(MARK_DETAIL)) {
+    return {
+      text: raw.slice(MARK_DETAIL.length),
+      style: { center: false, bold: true, double: false, doubleHeight: true, width: paperWidth },
     };
   }
   if (raw.startsWith(MARK_INDENT)) {
-    return {
-      text: raw.slice(MARK_INDENT.length),
-      style: { center: false, bold: false, double: false, width: paperWidth },
-    };
+    return { text: raw.slice(MARK_INDENT.length), style: { ...normal } };
   }
-  return {
-    text: raw,
-    style: { center: false, bold: false, double: false, width: paperWidth },
-  };
+  return { text: raw, style: { ...normal } };
 }
 
 function appendStyledLine(chunks, text, style) {
@@ -179,9 +191,10 @@ function appendStyledLine(chunks, text, style) {
     else chunks.push(CMD_ALIGN_LEFT);
     if (style.bold) chunks.push(CMD_BOLD_ON);
     if (style.double) chunks.push(CMD_DOUBLE_ON);
+    else if (style.doubleHeight) chunks.push(CMD_DOUBLE_HEIGHT_ON);
     chunks.push(encodeToCp858(line));
     chunks.push(CMD_LF);
-    if (style.double) chunks.push(CMD_DOUBLE_OFF);
+    if (style.double || style.doubleHeight) chunks.push(CMD_DOUBLE_OFF);
     if (style.bold) chunks.push(CMD_BOLD_OFF);
     chunks.push(CMD_ALIGN_LEFT);
   }

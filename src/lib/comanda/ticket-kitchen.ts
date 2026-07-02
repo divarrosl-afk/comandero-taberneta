@@ -11,6 +11,7 @@ export const MARK_SEP = "@S@";
 export const MARK_SECTION = "@T@";
 export const MARK_URGENT = "@U@";
 export const MARK_DISH = "@D@";
+export const MARK_DETAIL = "@M@";
 export const MARK_INDENT = "@I@";
 
 export interface TicketFormatOptions {
@@ -25,6 +26,11 @@ const BARRA_EXTRA_RE = /hielo|limón|limon|pan|cubiertos/i;
 
 const INDENT_MOD = " - ";
 
+/** Mayúsculas preservando acentos españoles (Á, É, Ñ…). */
+export function toTicketUpper(text: string): string {
+  return text.toLocaleUpperCase("es-ES").trim();
+}
+
 export function stripTicketMarkers(text: string, width = TICKET_WIDTH_80MM): string {
   return text
     .split("\n")
@@ -34,6 +40,7 @@ export function stripTicketMarkers(text: string, width = TICKET_WIDTH_80MM): str
       if (line.startsWith(MARK_SECTION)) return line.slice(MARK_SECTION.length);
       if (line.startsWith(MARK_URGENT)) return line.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
       if (line.startsWith(MARK_DISH)) return line.slice(MARK_DISH.length);
+      if (line.startsWith(MARK_DETAIL)) return line.slice(MARK_DETAIL.length);
       if (line.startsWith(MARK_INDENT)) return line.slice(MARK_INDENT.length);
       return line;
     })
@@ -66,7 +73,7 @@ function pluralizarPalabra(palabra: string): string {
 }
 
 function pluralizarNombre(nombre: string, cantidad: number): string {
-  const upper = nombre.toUpperCase().trim();
+  const upper = toTicketUpper(nombre);
   if (cantidad <= 1) return upper;
 
   const palabras = upper.split(/\s+/);
@@ -93,7 +100,7 @@ function formatModificacion(label: string, lineWidth = TICKET_WIDTH_80MM): {
 } {
   const norm = normalizeKey(label);
   if (norm === "urgente") return { urgente: true };
-  const full = label.toUpperCase().trim();
+  const full = toTicketUpper(label);
   const prefixLen = INDENT_MOD.length;
   if (full.length + prefixLen <= lineWidth) return { urgente: false, text: full };
   return { urgente: false, text: full };
@@ -120,7 +127,7 @@ function procesarModificaciones(modificaciones: string[]): {
 
 function salsasBullets(salsas: PlatoComanda["salsas"]): string[] {
   return salsas.map((s) => {
-    const nombre = s.nombre.toUpperCase();
+    const nombre = toTicketUpper(s.nombre);
     return s.cantidad > 1 ? `${nombre} x${s.cantidad}` : nombre;
   });
 }
@@ -211,17 +218,17 @@ function lineaPlatoCantidad(
   if (cantidad > 1) {
     return `${MARK_DISH}${cantidad} ${pluralizarNombre(nombre, cantidad)}`;
   }
-  return `${MARK_DISH}${prefijoTipo(tipo)}${nombre.toUpperCase()}`;
+  return `${MARK_DISH}${prefijoTipo(tipo)}${toTicketUpper(nombre)}`;
 }
 
 function lineasSuplemento(tipo: TipoPlato | undefined, suplemento?: number): string[] {
   if (!suplemento) return [];
-  if (tipo === "carta") return [`${MARK_INDENT}SUPL. +${suplemento} EUR`];
-  return [`${MARK_INDENT} +${suplemento} EUR`];
+  if (tipo === "carta") return [`${MARK_DETAIL}SUPL. +${suplemento} EUR`];
+  return [`${MARK_DETAIL} +${suplemento} EUR`];
 }
 
 function lineasBullets(bullets: string[]): string[] {
-  return bullets.map((b) => `${MARK_INDENT}${INDENT_MOD}${b}`);
+  return bullets.map((b) => `${MARK_DETAIL}${INDENT_MOD}${b}`);
 }
 
 function lineasGrupo(grupo: GrupoImpresion): string[] {
@@ -254,7 +261,7 @@ function lineasGrupo(grupo: GrupoImpresion): string[] {
     if (u.notaLibre) {
       for (const parte of u.notaLibre.split(/\s*[·•]\s*/)) {
         const t = parte.trim();
-        if (t) lineas.push(`${MARK_INDENT}${INDENT_MOD}${t.toUpperCase()}`);
+        if (t) lineas.push(`${MARK_DETAIL}${INDENT_MOD}${toTicketUpper(t)}`);
       }
     }
     return lineas;
@@ -270,7 +277,7 @@ function lineasGrupo(grupo: GrupoImpresion): string[] {
       lineas.push(`${MARK_INDENT}#${idx}`);
     }
     lineas.push(...lineasBullets(u.bullets));
-    if (u.notaLibre) lineas.push(`${MARK_INDENT}${INDENT_MOD}${u.notaLibre.toUpperCase()}`);
+    if (u.notaLibre) lineas.push(`${MARK_DETAIL}${INDENT_MOD}${toTicketUpper(u.notaLibre)}`);
     idx += count;
   }
 
@@ -321,7 +328,7 @@ function lineasObservaciones(observaciones: string[]): string[] {
   if (!observaciones.length) return [];
   const lineas = [`${MARK_SECTION}${sectionHeader("OBSERVACIONES", TICKET_WIDTH_80MM)}`, ""];
   for (const o of observaciones) {
-    lineas.push(`${MARK_INDENT}${INDENT_MOD}${o.toUpperCase()}`);
+    lineas.push(`${MARK_DETAIL}${INDENT_MOD}${toTicketUpper(o)}`);
   }
   lineas.push("");
   return lineas;
