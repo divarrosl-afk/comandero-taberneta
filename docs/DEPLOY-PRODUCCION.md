@@ -33,18 +33,14 @@ Hace: bootstrap DB → (opcional seed) → Vercel env + redeploy → health chec
 1. Pegar `supabase/bootstrap-all.sql` en Supabase SQL Editor
 2. Variables Vercel (ver abajo) + Redeploy
 
-### Opción C — GitHub Actions
+### Opción C — GitHub Actions (recomendado en equipo)
 
-Con secretos en **Settings → Secrets → Actions**, ejecutar **Deploy cloud print**.
+1. Crea los 6 secretos siguiendo **[docs/GITHUB-SECRETS.md](./GITHUB-SECRETS.md)** (guía paso a paso).
+2. **Actions** → **Production setup** → **Run workflow**.
 
-| Secreto | Uso |
-|---------|-----|
-| `SUPABASE_DB_URL` | Bootstrap DB |
-| `VERCEL_TOKEN` | Variables + redeploy |
-| `SUPABASE_SERVICE_ROLE_KEY` | Vercel + cola print_jobs |
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://vhlzbfrzmqljngwegbde.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` o `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Cliente Supabase |
-| `NEXT_PUBLIC_RESTAURANTE_ID` | `b1c2d3e4-f5a6-4789-a012-3456789abcde` |
+Ejecuta en orden: migración Supabase → variables Vercel → redeploy → health check.
+
+Workflows individuales: `Supabase migrate`, `Vercel configure`, `Vercel redeploy`, `Verify print health`.
 
 ---
 

@@ -73,7 +73,8 @@ try {
   console.log("\n✓ Bootstrap Supabase OK.");
   console.log("Siguiente: npm run seed:supabase (usuarios) y variables en Vercel.");
 } catch (e) {
-  console.error("Error:", e.message ?? e);
+  const { sanitizeLogMessage } = await import("./ci/sanitize.mjs");
+  console.error("Error:", sanitizeLogMessage(e.message ?? e));
   process.exit(1);
 } finally {
   await client.end();

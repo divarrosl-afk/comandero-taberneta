@@ -1,0 +1,29 @@
+name: Verify print health
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health:
+    name: Comprobar /api/print-jobs/health
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify health endpoint
+        env:
+          VERCEL_PRODUCTION_URL: https://comandero-taberneta.vercel.app
+        run: node scripts/ci/verify-print-health.mjs
