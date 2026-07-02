@@ -23,22 +23,7 @@ export interface TicketFormatOptions {
 
 const BARRA_EXTRA_RE = /hielo|limón|limon|pan|cubiertos/i;
 
-const MOD_ABBR: Record<string, string> = {
-  "sin lactosa": "SL",
-  "sin gluten": "SG",
-  "muy hecho": "MH",
-  "poco hecho": "PC",
-  "sin cebolla": "SR",
-  "sin ajo": "SA",
-  "sin queso": "Q",
-  "sin salsa": "SS",
-  "salsa aparte": "SP",
-  "al punto": "AP",
-  "compartir": "COMP",
-  "para llevar": "P/LLEVAR",
-  "niños": "NIÑOS",
-  "ninos": "NIÑOS",
-};
+const INDENT_MOD = " - ";
 
 export function stripTicketMarkers(text: string, width = TICKET_WIDTH_80MM): string {
   return text
@@ -49,7 +34,7 @@ export function stripTicketMarkers(text: string, width = TICKET_WIDTH_80MM): str
       if (line.startsWith(MARK_SECTION)) return line.slice(MARK_SECTION.length);
       if (line.startsWith(MARK_URGENT)) return line.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
       if (line.startsWith(MARK_DISH)) return line.slice(MARK_DISH.length);
-      if (line.startsWith(MARK_INDENT)) return `   ${line.slice(MARK_INDENT.length)}`;
+      if (line.startsWith(MARK_INDENT)) return line.slice(MARK_INDENT.length);
       return line;
     })
     .join("\n");
@@ -102,12 +87,16 @@ function normalizeKey(value: string): string {
     .trim();
 }
 
-function abreviarModificacion(label: string): { urgente: boolean; text?: string } {
+function formatModificacion(label: string, lineWidth = TICKET_WIDTH_80MM): {
+  urgente: boolean;
+  text?: string;
+} {
   const norm = normalizeKey(label);
   if (norm === "urgente") return { urgente: true };
-  const abbr = MOD_ABBR[norm];
-  if (abbr) return { urgente: false, text: abbr };
-  return { urgente: false, text: label.toUpperCase() };
+  const full = label.toUpperCase().trim();
+  const prefixLen = INDENT_MOD.length;
+  if (full.length + prefixLen <= lineWidth) return { urgente: false, text: full };
+  return { urgente: false, text: full };
 }
 
 function procesarModificaciones(modificaciones: string[]): {
@@ -118,7 +107,7 @@ function procesarModificaciones(modificaciones: string[]): {
   let urgente = false;
 
   for (const mod of modificaciones) {
-    const { urgente: esUrgente, text } = abreviarModificacion(mod);
+    const { urgente: esUrgente, text } = formatModificacion(mod);
     if (esUrgente) {
       urgente = true;
       continue;
@@ -227,12 +216,12 @@ function lineaPlatoCantidad(
 
 function lineasSuplemento(tipo: TipoPlato | undefined, suplemento?: number): string[] {
   if (!suplemento) return [];
-  if (tipo === "carta") return [`${MARK_INDENT}SUPL. +${suplemento}€`];
-  return [`${MARK_INDENT}+${suplemento}€`];
+  if (tipo === "carta") return [`${MARK_INDENT}SUPL. +${suplemento} EUR`];
+  return [`${MARK_INDENT} +${suplemento} EUR`];
 }
 
 function lineasBullets(bullets: string[]): string[] {
-  return bullets.map((b) => `${MARK_INDENT}• ${b}`);
+  return bullets.map((b) => `${MARK_INDENT}${INDENT_MOD}${b}`);
 }
 
 function lineasGrupo(grupo: GrupoImpresion): string[] {
@@ -265,7 +254,7 @@ function lineasGrupo(grupo: GrupoImpresion): string[] {
     if (u.notaLibre) {
       for (const parte of u.notaLibre.split(/\s*[·•]\s*/)) {
         const t = parte.trim();
-        if (t) lineas.push(`${MARK_INDENT}• ${t.toUpperCase()}`);
+        if (t) lineas.push(`${MARK_INDENT}${INDENT_MOD}${t.toUpperCase()}`);
       }
     }
     return lineas;
@@ -281,7 +270,7 @@ function lineasGrupo(grupo: GrupoImpresion): string[] {
       lineas.push(`${MARK_INDENT}#${idx}`);
     }
     lineas.push(...lineasBullets(u.bullets));
-    if (u.notaLibre) lineas.push(`${MARK_INDENT}• ${u.notaLibre.toUpperCase()}`);
+    if (u.notaLibre) lineas.push(`${MARK_INDENT}${INDENT_MOD}${u.notaLibre.toUpperCase()}`);
     idx += count;
   }
 
@@ -330,9 +319,9 @@ function lineasExtras(
 
 function lineasObservaciones(observaciones: string[]): string[] {
   if (!observaciones.length) return [];
-  const lineas = ["OBSERVACIONES MESA", ""];
+  const lineas = [`${MARK_SECTION}${sectionHeader("OBSERVACIONES", TICKET_WIDTH_80MM)}`, ""];
   for (const o of observaciones) {
-    lineas.push(`${MARK_INDENT}• ${o.toUpperCase()}`);
+    lineas.push(`${MARK_INDENT}${INDENT_MOD}${o.toUpperCase()}`);
   }
   lineas.push("");
   return lineas;
@@ -377,7 +366,7 @@ export function formatTicketCabecera(
   const width = options.ancho ?? TICKET_WIDTH_80MM;
   const nombreMesa = options.nombreMesa ?? getNombreMesaComanda(comanda);
   const mesa = resolveMesaDisplay(comanda.mesa, nombreMesa);
-  const lineas: string[] = [MARK_SEP];
+  const lineas: string[] = [];
 
   lineas.push(`${MARK_CENTER}${mesa.titulo}`);
   if (mesa.subtitulo) {
@@ -395,7 +384,7 @@ export function formatTicketCabecera(
   const hora = formatHora(comanda.creadaEn);
   if (hora) lineas.push(`${MARK_CENTER}${hora}`);
 
-  lineas.push(MARK_SEP, "");
+  lineas.push("");
   return lineas;
 }
 
@@ -421,18 +410,17 @@ export function formatKitchenTicket(
     lineas.push(...lineasExtras(extrasCocina, width));
   }
 
-  if (incluirBarra) {
+  // BEBIDAS siempre en ticket completo y también en cocina (nunca fuera del ticket)
+  if (incluirBarra || destino === "cocina") {
     lineas.push(...lineasSeccion("BEBIDAS", comanda.bebidas, width));
 
-    const extrasBarra = comanda.extras.filter((e) => BARRA_EXTRA_RE.test(e.nombre));
-    lineas.push(...lineasExtras(extrasBarra, width));
+    if (destino === "barra") {
+      const extrasBarra = comanda.extras.filter((e) => BARRA_EXTRA_RE.test(e.nombre));
+      lineas.push(...lineasExtras(extrasBarra, width));
+    }
   }
 
-  if (destino === "barra" || destino === "completo") {
-    lineas.push(...lineasObservaciones(comanda.observaciones));
-  } else if (comanda.observaciones.length) {
-    lineas.push(...lineasObservaciones(comanda.observaciones));
-  }
+  lineas.push(...lineasObservaciones(comanda.observaciones));
 
   return lineas.join("\n").trimEnd();
 }

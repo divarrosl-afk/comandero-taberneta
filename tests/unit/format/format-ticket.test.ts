@@ -114,13 +114,15 @@ describe("ticket-kitchen", () => {
     expect(texto).toContain("3 PAN TOMATE");
     expect(texto).toContain("(M) GAZPACHO");
     expect(texto).toContain("(M) BURRATA");
-    expect(texto).toContain("+5€");
+    expect(texto).toContain("+5 EUR");
     expect(texto).toContain("(C) HAMBURGUESA ANGUS");
     expect(texto).toContain(">>> URGENTE <<<");
-    expect(texto).toContain("• SL");
-    expect(texto).toContain("• MH");
-    expect(texto).toContain("• NIÑOS");
+    expect(texto).toContain(" - SIN LACTOSA");
+    expect(texto).toContain(" - MUY HECHO");
+    expect(texto).toContain(" - NIÑOS");
     expect(texto).not.toMatch(/Sin lactosa.*Muy hecho/i);
+    expect(texto).not.toContain(" - SL");
+    expect(texto).not.toContain(" - MH");
   });
 
   it("agrupa bebidas en ticket barra", () => {
@@ -133,11 +135,14 @@ describe("ticket-kitchen", () => {
     expect(texto).not.toContain("PRIMEROS");
   });
 
-  it("cocina no incluye bebidas", () => {
+  it("cocina incluye bebidas al final", () => {
     const marcado = comandaToTicketCocina(comandaEjemplo(), { nombreMesa: "12" });
     const texto = stripTicketMarkers(marcado);
-    expect(texto).not.toContain("3 AGUAS");
+    expect(texto).toContain("3 AGUAS");
     expect(texto).toContain("SEGUNDOS");
+    const idxSegundos = texto.indexOf("SEGUNDOS");
+    const idxBebidas = texto.indexOf("BEBIDAS");
+    expect(idxBebidas).toBeGreaterThan(idxSegundos);
   });
 
   it("barra devuelve null si no hay bebidas ni extras de barra", () => {
@@ -169,7 +174,7 @@ describe("ticket-kitchen", () => {
     expect(texto).toContain("2 HAMBURGUESAS ANGUS");
     expect(texto).toContain("#1");
     expect(texto).toContain("#2");
-    expect(texto).toContain("• MH");
-    expect(texto).toContain("• PC");
+    expect(texto).toContain(" - MUY HECHO");
+    expect(texto).toContain(" - POCO HECHO");
   });
 });

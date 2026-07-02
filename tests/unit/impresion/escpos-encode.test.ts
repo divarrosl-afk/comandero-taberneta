@@ -68,10 +68,12 @@ describe("escpos-encode", () => {
     expect(buf.indexOf(0x1d)).toBeGreaterThan(-1);
   });
 
-  it("termina con corte parcial GS V", () => {
+  it("termina con corte parcial GS V tras líneas de avance", () => {
     const buf = buildTestTicketBuffer();
     expect(buf.includes(0x1d)).toBe(true);
     const gsIndex = buf.lastIndexOf(0x1d);
     expect(buf[gsIndex + 1]).toBe(0x56);
+    expect(buf[gsIndex + 2]).toBe(0x42);
+    expect(buf[gsIndex + 3]).toBe(5);
   });
 });

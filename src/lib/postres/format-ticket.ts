@@ -46,7 +46,7 @@ export function comandaPostresToTexto(
 
   if (comanda.observaciones.length) {
     lineas.push("OBSERVACIONES");
-    comanda.observaciones.forEach((o) => lineas.push(`   • ${o.toUpperCase()}`));
+    comanda.observaciones.forEach((o) => lineas.push(` - ${o.toUpperCase()}`));
   }
 
   return lineas.join("\n").trimEnd();

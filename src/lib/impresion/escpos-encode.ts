@@ -13,6 +13,7 @@ import {
   CMD_LF,
   cutPaper,
   feedAndCutPartial,
+  TICKET_FINAL_FEED_LINES,
 } from "@/lib/impresion/escpos-commands";
 import {
   MARK_CENTER,
@@ -50,7 +51,15 @@ export function wrapLine(line: string, width: number): string[] {
   let rest = line;
   while (rest.length > width) {
     let breakAt = rest.lastIndexOf(" ", width);
-    if (breakAt <= 0) breakAt = width;
+    if (breakAt <= 0) {
+      const nextSpace = rest.indexOf(" ", width);
+      if (nextSpace > 0) {
+        parts.push(rest.slice(0, nextSpace).trimEnd());
+        rest = rest.slice(nextSpace).trimStart();
+        continue;
+      }
+      breakAt = width;
+    }
     parts.push(rest.slice(0, breakAt).trimEnd());
     rest = rest.slice(breakAt).trimStart();
   }
@@ -176,7 +185,10 @@ function ticketPreamble(chunks: Buffer[]): void {
 }
 
 function ticketEpilogue(chunks: Buffer[]): void {
-  chunks.push(CMD_LF, CMD_LF, CMD_LF, cutPaper());
+  for (let i = 0; i < TICKET_FINAL_FEED_LINES; i++) {
+    chunks.push(CMD_LF);
+  }
+  chunks.push(cutPaper());
 }
 
 function hasTicketMarkers(text: string): boolean {

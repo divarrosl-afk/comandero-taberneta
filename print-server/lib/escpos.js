@@ -13,6 +13,8 @@ const GS = 0x1d;
 const CHARS_PER_LINE_80MM = 48;
 const TCP_CHUNK_SIZE = 1024;
 const TCP_PRINT_TIMEOUT_MS = 20_000;
+const TICKET_FINAL_FEED_LINES = 5;
+const PRINTER_FLUSH_MS = 250;
 
 const CMD_INIT = Buffer.from([ESC, 0x40]);
 const CMD_CP858 = Buffer.from([ESC, 0x74, 19]);
@@ -77,7 +79,15 @@ export function wrapLine(line, width) {
   let rest = line;
   while (rest.length > width) {
     let breakAt = rest.lastIndexOf(" ", width);
-    if (breakAt <= 0) breakAt = width;
+    if (breakAt <= 0) {
+      const nextSpace = rest.indexOf(" ", width);
+      if (nextSpace > 0) {
+        parts.push(rest.slice(0, nextSpace).trimEnd());
+        rest = rest.slice(nextSpace).trimStart();
+        continue;
+      }
+      breakAt = width;
+    }
     parts.push(rest.slice(0, breakAt).trimEnd());
     rest = rest.slice(breakAt).trimStart();
   }
@@ -184,12 +194,15 @@ function appendLine(chunks, line, width) {
   }
 }
 
-function feedAndCutPartial(feedLines = 3) {
+function feedAndCutPartial(feedLines = TICKET_FINAL_FEED_LINES) {
   return Buffer.from([GS, 0x56, 0x42, Math.min(255, Math.max(0, feedLines))]);
 }
 
 function ticketEpilogue(chunks) {
-  chunks.push(CMD_LF, CMD_LF, CMD_LF, feedAndCutPartial(3));
+  for (let i = 0; i < TICKET_FINAL_FEED_LINES; i++) {
+    chunks.push(CMD_LF);
+  }
+  chunks.push(feedAndCutPartial(TICKET_FINAL_FEED_LINES));
 }
 
 function isDebugEnabled() {
@@ -338,6 +351,7 @@ export function printTcp(host, port, data, plainText, timeoutMs = TCP_PRINT_TIME
       try {
         writeDebugTicket(data, plainText);
         await writeBufferToSocket(socket, data);
+        await new Promise((r) => setTimeout(r, PRINTER_FLUSH_MS));
         socket.end();
       } catch (writeErr) {
         socket.destroy();
