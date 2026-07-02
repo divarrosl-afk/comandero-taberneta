@@ -31,7 +31,8 @@
     "next": "^15.2.4",
     "pg": "^8.22.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "unpdf": "^1.6.2"
   },
   "devDependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",

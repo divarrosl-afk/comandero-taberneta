@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/Button";
+import { MenuDiaImportPanel } from "@/components/configuracion/MenuDiaImportPanel";
 import { useCatalogo } from "@/hooks/useCatalogo";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import type { MenuDiaConfig } from "@/types/menu-dia";
@@ -52,7 +53,7 @@ function SelectorPlatos({
 
 export function MenuDiaConfigClient() {
   const { menu, actualizar, guardar } = useMenuDia();
-  const { productos } = useCatalogo();
+  const { productos, actualizar: actualizarProducto } = useCatalogo();
 
   const primeros = useMemo(
     () =>
@@ -103,6 +104,19 @@ export function MenuDiaConfigClient() {
 
   const patch = (cambios: Partial<MenuDiaConfig>) => {
     guardar({ ...menu, ...cambios });
+  };
+
+  const aplicarImport = async (
+    cambios: Partial<MenuDiaConfig>,
+    suplementosProducto: { id: string; suplemento: number }[],
+  ) => {
+    patch(cambios);
+    for (const { id, suplemento } of suplementosProducto) {
+      await actualizarProducto(id, {
+        suplemento,
+        tipo: "menu-dia",
+      });
+    }
   };
 
   return (
@@ -221,6 +235,10 @@ export function MenuDiaConfigClient() {
           {menu.activo ? "✓ Menú activo hoy" : "Menú inactivo — activar"}
         </button>
       </section>
+
+      <div className="mb-6">
+        <MenuDiaImportPanel productos={productos} onAplicar={aplicarImport} />
+      </div>
 
       <div className="space-y-4">
         <SelectorPlatos
