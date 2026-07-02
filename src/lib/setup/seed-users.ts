@@ -20,6 +20,7 @@ export interface SeedUsersOptions {
 export interface SeedUsersResult {
   ok: boolean;
   created: string[];
+  updated: string[];
   skipped: string[];
   userCount: number;
 }
@@ -72,7 +73,7 @@ async function ensureUsuario(
   admin: SupabaseClient,
   restauranteId: string,
   user: SeedUserInput,
-): Promise<"created" | "skipped"> {
+): Promise<"created" | "skipped" | "updated"> {
   const authEmail = usernameToAuthEmail(user.username);
 
   const { data: existente } = await admin
@@ -82,7 +83,14 @@ async function ensureUsuario(
     .eq("username", user.username)
     .maybeSingle();
 
-  if (existente?.auth_user_id) return "skipped";
+  if (existente?.auth_user_id) {
+    const { error } = await admin.auth.admin.updateUserById(existente.auth_user_id, {
+      password: user.password,
+      email_confirm: true,
+    });
+    if (error) throw new Error(`${user.username} password: ${error.message}`);
+    return "updated";
+  }
 
   let authUserId = existente?.auth_user_id ?? null;
 
@@ -148,10 +156,12 @@ export async function seedSupabaseUsers(
   const users = DEFAULT_USERS(options.adminPassword, options.camareroPassword);
   const created: string[] = [];
   const skipped: string[] = [];
+  const updated: string[] = [];
 
   for (const user of users) {
     const result = await ensureUsuario(admin, restauranteId, user);
     if (result === "created") created.push(user.username);
+    else if (result === "updated") updated.push(user.username);
     else skipped.push(user.username);
   }
 
@@ -164,6 +174,7 @@ export async function seedSupabaseUsers(
   return {
     ok: true,
     created,
+    updated,
     skipped,
     userCount: count ?? 0,
   };
