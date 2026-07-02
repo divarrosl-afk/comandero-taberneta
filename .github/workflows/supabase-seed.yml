@@ -2,6 +2,15 @@ name: Supabase seed
 
 on:
   workflow_dispatch:
+    inputs:
+      admin_password:
+        description: Contraseña para divarro (si no existe el secreto SEED_ADMIN_PASSWORD)
+        required: false
+        type: string
+      camarero_password:
+        description: Contraseña para david/ingrid/cocina (si no existe SEED_CAMARERO_PASSWORD)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -21,19 +30,19 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - name: Validate secrets
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          NEXT_PUBLIC_RESTAURANTE_ID: ${{ secrets.NEXT_PUBLIC_RESTAURANTE_ID }}
-          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
-          SEED_CAMARERO_PASSWORD: ${{ secrets.SEED_CAMARERO_PASSWORD }}
-        run: node scripts/ci/validate-secrets.mjs seed
       - name: Seed usuarios
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_RESTAURANTE_ID: ${{ secrets.NEXT_PUBLIC_RESTAURANTE_ID }}
-          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
-          SEED_CAMARERO_PASSWORD: ${{ secrets.SEED_CAMARERO_PASSWORD }}
-        run: node scripts/seed-supabase.mjs
+          SEED_ADMIN_PASSWORD: ${{ github.event.inputs.admin_password || secrets.SEED_ADMIN_PASSWORD }}
+          SEED_CAMARERO_PASSWORD: ${{ github.event.inputs.camarero_password || secrets.SEED_CAMARERO_PASSWORD }}
+        run: |
+          if [ -z "$SEED_ADMIN_PASSWORD" ] || [ -z "$SEED_CAMARERO_PASSWORD" ]; then
+            echo "✗ Faltan contraseñas."
+            echo "  Opción A: GitHub → Settings → Secrets → SEED_ADMIN_PASSWORD y SEED_CAMARERO_PASSWORD"
+            echo "  Opción B: Run workflow → rellena admin_password y camarero_password"
+            exit 1
+          fi
+          node scripts/ci/validate-secrets.mjs seed
+          node scripts/seed-supabase.mjs

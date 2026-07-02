@@ -16,8 +16,6 @@ const STEPS = {
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
     "NEXT_PUBLIC_RESTAURANTE_ID",
-    "SEED_ADMIN_PASSWORD",
-    "SEED_CAMARERO_PASSWORD",
   ],
   "vercel-redeploy": ["VERCEL_TOKEN"],
   health: [],

@@ -36,7 +36,7 @@ export function LoginForm() {
       .then((data) => {
         if (data?.seedRequired) {
           setSeedHint(
-            "Aún no hay usuarios en Supabase. Ejecuta el workflow Supabase seed en GitHub Actions.",
+            "Aún no hay usuarios en Supabase. GitHub → Actions → Supabase seed → Run workflow → indica admin_password y camarero_password.",
           );
         }
       })
