@@ -30,6 +30,36 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: node scripts/bootstrap-supabase-db.mjs
 
+  supabase-seed:
+    name: "1b · Supabase seed (usuarios)"
+    needs: supabase-migrate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Validate seed secrets
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_RESTAURANTE_ID: ${{ secrets.NEXT_PUBLIC_RESTAURANTE_ID }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          SEED_CAMARERO_PASSWORD: ${{ secrets.SEED_CAMARERO_PASSWORD }}
+        run: node scripts/ci/validate-secrets.mjs seed
+        continue-on-error: true
+      - name: Seed usuarios
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_RESTAURANTE_ID: ${{ secrets.NEXT_PUBLIC_RESTAURANTE_ID }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          SEED_CAMARERO_PASSWORD: ${{ secrets.SEED_CAMARERO_PASSWORD }}
+        run: node scripts/seed-supabase.mjs
+        continue-on-error: true
+
   vercel-configure:
     name: "2 · Vercel configure"
     needs: supabase-migrate

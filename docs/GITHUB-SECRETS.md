@@ -24,6 +24,10 @@ Guía para configurar **secretos en GitHub Actions** sin guardarlos en el reposi
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → **API** → **Project URL** | Ej. `https://vhlzbfrzmqljngwegbde.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → **API** → **anon** *o* **publishable key** del wizard nuevo | En Vercel va como variable pública; en GitHub va como **Secret** para no filtrarla en forks/logs |
 | `NEXT_PUBLIC_RESTAURANTE_ID` | UUID del restaurante en `schema.sql` | `b1c2d3e4-f5a6-4789-a012-3456789abcde` |
+| `SEED_ADMIN_PASSWORD` | Contraseña que elijas para `divarro` | Solo para workflow **Supabase seed** |
+| `SEED_CAMARERO_PASSWORD` | Contraseña para `david`, `ingrid`, `cocina` | Solo para workflow **Supabase seed** |
+
+Sin los secretos `SEED_*`, la migración crea tablas pero **no hay usuarios** para iniciar sesión.
 
 ### Opcionales (no hace falta crearlos si usas el proyecto por defecto)
 
@@ -94,18 +98,16 @@ Tras crear los secretos, en **Actions** del repo:
 | **Vercel configure** | Sincroniza env en Vercel | Los 6 de la tabla |
 | **Vercel redeploy** | Redeploy producción `main` | `VERCEL_TOKEN` |
 | **Verify print health** | Comprueba `/api/print-jobs/health` | ninguno (endpoint público) |
+| **Supabase seed** | Crea usuarios Auth + perfiles | + `SEED_ADMIN_PASSWORD`, `SEED_CAMARERO_PASSWORD` |
 | **Production setup** | Los 4 pasos en orden | Los 6 de la tabla |
 
 ### Ejecución recomendada (primera vez)
 
-1. **Production setup** → **Run workflow**
+1. Añade también `SEED_ADMIN_PASSWORD` y `SEED_CAMARERO_PASSWORD`
+2. **Production setup** → **Run workflow** (incluye seed si hay secretos)
+3. O manualmente: **Supabase migrate** → **Supabase seed** → **Vercel configure** → **Vercel redeploy**
 
-O manualmente en orden:
-
-1. **Supabase migrate**
-2. **Vercel configure**
-3. **Vercel redeploy**
-4. **Verify print health**
+Login tras seed: usuario `divarro` + la contraseña de `SEED_ADMIN_PASSWORD` (no es `admin` del modo local).
 
 ---
 

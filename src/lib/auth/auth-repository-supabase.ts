@@ -2,7 +2,7 @@ import { usernameToAuthEmail } from "@/lib/supabase/email";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { perfilToSesion, type DbPerfil } from "@/lib/supabase/mappers";
-import type { AuthRepository } from "@/lib/auth/auth-repository";
+import type { AuthRepository, LoginError } from "@/lib/auth/auth-repository";
 import { guardarSesion, limpiarSesion } from "@/lib/storage/sesion";
 
 async function fetchPerfil(authUserId: string): Promise<DbPerfil | null> {
@@ -29,10 +29,14 @@ async function registrarAcceso(): Promise<void> {
   await client.rpc("ct_touch_ultimo_acceso");
 }
 
+function fail(error: LoginError) {
+  return { sesion: null, error };
+}
+
 export const authRepositorySupabase: AuthRepository = {
   async login(username, password) {
     const client = getSupabaseClient();
-    if (!client) return null;
+    if (!client) return fail("credentials");
 
     const email = usernameToAuthEmail(username);
     const { data, error } = await client.auth.signInWithPassword({
@@ -40,18 +44,23 @@ export const authRepositorySupabase: AuthRepository = {
       password,
     });
 
-    if (error || !data.user) return null;
+    if (error || !data.user) return fail("credentials");
 
     const perfil = await fetchPerfil(data.user.id);
-    if (!perfil || !perfil.activo) {
+    if (!perfil) {
       await client.auth.signOut();
-      return null;
+      return fail("no_perfil");
+    }
+
+    if (!perfil.activo) {
+      await client.auth.signOut();
+      return fail("inactive");
     }
 
     await registrarAcceso();
     const sesion = perfilToSesion(perfil);
     guardarSesion(sesion);
-    return sesion;
+    return { sesion };
   },
 
   async logout() {

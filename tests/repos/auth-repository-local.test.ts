@@ -3,12 +3,14 @@ import { authRepositoryLocal } from "@/lib/auth/auth-repository-local";
 
 describe("authRepositoryLocal", () => {
   it("login válido devuelve sesión", async () => {
-    const sesion = await authRepositoryLocal.login("david", "camarero");
-    expect(sesion?.username).toBe("david");
+    const result = await authRepositoryLocal.login("david", "camarero");
+    expect(result.sesion?.username).toBe("david");
   });
 
   it("login inválido devuelve null", async () => {
-    expect(await authRepositoryLocal.login("david", "wrong")).toBeNull();
+    const result = await authRepositoryLocal.login("david", "wrong");
+    expect(result.sesion).toBeNull();
+    expect(result.error).toBe("credentials");
   });
 
   it("restoreSession tras login", async () => {

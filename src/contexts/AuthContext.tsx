@@ -22,12 +22,13 @@ import {
 } from "@/lib/auth/permisos";
 import { getAuthRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
+import type { LoginError, LoginResult } from "@/lib/auth/auth-repository";
 import type { Sesion } from "@/types/auth";
 
 interface AuthContextValue {
   sesion: Sesion | null;
   listo: boolean;
-  iniciarSesion: (username: string, password: string) => Promise<boolean>;
+  iniciarSesion: (username: string, password: string) => Promise<LoginResult>;
   cerrarSesion: () => Promise<void>;
   puedeConfigCatalogo: boolean;
   puedeConfigCarta: boolean;
@@ -65,11 +66,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const iniciarSesion = useCallback(async (username: string, password: string) => {
-    const nueva = await getAuthRepository().login(username, password);
-    if (!nueva) return false;
+    const result = await getAuthRepository().login(username, password);
+    if (!result.sesion) return result;
 
-    setSesion(nueva);
-    return true;
+    setSesion(result.sesion);
+    return result;
   }, []);
 
   const cerrarSesion = useCallback(async () => {
