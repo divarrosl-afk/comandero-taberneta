@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { BottomBar } from "@/components/ui/BottomBar";
 import { ComandaTicketPreview } from "@/components/comanda/nueva/ComandaTicketPreview";
-import { getNombreMesa } from "@/lib/storage/mesas";
+import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import type { ComandaCocina } from "@/types/comanda";
 
 interface ComandaPreviewViewProps {
@@ -29,7 +29,7 @@ export function ComandaPreviewView({
         </button>
         <h1 className="text-2xl font-bold text-primary">Revisar comanda</h1>
         <p className="mt-1 text-sm text-muted">
-          MESA {getNombreMesa(String(comanda.mesa))} · {comanda.camarero.toUpperCase()}
+          MESA {getNombreMesaComanda(comanda)} · {comanda.camarero.toUpperCase()}
         </p>
       </header>
 

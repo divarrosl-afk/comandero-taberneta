@@ -1,3 +1,4 @@
+import { comandaPerteneceAMesa } from "@/lib/mesas/resolve-mesa";
 import { getComandasSync } from "@/lib/comandas/comandas-service";
 import { getPostresSync } from "@/lib/postres/postres-service";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
@@ -46,8 +47,8 @@ function setEstadoPersistido(
 }
 
 function calcularEstadoDesdeComandas(mesaId: string): EstadoMesaOperativo {
-  const cocina = getComandasSync().filter((c) => String(c.mesa) === mesaId);
-  const postres = getPostresSync().filter((c) => String(c.mesa) === mesaId);
+  const cocina = getComandasSync().filter((c) => comandaPerteneceAMesa(c, mesaId));
+  const postres = getPostresSync().filter((c) => comandaPerteneceAMesa(c, mesaId));
   const todas = [...cocina, ...postres];
 
   if (todas.length === 0) return "libre";
@@ -93,8 +94,8 @@ export function notificarComandaEnviada(mesaId: string): void {
 }
 
 export function getComandasDeMesa(mesaId: string) {
-  const cocina = getComandasSync().filter((c) => String(c.mesa) === mesaId);
-  const postres = getPostresSync().filter((c) => String(c.mesa) === mesaId);
+  const cocina = getComandasSync().filter((c) => comandaPerteneceAMesa(c, mesaId));
+  const postres = getPostresSync().filter((c) => comandaPerteneceAMesa(c, mesaId));
   return { cocina, postres, total: cocina.length + postres.length };
 }
 

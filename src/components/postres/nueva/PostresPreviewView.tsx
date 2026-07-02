@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { BottomBar } from "@/components/ui/BottomBar";
 import { PostresTicketPreview } from "@/components/postres/nueva/PostresTicketPreview";
-import { getNombreMesa } from "@/lib/storage/mesas";
+import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import type { ComandaPostres } from "@/types/postres";
 
 interface PostresPreviewViewProps {
@@ -29,7 +29,7 @@ export function PostresPreviewView({
         </button>
         <h1 className="text-2xl font-bold text-primary">Revisar postres</h1>
         <p className="mt-1 text-sm text-muted">
-          MESA {getNombreMesa(String(comanda.mesa))} · {comanda.camarero.toUpperCase()}
+          MESA {getNombreMesaComanda(comanda)} · {comanda.camarero.toUpperCase()}
         </p>
       </header>
 

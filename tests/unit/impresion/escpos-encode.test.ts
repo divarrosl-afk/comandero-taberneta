@@ -46,10 +46,10 @@ describe("escpos-encode", () => {
     expect(ADVANCED_TEST_TICKET_TEXT).toContain("Mesa C1");
   });
 
-  it("normaliza separadores a 48 guiones en 80mm", () => {
-    const buf = buildEscPosBuffer("--------------------------------\n", "80mm");
+  it("normaliza separadores a 48 iguales en 80mm", () => {
+    const buf = buildEscPosBuffer("================================\n", "80mm");
     const text = buf.toString("latin1");
-    const matches = text.match(/-{48}/);
+    const matches = text.match(/={48}/);
     expect(matches).not.toBeNull();
   });
 
@@ -60,10 +60,20 @@ describe("escpos-encode", () => {
     expect(wrapped.every((l) => l.length <= 48)).toBe(true);
   });
 
-  it("termina con corte parcial GS V", () => {
+  it("aplica negrita y doble tamaño en líneas de plato marcadas", () => {
+    const buf = buildEscPosBuffer("@D@(M) GAZPACHO\n", "80mm");
+    expect(buf.includes(0x1b)).toBe(true);
+    const text = buf.toString("latin1");
+    expect(text).toContain("GAZPACHO");
+    expect(buf.indexOf(0x1d)).toBeGreaterThan(-1);
+  });
+
+  it("termina con corte parcial GS V tras líneas de avance", () => {
     const buf = buildTestTicketBuffer();
     expect(buf.includes(0x1d)).toBe(true);
     const gsIndex = buf.lastIndexOf(0x1d);
     expect(buf[gsIndex + 1]).toBe(0x56);
+    expect(buf[gsIndex + 2]).toBe(0x42);
+    expect(buf[gsIndex + 3]).toBe(5);
   });
 });

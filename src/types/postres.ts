@@ -30,6 +30,7 @@ export interface PostreItem {
 export interface ComandaPostres {
   id: string;
   mesa: string;
+  mesaCodigo?: string;
   camarero: string;
   postres: PostreItem[];
   estadoX: EstadoPostreX | null;

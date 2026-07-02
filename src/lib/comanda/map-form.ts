@@ -1,6 +1,7 @@
 import { getExtraLabel, getModificacionLabel, getSalsaLabel } from "@/data/comanda-catalogo";
 import { CAMARERO_EQUIPO } from "@/lib/comanda/camarero-equipo";
 import { generarIdComanda } from "@/lib/comandas/comandas-service";
+import { getMesaCodigo } from "@/lib/mesas/resolve-mesa";
 import { tipoSeleccionToPlatoFields } from "@/lib/comanda/tipo-plato";
 import { platoTieneContenido } from "@/lib/comanda/plato-factory";
 import type {
@@ -68,6 +69,7 @@ export function formToComanda(form: ComandaFormState): ComandaCocina | null {
   return {
     id: generarIdComanda(),
     mesa: form.mesa,
+    mesaCodigo: getMesaCodigo(form.mesa),
     camarero: CAMARERO_EQUIPO,
     tipoServicio: inferirTipoServicio(form),
     entrantes: form.entrantes.filter(platoTieneContenido).map(mapPlatoBase),

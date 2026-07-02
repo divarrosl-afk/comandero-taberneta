@@ -59,6 +59,7 @@ export function rowToComandaCocina(row: DbComandaCocina): ComandaCocina {
   return {
     id: row.id,
     mesa: row.mesa_id ?? row.mesa_codigo,
+    mesaCodigo: row.mesa_codigo,
     camarero: row.camarero_nombre,
     tipoServicio: row.tipo_servicio,
     entrantes: normalizarPlatos(row.entrantes ?? []),
@@ -107,6 +108,7 @@ export function rowToComandaPostres(row: DbComandaPostres): ComandaPostres {
   return {
     id: row.id,
     mesa: row.mesa_id ?? row.mesa_codigo,
+    mesaCodigo: row.mesa_codigo,
     camarero: row.camarero_nombre,
     postres: row.postres ?? [],
     estadoX: row.estado_x,

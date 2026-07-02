@@ -1,5 +1,6 @@
 import { comandaToTexto } from "@/lib/comanda/format-ticket";
 import { getComandasSync } from "@/lib/comandas/comandas-service";
+import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { comandaPostresToTexto } from "@/lib/postres/format-ticket";
 import { getPostresSync } from "@/lib/postres/postres-service";
 import type { ComandaCocina } from "@/types/comanda";
@@ -37,9 +38,10 @@ export function entradaToHistorialItem(entrada: HistorialEntrada): HistorialItem
 }
 
 export function entradaToTicket(entrada: HistorialEntrada): string {
+  const options = { nombreMesa: getNombreMesaComanda(entrada.comanda) };
   return entrada.tipo === "cocina"
-    ? comandaToTexto(entrada.comanda)
-    : comandaPostresToTexto(entrada.comanda);
+    ? comandaToTexto(entrada.comanda, options)
+    : comandaPostresToTexto(entrada.comanda, options);
 }
 
 export function formatHora(iso: string): string {
