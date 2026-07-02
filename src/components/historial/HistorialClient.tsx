@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { HistorialCard } from "@/components/historial/HistorialCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHistorial } from "@/hooks/useHistorial";
-import { getNombreMesa } from "@/lib/storage/mesas";
+import { comandaPerteneceAMesa, getNombreMesa } from "@/lib/mesas/resolve-mesa";
 import type { HistorialTipo } from "@/types/panel";
 
 type FiltroTipo = "todos" | HistorialTipo;
@@ -23,7 +23,7 @@ function HistorialContent() {
 
   const filtradas = entradas
     .filter((e) => (filtro === "todos" ? true : e.tipo === filtro))
-    .filter((e) => (mesaFiltro ? String(e.comanda.mesa) === mesaFiltro : true));
+    .filter((e) => (mesaFiltro ? comandaPerteneceAMesa(e.comanda, mesaFiltro) : true));
 
   return (
     <main className="mx-auto min-h-dvh max-w-lg px-4 py-4">

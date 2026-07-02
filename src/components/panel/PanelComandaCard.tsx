@@ -1,7 +1,7 @@
 "use client";
 
 import { etiquetaTipoPlato } from "@/lib/comanda/tipo-plato";
-import { getNombreMesa } from "@/lib/storage/mesas";
+import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { formatHora } from "@/lib/historial/items";
 import { EstadoPanelBadge } from "@/components/panel/EstadoPanelBadge";
 import { EstadoPanelSelector } from "@/components/panel/EstadoPanelSelector";
@@ -60,7 +60,7 @@ export function PanelComandaCard({
       <header className="mb-3 flex items-start justify-between gap-2">
         <div>
           <p className="text-2xl font-bold text-primary">
-            MESA {getNombreMesa(String(comanda.mesa))}
+            MESA {getNombreMesaComanda(comanda)}
           </p>
           <p className="text-sm font-medium text-muted">
             {comanda.camarero} · {formatHora(comanda.creadaEn)}

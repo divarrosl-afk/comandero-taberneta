@@ -1,5 +1,6 @@
+import type { HistorialEntrada } from "@/lib/historial/items";
+import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { comandaPostresToTexto } from "@/lib/postres/format-ticket";
-import { getNombreMesa } from "@/lib/storage/mesas";
 import {
   comandaToTicketBarra,
   comandaToTicketCocina,
@@ -9,6 +10,10 @@ import type { PrintBatchResult } from "@/modules/impresion-wifi/types";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi/types";
 import type { ComandaCocina } from "@/types/comanda";
 import type { ComandaPostres } from "@/types/postres";
+
+function ticketOptionsForComanda(comanda: { mesa: string; mesaCodigo?: string }) {
+  return { nombreMesa: getNombreMesaComanda(comanda) };
+}
 
 function buildSummary(results: Awaited<ReturnType<typeof printTicket>>[]): string {
   if (results.every((r) => r.ok)) {
@@ -28,7 +33,7 @@ function buildSummary(results: Awaited<ReturnType<typeof printTicket>>[]): strin
 export async function imprimirComandaCocina(
   comanda: ComandaCocina,
 ): Promise<PrintBatchResult> {
-  const ticketOptions = { nombreMesa: getNombreMesa(comanda.mesa) };
+  const ticketOptions = ticketOptionsForComanda(comanda);
 
   const jobs = [
     printTicket(comandaToTicketCocina(comanda, ticketOptions), "cocina", {
@@ -62,8 +67,9 @@ export async function imprimirComandaCocina(
 export async function imprimirComandaPostres(
   comanda: ComandaPostres,
 ): Promise<PrintBatchResult> {
+  const ticketOptions = ticketOptionsForComanda(comanda);
   const results = [
-    await printTicket(comandaPostresToTexto(comanda), "postres", {
+    await printTicket(comandaPostresToTexto(comanda, ticketOptions), "postres", {
       tipo: "postres",
       comandaId: comanda.id,
       mesa: comanda.mesa,
@@ -76,6 +82,16 @@ export async function imprimirComandaPostres(
     allOk: results.every((r) => r.ok),
     summary: buildSummary(results),
   };
+}
+
+/** Reimprime cocina+barra o postres regenerando el ticket (mismo formato que envío). */
+export async function reimprimirEntrada(
+  entrada: HistorialEntrada,
+): Promise<PrintBatchResult> {
+  if (entrada.tipo === "cocina") {
+    return imprimirComandaCocina(entrada.comanda);
+  }
+  return imprimirComandaPostres(entrada.comanda);
 }
 
 export async function reimprimirTicket(

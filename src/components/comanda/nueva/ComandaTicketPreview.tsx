@@ -1,7 +1,7 @@
 "use client";
 
 import { comandaToTexto } from "@/lib/comanda/format-ticket";
-import { getNombreMesa } from "@/lib/storage/mesas";
+import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import type { ComandaCocina } from "@/types/comanda";
 
 interface ComandaTicketPreviewProps {
@@ -10,7 +10,7 @@ interface ComandaTicketPreviewProps {
 
 export function ComandaTicketPreview({ comanda }: ComandaTicketPreviewProps) {
   const texto = comandaToTexto(comanda, {
-    nombreMesa: getNombreMesa(comanda.mesa),
+    nombreMesa: getNombreMesaComanda(comanda),
   });
 
   return (

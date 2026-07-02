@@ -1,4 +1,7 @@
 import type { ComandaCocina, PlatoComanda, TipoPlato } from "@/types/comanda";
+import { getNombreMesaComanda, isUuid } from "@/lib/mesas/resolve-mesa";
+
+export { isUuid } from "@/lib/mesas/resolve-mesa";
 
 export const TICKET_WIDTH_80MM = 48;
 
@@ -18,8 +21,7 @@ export interface TicketFormatOptions {
   ancho?: number;
 }
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const BARRA_EXTRA_RE = /hielo|limón|limon|pan|cubiertos/i;
 
 const MOD_ABBR: Record<string, string> = {
   "sin lactosa": "SL",
@@ -38,20 +40,19 @@ const MOD_ABBR: Record<string, string> = {
   "ninos": "NIÑOS",
 };
 
-const BARRA_EXTRA_RE = /hielo|limón|limon|pan|cubiertos/i;
-
-export function isUuid(value: string): boolean {
-  return UUID_RE.test(value);
-}
-
-export function stripTicketMarkers(text: string): string {
+export function stripTicketMarkers(text: string, width = TICKET_WIDTH_80MM): string {
   return text
-    .replace(/@C@/g, "")
-    .replace(/@S@/g, "")
-    .replace(/@T@/g, "")
-    .replace(/@U@/g, "")
-    .replace(/@D@/g, "")
-    .replace(/@I@/g, "   ");
+    .split("\n")
+    .map((line) => {
+      if (line === MARK_SEP) return "=".repeat(width);
+      if (line.startsWith(MARK_CENTER)) return line.slice(MARK_CENTER.length);
+      if (line.startsWith(MARK_SECTION)) return line.slice(MARK_SECTION.length);
+      if (line.startsWith(MARK_URGENT)) return line.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
+      if (line.startsWith(MARK_DISH)) return line.slice(MARK_DISH.length);
+      if (line.startsWith(MARK_INDENT)) return `   ${line.slice(MARK_INDENT.length)}`;
+      return line;
+    })
+    .join("\n");
 }
 
 export function centerText(text: string, width: number): string {
@@ -374,7 +375,8 @@ export function formatTicketCabecera(
   options: TicketFormatOptions = {},
 ): string[] {
   const width = options.ancho ?? TICKET_WIDTH_80MM;
-  const mesa = resolveMesaDisplay(comanda.mesa, options.nombreMesa);
+  const nombreMesa = options.nombreMesa ?? getNombreMesaComanda(comanda);
+  const mesa = resolveMesaDisplay(comanda.mesa, nombreMesa);
   const lineas: string[] = [MARK_SEP];
 
   lineas.push(`${MARK_CENTER}${mesa.titulo}`);

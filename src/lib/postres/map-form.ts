@@ -1,4 +1,5 @@
 import { CAMARERO_EQUIPO } from "@/lib/comanda/camarero-equipo";
+import { getMesaCodigo } from "@/lib/mesas/resolve-mesa";
 import { postreTieneContenido } from "@/lib/postres/postre-factory";
 import { generarIdPostres } from "@/lib/postres/postres-service";
 import type { ComandaPostres, PostresFormState } from "@/types/postres";
@@ -11,6 +12,7 @@ export function formToComandaPostres(
   return {
     id: generarIdPostres(),
     mesa: form.mesa,
+    mesaCodigo: getMesaCodigo(form.mesa),
     camarero: CAMARERO_EQUIPO,
     postres: form.postres
       .filter(postreTieneContenido)

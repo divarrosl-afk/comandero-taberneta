@@ -1,25 +1,40 @@
+import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
+import { sectionHeader, TICKET_WIDTH_80MM } from "@/lib/comanda/ticket-kitchen";
 import { getEstadoXLabel } from "@/data/postres-catalogo";
 import type { ComandaPostres, PostreItem } from "@/types/postres";
+import type { TicketFormatOptions } from "@/lib/comanda/ticket-kitchen";
 
 function lineaPostre(postre: PostreItem): string {
-  const cantidad = postre.cantidad > 1 ? ` x${postre.cantidad}` : "";
-  const nota = postre.nota ? ` · ${postre.nota}` : "";
-  return `- ${postre.nombre}${cantidad}${nota}`;
+  const cantidad = postre.cantidad > 1 ? `${postre.cantidad} ` : "";
+  const nombre = postre.cantidad > 1
+    ? `${cantidad}${postre.nombre.toUpperCase()}`
+    : postre.nombre.toUpperCase();
+  const nota = postre.nota ? `\n   • ${postre.nota.toUpperCase()}` : "";
+  return `${nombre}${nota}`;
 }
 
-export function comandaPostresToTexto(comanda: ComandaPostres): string {
-  const lineas: string[] = [`MESA ${comanda.mesa}`, ""];
+export function comandaPostresToTexto(
+  comanda: ComandaPostres,
+  options?: TicketFormatOptions,
+): string {
+  const width = options?.ancho ?? TICKET_WIDTH_80MM;
+  const nombreMesa = options?.nombreMesa ?? getNombreMesaComanda(comanda);
+  const lineas: string[] = [
+    "=".repeat(width),
+    `MESA ${nombreMesa}`,
+    "",
+    sectionHeader("POSTRES", width),
+    "",
+  ];
 
   if (comanda.postres.length) {
-    lineas.push("POSTRES");
     comanda.postres.forEach((p) => lineas.push(lineaPostre(p)));
     lineas.push("");
   }
 
   if (comanda.estadoX || comanda.clH) {
-    lineas.push("---------");
     if (comanda.estadoX) {
-      lineas.push(`X: ${getEstadoXLabel(comanda.estadoX)}`);
+      lineas.push(`X: ${getEstadoXLabel(comanda.estadoX).toUpperCase()}`);
     } else {
       lineas.push("X");
     }
@@ -31,7 +46,7 @@ export function comandaPostresToTexto(comanda: ComandaPostres): string {
 
   if (comanda.observaciones.length) {
     lineas.push("OBSERVACIONES");
-    comanda.observaciones.forEach((o) => lineas.push(`- ${o}`));
+    comanda.observaciones.forEach((o) => lineas.push(`   • ${o.toUpperCase()}`));
   }
 
   return lineas.join("\n").trimEnd();

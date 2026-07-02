@@ -77,6 +77,8 @@ export interface PlatoComanda {
 export interface ComandaCocina {
   id: string;
   mesa: string;
+  /** Código de mesa (C1, R2…) para mostrar cuando mesa es UUID. */
+  mesaCodigo?: string;
   camarero: string;
   tipoServicio: TipoServicio;
   entrantes: PlatoComanda[];

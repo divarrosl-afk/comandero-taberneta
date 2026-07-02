@@ -1,4 +1,5 @@
 import { crearMesasDefault } from "@/data/mesas-default";
+import { getNombreMesa as resolveNombreMesa } from "@/lib/mesas/resolve-mesa";
 import { codigoVarianteB, type MesaConfig } from "@/types/mesas";
 
 const STORAGE_KEY = "comandero-taberneta:mesas";
@@ -56,7 +57,11 @@ export function guardarMesasConfig(mesas: MesaConfig[]): void {
 }
 
 export function getMesaConfig(id: string): MesaConfig | undefined {
-  return getMesasConfig().find((m) => m.id === id);
+  const norm = id.trim();
+  const upper = norm.toUpperCase();
+  return getMesasConfig().find(
+    (m) => m.id === norm || m.codigo === norm || m.codigo === upper,
+  );
 }
 
 export function getMesasActivas(): MesaConfig[] {
@@ -131,7 +136,5 @@ export function resetMesasConfig(): MesaConfig[] {
 }
 
 export function getNombreMesa(id: string | null): string {
-  if (!id) return "—";
-  const m = getMesaConfig(id);
-  return m?.nombreVisible ?? id;
+  return resolveNombreMesa(id);
 }
