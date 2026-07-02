@@ -17,7 +17,15 @@ export function useMesas() {
   const recargar = useCallback(async () => {
     setCargando(true);
     try {
-      const config = await getMesasRepository().getConfig();
+      let config = await getMesasRepository().getConfig();
+      if (config.length === 0 && usesRemoteData()) {
+        try {
+          await fetch("/api/mesas/ensure", { cache: "no-store" });
+          config = await getMesasRepository().getConfig();
+        } catch {
+          /* reintento en siguiente recarga */
+        }
+      }
       if (usesRemoteData()) {
         guardarMesasConfig(config);
       }
@@ -77,7 +85,7 @@ export function useMesas() {
 }
 
 export function useMesasOperativas() {
-  const { activas, recargar } = useMesas();
+  const { activas, recargar, cargando } = useMesas();
   const [revision, setRevision] = useState(0);
 
   const refrescar = useCallback(() => {
@@ -125,5 +133,5 @@ export function useMesasOperativas() {
     [operativas],
   );
 
-  return { operativas, refrescar, porZona };
+  return { operativas, refrescar, porZona, cargando };
 }

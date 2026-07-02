@@ -12,7 +12,7 @@ import {
 import { labelZona, ZONAS_MESA } from "@/types/mesas";
 
 export function MesasMapClient() {
-  const { operativas, refrescar, porZona } = useMesasOperativas();
+  const { operativas, refrescar, porZona, cargando } = useMesasOperativas();
 
   return (
     <RequireAuth>
@@ -44,6 +44,15 @@ export function MesasMapClient() {
         </div>
 
         <div className="space-y-8">
+          {cargando && (
+            <p className="text-center text-sm text-muted">Cargando mesas…</p>
+          )}
+          {!cargando && operativas.length === 0 && (
+            <p className="rounded-xl border border-dashed border-amber-300 bg-amber-50 px-4 py-6 text-center text-sm text-amber-900">
+              No hay mesas en Supabase. Pulsa <strong>Actualizar</strong> o ve a
+              Configuración → Mesas → Restaurar distribución por defecto.
+            </p>
+          )}
           {ZONAS_MESA.map((zona) => {
             const lista = porZona(zona.id);
             if (lista.length === 0) return null;
