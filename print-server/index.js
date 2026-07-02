@@ -273,6 +273,18 @@ setInterval(() => {
   void processQueue();
 }, 5000);
 
+server.on("error", (err) => {
+  if (err && "code" in err && err.code === "EADDRINUSE") {
+    console.error(
+      `\n✗ Puerto ${PORT} ya en uso. En Windows ejecuta: print-server\\windows\\stop-print-server.bat`,
+    );
+    console.error("  Luego vuelve a arrancar: npm run print-server\n");
+    process.exit(1);
+  }
+  console.error("✗ Error del servidor HTTP:", err);
+  process.exit(1);
+});
+
 server.listen(PORT, HOST, () => {
   ensureLogDir();
   console.info(`🖨️  Comandero print-server v2 · ${HOST}:${PORT}`);
