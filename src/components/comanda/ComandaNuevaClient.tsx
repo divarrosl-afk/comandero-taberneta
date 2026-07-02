@@ -17,9 +17,8 @@ import { guardarComanda } from "@/lib/comandas/comandas-service";
 function ComandaNuevaForm() {
   const searchParams = useSearchParams();
   const mesaParam = searchParams.get("mesa");
-  const { sesion, puedeCambiarCamarero } = useAuth();
-  const camareroFijo = puedeCambiarCamarero ? null : (sesion?.camareroId ?? null);
-  const formActions = useComandaForm(camareroFijo, mesaParam);
+  const { sesion } = useAuth();
+  const formActions = useComandaForm(null, mesaParam);
   const {
     form,
     step,
@@ -62,9 +61,7 @@ function ComandaNuevaForm() {
           form={form}
           borradorRecuperado={borradorRecuperado}
           esValido={esValido}
-          puedeCambiarCamarero={puedeCambiarCamarero}
           onSetMesa={formActions.setMesa}
-          onSetCamarero={formActions.setCamarero}
           onUpdatePlato={formActions.updatePlato}
           onAddPlato={formActions.addPlato}
           onAddPlatoFromCatalog={formActions.addPlatoFromCatalog}

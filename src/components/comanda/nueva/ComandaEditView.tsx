@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { BottomBar } from "@/components/ui/BottomBar";
-import { CamareroSelector } from "@/components/comanda/CamareroSelector";
 import { MesaSelector } from "@/components/comanda/MesaSelector";
 import { CabeceraComanda } from "@/components/comanda/nueva/CabeceraComanda";
 import { ExtrasMesaSection } from "@/components/comanda/nueva/ExtrasMesaSection";
@@ -28,9 +27,7 @@ interface ComandaEditViewProps {
   form: ComandaFormActions["form"];
   borradorRecuperado: boolean;
   esValido: boolean;
-  puedeCambiarCamarero: boolean;
   onSetMesa: ComandaFormActions["setMesa"];
-  onSetCamarero: ComandaFormActions["setCamarero"];
   onUpdatePlato: ComandaFormActions["updatePlato"];
   onAddPlato: ComandaFormActions["addPlato"];
   onAddPlatoFromCatalog: ComandaFormActions["addPlatoFromCatalog"];
@@ -50,7 +47,6 @@ interface ComandaEditViewProps {
 
 function getValidationHint(form: ComandaFormActions["form"]): string | undefined {
   if (!form.mesa) return "Selecciona una mesa";
-  if (!form.camareroId) return "Selecciona un camarero";
   return "Añade al menos un plato";
 }
 
@@ -58,9 +54,7 @@ export function ComandaEditView({
   form,
   borradorRecuperado,
   esValido,
-  puedeCambiarCamarero,
   onSetMesa,
-  onSetCamarero,
   onUpdatePlato,
   onAddPlato,
   onAddPlatoFromCatalog,
@@ -115,7 +109,7 @@ export function ComandaEditView({
         </div>
       )}
 
-      <CabeceraComanda mesa={form.mesa} camareroId={form.camareroId} />
+      <CabeceraComanda mesa={form.mesa} />
       <SectionTabs
         active={tab}
         onChange={(t) => {
@@ -128,11 +122,6 @@ export function ComandaEditView({
         {tab === "mesa" && (
           <div className="space-y-6">
             <MesaSelector mesaSeleccionada={form.mesa} onSelect={onSetMesa} />
-            <CamareroSelector
-              camareroSeleccionado={form.camareroId}
-              onSelect={onSetCamarero}
-              soloLectura={!puedeCambiarCamarero}
-            />
           </div>
         )}
 

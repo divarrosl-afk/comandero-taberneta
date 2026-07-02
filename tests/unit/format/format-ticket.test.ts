@@ -4,10 +4,10 @@ import { comandaPostresToTexto } from "@/lib/postres/format-ticket";
 import { comandaCocinaFixture, comandaPostresFixture } from "../../setup/fixtures";
 
 describe("format-ticket", () => {
-  it("comandaToTexto incluye mesa y camarero", () => {
+  it("comandaToTexto incluye mesa sin camarero en ticket", () => {
     const texto = comandaToTexto(comandaCocinaFixture());
     expect(texto).toContain("MESA C1");
-    expect(texto).toContain("DAVID");
+    expect(texto).not.toContain("CAMARERO");
     expect(texto).toContain("Ensalada");
   });
 

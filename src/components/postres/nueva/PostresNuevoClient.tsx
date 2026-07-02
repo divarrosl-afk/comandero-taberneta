@@ -16,9 +16,8 @@ import { guardarPostres } from "@/lib/postres/postres-service";
 function PostresNuevoForm() {
   const searchParams = useSearchParams();
   const mesaParam = searchParams.get("mesa");
-  const { sesion, puedeCambiarCamarero } = useAuth();
-  const camareroFijo = puedeCambiarCamarero ? null : (sesion?.camareroId ?? null);
-  const formActions = usePostresForm(camareroFijo, mesaParam);
+  const { sesion } = useAuth();
+  const formActions = usePostresForm(null, mesaParam);
   const {
     form,
     step,
@@ -61,9 +60,7 @@ function PostresNuevoForm() {
           form={form}
           borradorRecuperado={borradorRecuperado}
           esValido={esValido}
-          puedeCambiarCamarero={puedeCambiarCamarero}
           onSetMesa={formActions.setMesa}
-          onSetCamarero={formActions.setCamarero}
           onUpdatePostre={formActions.updatePostre}
           onAddPostre={formActions.addPostre}
           onAddPostreFrecuente={formActions.addPostreFrecuente}

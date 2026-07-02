@@ -171,3 +171,20 @@ jobs:
         env:
           VERCEL_PRODUCTION_URL: https://comandero-taberneta.vercel.app
         run: node scripts/ci/verify-auth-status.mjs
+
+  ensure-catalogo:
+    name: "6b · Ensure catálogo"
+    needs: vercel-redeploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Ensure catálogo platos
+        env:
+          VERCEL_PRODUCTION_URL: https://comandero-taberneta.vercel.app
+        run: node scripts/ci/ensure-catalogo.mjs
+        continue-on-error: true

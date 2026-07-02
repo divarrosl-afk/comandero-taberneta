@@ -9,7 +9,17 @@ import {
   guardarCatalogo,
   resetCatalogo,
 } from "@/lib/catalogo/catalogo-service";
+import { usesRemoteData } from "@/lib/data/backend";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
+
+async function ensureCatalogoRemoto() {
+  if (!usesRemoteData()) return;
+  try {
+    await fetch("/api/catalogo/ensure");
+  } catch {
+    /* reintento en recargar */
+  }
+}
 
 export function useCatalogo() {
   const [productos, setProductos] = useState<ProductoCatalogo[]>([]);
@@ -18,7 +28,11 @@ export function useCatalogo() {
   const recargar = useCallback(async () => {
     setCargando(true);
     try {
-      const lista = await getCatalogo();
+      let lista = await getCatalogo();
+      if (lista.length === 0 && usesRemoteData()) {
+        await ensureCatalogoRemoto();
+        lista = await getCatalogo();
+      }
       setProductos(lista);
     } finally {
       setCargando(false);

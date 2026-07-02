@@ -85,7 +85,7 @@ export async function upsertVercelEnv(key, value, { token, projectId, teamSlug }
     console.log(`  + ${key}`);
   } catch (err) {
     const msg = sanitizeLogMessage(String(err));
-    if (!msg.includes("ENV_ALREADY_EXISTS")) throw new Error(msg);
+    if (!msg.includes("ENV_ALREADY_EXISTS") && !msg.includes("ENV_CONFLICT")) throw new Error(msg);
     const list = await vercelRequest(`/v9/projects/${projectId}/env`, {
       token,
       teamSlug,
