@@ -1,6 +1,6 @@
 "use client";
 
-import { ESTADOS_PANEL, getEstadoPanelLabel } from "@/types/panel";
+import { ESTADOS_PANEL } from "@/types/panel";
 import { getNombreMesa } from "@/lib/storage/mesas";
 import type { ResumenCierre } from "@/types/cierre";
 
