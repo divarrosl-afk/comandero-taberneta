@@ -1,5 +1,5 @@
 -- Cola de impresión en nube (Vercel → print-server Lenovo)
--- El print-server hace polling y imprime por TCP en la LAN.
+-- Idempotente — requiere supabase/idempotent_helpers.sql
 
 CREATE TABLE IF NOT EXISTS print_jobs (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -25,16 +25,16 @@ CREATE INDEX IF NOT EXISTS idx_print_jobs_poll
   ON print_jobs (restaurante_id, status, created_at)
   WHERE status IN ('queued', 'error');
 
-CREATE TRIGGER trg_print_jobs_updated_at
-  BEFORE UPDATE ON print_jobs
-  FOR EACH ROW EXECUTE FUNCTION ct_set_updated_at();
+SELECT ct_ensure_trigger('trg_print_jobs_updated_at', 'print_jobs'::regclass);
 
 ALTER TABLE print_jobs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS print_jobs_insert ON print_jobs;
 CREATE POLICY print_jobs_insert ON print_jobs
   FOR INSERT TO authenticated
   WITH CHECK (restaurante_id = ct_current_restaurante_id());
 
+DROP POLICY IF EXISTS print_jobs_select ON print_jobs;
 CREATE POLICY print_jobs_select ON print_jobs
   FOR SELECT TO authenticated
   USING (restaurante_id = ct_current_restaurante_id());

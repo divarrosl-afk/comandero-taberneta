@@ -1,5 +1,5 @@
--- Migración Fase 1: tabla config_impresora
--- Ejecutar si ya aplicaste schema.sql de Fase 0 sin esta tabla.
+-- Migración Fase 1: tabla config_impresora (idempotente)
+-- Requiere supabase/idempotent_helpers.sql
 
 CREATE TABLE IF NOT EXISTS config_impresora (
   restaurante_id    UUID PRIMARY KEY REFERENCES restaurantes (id) ON DELETE CASCADE,
@@ -15,16 +15,16 @@ CREATE TABLE IF NOT EXISTS config_impresora (
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TRIGGER trg_config_impresora_updated_at
-  BEFORE UPDATE ON config_impresora
-  FOR EACH ROW EXECUTE FUNCTION ct_set_updated_at();
+SELECT ct_ensure_trigger('trg_config_impresora_updated_at', 'config_impresora'::regclass);
 
 ALTER TABLE config_impresora ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS config_impresora_select ON config_impresora;
 CREATE POLICY config_impresora_select ON config_impresora
   FOR SELECT TO authenticated
   USING (restaurante_id = ct_current_restaurante_id());
 
+DROP POLICY IF EXISTS config_impresora_admin_write ON config_impresora;
 CREATE POLICY config_impresora_admin_write ON config_impresora
   FOR ALL TO authenticated
   USING (restaurante_id = ct_current_restaurante_id() AND ct_is_admin())

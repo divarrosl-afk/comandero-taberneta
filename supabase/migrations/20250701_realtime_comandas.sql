@@ -1,5 +1,5 @@
--- Habilitar Realtime para comandas (Fase 2)
--- Ejecutar en SQL Editor si las tablas aún no están en la publicación.
+-- Habilitar Realtime para comandas (Fase 2, idempotente)
+-- Requiere supabase/idempotent_helpers.sql
 
-ALTER PUBLICATION supabase_realtime ADD TABLE comandas_cocina;
-ALTER PUBLICATION supabase_realtime ADD TABLE comandas_postres;
+SELECT ct_ensure_publication_table('supabase_realtime', 'comandas_cocina');
+SELECT ct_ensure_publication_table('supabase_realtime', 'comandas_postres');
