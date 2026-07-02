@@ -60,12 +60,18 @@ describe("escpos-encode", () => {
     expect(wrapped.every((l) => l.length <= 48)).toBe(true);
   });
 
-  it("aplica negrita y doble tamaño en líneas de plato marcadas", () => {
+  it("aplica doble tamaño en líneas de plato marcadas", () => {
     const buf = buildEscPosBuffer("@D@(M) GAZPACHO\n", "80mm");
-    expect(buf.includes(0x1b)).toBe(true);
-    const text = buf.toString("latin1");
-    expect(text).toContain("GAZPACHO");
-    expect(buf.indexOf(0x1d)).toBeGreaterThan(-1);
+    const gsIdx = buf.indexOf(0x1d);
+    expect(buf[gsIdx + 2]).toBe(0x11);
+    expect(buf.toString("latin1")).toContain("GAZPACHO");
+  });
+
+  it("aplica doble alto en especificaciones marcadas", () => {
+    const buf = buildEscPosBuffer("@M@ - MUY HECHO\n", "80mm");
+    const gsIdx = buf.indexOf(0x1d);
+    expect(buf[gsIdx + 2]).toBe(0x01);
+    expect(buf.toString("latin1")).toContain("MUY HECHO");
   });
 
   it("termina con corte parcial GS V tras líneas de avance", () => {

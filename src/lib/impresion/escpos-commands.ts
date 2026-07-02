@@ -24,6 +24,9 @@ export const CMD_BOLD_OFF = Buffer.from([ESC, 0x45, 0x00]);
 /** GS ! 0x11 — doble alto y ancho */
 export const CMD_DOUBLE_ON = Buffer.from([GS, 0x21, 0x11]);
 
+/** GS ! 0x01 — doble alto (ancho normal) */
+export const CMD_DOUBLE_HEIGHT_ON = Buffer.from([GS, 0x21, 0x01]);
+
 /** GS ! 0x00 — tamaño normal */
 export const CMD_DOUBLE_OFF = Buffer.from([GS, 0x21, 0x00]);
 
