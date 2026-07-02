@@ -150,7 +150,7 @@ function expandirItem(
 }
 
 function crearDesdeCategorias<
-  T extends Record<string, ItemCarta[]>,
+  T extends Record<string, readonly ItemCarta[]>,
 >(
   grupos: T,
   usosMap: Record<keyof T, UsoComanda[]>,
@@ -162,7 +162,7 @@ function crearDesdeCategorias<
 
   for (const [categoria, items] of Object.entries(grupos) as [
     keyof T,
-    ItemCarta[],
+    readonly ItemCarta[],
   ][]) {
     const usos = usosMap[categoria];
     const prefijo = prefijos?.[categoria] ?? "";

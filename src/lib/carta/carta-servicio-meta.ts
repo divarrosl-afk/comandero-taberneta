@@ -37,12 +37,12 @@ export function decodeProductoMeta(notas?: string): {
   notasLimpias?: string;
 } {
   if (!notas?.startsWith(PREFIX)) {
-    return { notasLimpias: notas };
+    return { meta: {}, notasLimpias: notas };
   }
 
   const end = notas.indexOf(SUFFIX, PREFIX.length);
   if (end === -1) {
-    return { notasLimpias: notas };
+    return { meta: {}, notasLimpias: notas };
   }
 
   const meta = parseMeta(notas.slice(PREFIX.length, end));

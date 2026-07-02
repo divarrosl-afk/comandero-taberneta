@@ -2,9 +2,18 @@ import type {
   CartaServicio,
   CategoriaCarta,
   ProductoCatalogo,
+  SeccionCatalogo,
   UsoComanda,
 } from "@/types/catalogo";
 import { CATEGORIAS_CARTA } from "@/types/catalogo";
+import type { SeccionPlatos } from "@/types/comanda";
+
+export function aUsoComanda(
+  seccion: SeccionPlatos | SeccionCatalogo,
+): UsoComanda {
+  if (seccion === "salsas") return "extras";
+  return seccion;
+}
 
 export function productoPerteneceACarta(
   producto: ProductoCatalogo,

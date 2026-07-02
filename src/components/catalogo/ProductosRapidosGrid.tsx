@@ -5,6 +5,7 @@ import { useCatalogo } from "@/hooks/useCatalogo";
 import { buscarEnCatalogo } from "@/lib/catalogo/search";
 import { getVentasPorProductoId } from "@/lib/catalogo/popularidad";
 import {
+  aUsoComanda,
   filtrarProductosComanda,
   type OrigenPlatos,
 } from "@/lib/carta/carta-admin";
@@ -38,7 +39,7 @@ export function ProductosRapidosGrid({
     [productos],
   );
 
-  const uso = seccionPlatos ?? seccion;
+  const uso = aUsoComanda(seccionPlatos ?? seccion);
   const enBusqueda = busqueda.trim().length > 0;
 
   const lista = useMemo(() => {
