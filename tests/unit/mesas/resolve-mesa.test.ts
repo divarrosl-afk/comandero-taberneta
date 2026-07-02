@@ -3,6 +3,7 @@ import {
   comandaPerteneceAMesa,
   getNombreMesaComanda,
   isUuid,
+  resolveNombreMesaComanda,
 } from "@/lib/mesas/resolve-mesa";
 import { guardarMesasConfig } from "@/lib/storage/mesas";
 import type { MesaConfig } from "@/types/mesas";
@@ -26,6 +27,13 @@ describe("resolve-mesa", () => {
   it("detecta UUID", () => {
     expect(isUuid(MESA_UUID)).toBe(true);
     expect(isUuid("C1")).toBe(false);
+  });
+
+  it("resolveNombreMesaComanda encuentra mesa por id sin mesaCodigo", () => {
+    const mesas = [mesaFixture()];
+    expect(
+      resolveNombreMesaComanda({ mesa: MESA_UUID }, mesas),
+    ).toBe("12");
   });
 
   it("getNombreMesaComanda usa mesaCodigo cuando mesa es UUID", () => {

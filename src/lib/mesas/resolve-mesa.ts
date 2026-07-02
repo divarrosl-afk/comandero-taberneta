@@ -41,6 +41,34 @@ export interface MesaComandaRef {
   mesaCodigo?: string;
 }
 
+/** Resuelve nombre con lista de mesas cargada (panel, mesas operativas). */
+export function resolveNombreMesaComanda(
+  comanda: MesaComandaRef,
+  mesas?: readonly { id: string; codigo: string; nombreVisible: string }[],
+): string {
+  const ref = comanda.mesa?.trim();
+  const codigoRef = comanda.mesaCodigo?.trim().toUpperCase();
+
+  if (mesas?.length && ref) {
+    const found = mesas.find(
+      (m) =>
+        m.id === ref ||
+        m.codigo === ref.toUpperCase() ||
+        (codigoRef && m.codigo === codigoRef) ||
+        m.id === codigoRef,
+    );
+    if (found) return found.nombreVisible || found.codigo;
+  }
+
+  if (codigoRef && !isUuid(codigoRef)) {
+    const porCodigo = getNombreMesa(codigoRef);
+    if (!isUuid(porCodigo)) return porCodigo;
+    return codigoRef;
+  }
+
+  return getNombreMesaComanda(comanda);
+}
+
 /** Resuelve el nombre de mesa para una comanda (id UUID + código en BD). */
 export function getNombreMesaComanda(comanda: MesaComandaRef): string {
   const porId = getNombreMesa(comanda.mesa);

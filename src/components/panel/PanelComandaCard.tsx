@@ -1,7 +1,7 @@
 "use client";
 
 import { etiquetaTipoPlato } from "@/lib/comanda/tipo-plato";
-import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
+import { resolveNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { formatHora } from "@/lib/historial/items";
 import { EstadoPanelBadge } from "@/components/panel/EstadoPanelBadge";
 import { SemaforoPanelSelector } from "@/components/panel/SemaforoPanelSelector";
@@ -48,24 +48,28 @@ function BloqueSeccion({
   );
 }
 
+import type { MesaConfig } from "@/types/mesas";
+
 interface PanelComandaCardProps {
   comanda: ComandaCocina;
+  mesas?: MesaConfig[];
   postresMesa?: ComandaPostres;
   onCambiarEstado: (estado: EstadoPanel) => void;
 }
 
 export function PanelComandaCard({
   comanda,
+  mesas = [],
   postresMesa,
   onCambiarEstado,
 }: PanelComandaCardProps) {
+  const nombreMesa = resolveNombreMesaComanda(comanda, mesas);
+
   return (
     <article className="rounded-2xl border-2 border-border bg-card p-4 shadow-sm">
       <header className="mb-3 flex items-start justify-between gap-2">
         <div>
-          <p className="text-2xl font-bold text-primary">
-            MESA {getNombreMesaComanda(comanda)}
-          </p>
+          <p className="text-2xl font-bold text-primary">{nombreMesa}</p>
           <p className="text-sm font-medium text-muted">
             {comanda.camarero} · {formatHora(comanda.creadaEn)}
           </p>
