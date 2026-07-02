@@ -188,3 +188,20 @@ jobs:
           VERCEL_PRODUCTION_URL: https://comandero-taberneta.vercel.app
         run: node scripts/ci/ensure-catalogo.mjs
         continue-on-error: true
+
+  ensure-mesas:
+    name: "6c · Ensure mesas"
+    needs: vercel-redeploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Ensure mesas distribución
+        env:
+          VERCEL_PRODUCTION_URL: https://comandero-taberneta.vercel.app
+        run: node scripts/ci/ensure-mesas.mjs
+        continue-on-error: true
