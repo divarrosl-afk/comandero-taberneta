@@ -1,4 +1,5 @@
 import { getDataBackend, usesRemoteData } from "@/lib/data/backend";
+import { getClientRuntimeConfig } from "@/lib/supabase/runtime-config";
 
 export interface SupabaseEnvConfig {
   url: string;
@@ -24,6 +25,11 @@ function readSupabaseAnonKey(): string | undefined {
  * Con `DATA_BACKEND=local` puede devolver `null` sin afectar a la app.
  */
 export function getSupabaseEnv(): SupabaseEnvConfig | null {
+  if (typeof window !== "undefined") {
+    const runtime = getClientRuntimeConfig()?.supabase;
+    if (runtime) return runtime;
+  }
+
   const url = readEnv("NEXT_PUBLIC_SUPABASE_URL");
   const anonKey = readSupabaseAnonKey();
   const restauranteId = readEnv("NEXT_PUBLIC_RESTAURANTE_ID");
@@ -56,10 +62,23 @@ export function validateSupabaseSetup(): {
   backend: ReturnType<typeof getDataBackend>;
   missing: string[];
 } {
-  const backend = getDataBackend();
+  const backend =
+    typeof window !== "undefined"
+      ? (getClientRuntimeConfig()?.backend ?? getDataBackend())
+      : getDataBackend();
 
-  if (!usesRemoteData()) {
+  const usesRemote =
+    backend === "supabase" || backend === "hybrid";
+
+  if (!usesRemote) {
     return { ok: true, backend, missing: [] };
+  }
+
+  if (typeof window !== "undefined") {
+    const runtime = getClientRuntimeConfig()?.supabase;
+    if (runtime) {
+      return { ok: true, backend, missing: [] };
+    }
   }
 
   const missing: string[] = [];

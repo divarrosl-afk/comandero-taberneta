@@ -1,12 +1,19 @@
+import { getClientRuntimeConfig } from "@/lib/supabase/runtime-config";
+
 export type DataBackend = "local" | "supabase" | "hybrid";
 
 const VALID_BACKENDS: DataBackend[] = ["local", "supabase", "hybrid"];
 
 /**
  * Lee el backend de datos configurado.
- * Por defecto `local` — la app sigue usando localStorage como hoy.
+ * En cliente, prioriza la config cargada en runtime desde /api/config/public.
  */
 export function getDataBackend(): DataBackend {
+  if (typeof window !== "undefined") {
+    const runtime = getClientRuntimeConfig()?.backend;
+    if (runtime) return runtime;
+  }
+
   const raw = process.env.NEXT_PUBLIC_DATA_BACKEND?.trim().toLowerCase();
 
   if (raw && VALID_BACKENDS.includes(raw as DataBackend)) {
