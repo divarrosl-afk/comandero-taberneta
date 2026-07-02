@@ -10,7 +10,7 @@ describe("postres-local storage", () => {
   it("guarda y actualiza postres", () => {
     guardarPostresLocal(comandaPostresFixture({ id: "ps1" }));
     expect(getPostresLocales()).toHaveLength(1);
-    const updated = actualizarEstadoPostresLocal("ps1", "servido");
-    expect(updated?.estadoPanel).toBe("servido");
+    const updated = actualizarEstadoPostresLocal("ps1", "marcha_segundos");
+    expect(updated?.estadoPanel).toBe("marcha_segundos");
   });
 });

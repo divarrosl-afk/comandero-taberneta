@@ -1,4 +1,5 @@
 import type { EstadoPanel, HistorialTipo } from "@/types/panel";
+import { ESTADOS_PANEL } from "@/types/panel";
 
 export type FiltroTipoCierre = "todos" | HistorialTipo;
 
@@ -52,10 +53,7 @@ export const FILTRO_TODOS_CAMARERO = "todos";
 
 export const ESTADOS_CIERRE: { id: FiltroEstadoCierre; label: string }[] = [
   { id: "todos", label: "Todos" },
-  { id: "pendiente", label: "Pendiente" },
-  { id: "en_preparacion", label: "En preparación" },
-  { id: "listo", label: "Listo" },
-  { id: "servido", label: "Servido" },
+  ...ESTADOS_PANEL.map((e) => ({ id: e.id, label: e.label })),
 ];
 
 export const TIPOS_CIERRE: { id: FiltroTipoCierre; label: string }[] = [

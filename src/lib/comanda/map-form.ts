@@ -85,7 +85,7 @@ export function formToComanda(form: ComandaFormState): ComandaCocina | null {
     observaciones: form.observaciones.map((o) => o.trim()).filter(Boolean),
     creadaEn: new Date().toISOString(),
     enviada: true,
-    estadoPanel: "pendiente",
+    estadoPanel: "sentados",
   };
 }
 

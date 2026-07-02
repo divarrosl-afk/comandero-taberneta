@@ -1,5 +1,6 @@
 import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
+import { normalizeEstadoPanel } from "@/types/panel";
 
 const STORAGE_KEY = "comandero-taberneta:postres";
 
@@ -9,7 +10,7 @@ function normalizarPostres(comanda: ComandaPostres): ComandaPostres {
     mesa: typeof comanda.mesa === "number" ? String(comanda.mesa) : comanda.mesa,
     postres: comanda.postres ?? [],
     observaciones: comanda.observaciones ?? [],
-    estadoPanel: comanda.estadoPanel ?? "pendiente",
+    estadoPanel: normalizeEstadoPanel(comanda.estadoPanel),
   };
 }
 

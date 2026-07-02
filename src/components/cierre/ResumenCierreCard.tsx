@@ -1,6 +1,6 @@
 "use client";
 
-import { getEstadoPanelLabel } from "@/types/panel";
+import { ESTADOS_PANEL, getEstadoPanelLabel } from "@/types/panel";
 import { getNombreMesa } from "@/lib/storage/mesas";
 import type { ResumenCierre } from "@/types/cierre";
 
@@ -66,23 +66,14 @@ export function ResumenCierreCard({ resumen }: ResumenCierreCardProps) {
 
       <div className="rounded-xl border border-border bg-card p-4">
         <p className="mb-2 text-sm font-bold">Estados</p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {(
-            [
-              "pendiente",
-              "en_preparacion",
-              "listo",
-              "servido",
-            ] as const
-          ).map((estado) => (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          {ESTADOS_PANEL.map((estado) => (
             <div
-              key={estado}
+              key={estado.id}
               className="rounded-lg bg-background px-2 py-2 text-center"
             >
-              <p className="text-lg font-bold">{resumen.porEstado[estado]}</p>
-              <p className="text-xs text-muted">
-                {getEstadoPanelLabel(estado)}
-              </p>
+              <p className="text-lg font-bold">{resumen.porEstado[estado.id]}</p>
+              <p className="text-xs text-muted">{estado.labelCorto}</p>
             </div>
           ))}
         </div>

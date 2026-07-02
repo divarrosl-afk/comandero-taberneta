@@ -6,6 +6,7 @@ import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/Button";
 import { PanelComandaCard } from "@/components/panel/PanelComandaCard";
 import { PanelPostresCard } from "@/components/panel/PanelPostresCard";
+import { comandaPerteneceAMesa } from "@/lib/mesas/resolve-mesa";
 import { usePanel } from "@/hooks/usePanel";
 
 type PanelTab = "cocina" | "postres";
@@ -92,15 +93,23 @@ export function PanelClient() {
               No hay comandas de cocina activas
             </p>
           ) : (
-            listaCocina.map((comanda) => (
-              <PanelComandaCard
-                key={comanda.id}
-                comanda={comanda}
-                onCambiarEstado={(estado) =>
-                  cambiarEstadoCocina(comanda.id, estado)
-                }
-              />
-            ))
+            listaCocina.map((comanda) => {
+              const postresMesa = comandasPostres.find(
+                (p) =>
+                  comandaPerteneceAMesa(p, comanda.mesa) &&
+                  p.estadoPanel !== "mesa_libre",
+              );
+              return (
+                <PanelComandaCard
+                  key={comanda.id}
+                  comanda={comanda}
+                  postresMesa={postresMesa}
+                  onCambiarEstado={(estado) =>
+                    cambiarEstadoCocina(comanda.id, estado)
+                  }
+                />
+              );
+            })
           )}
         </div>
       )}

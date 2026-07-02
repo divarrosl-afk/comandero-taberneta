@@ -12,6 +12,7 @@ import { OPERATIVA_POLL_MS } from "@/lib/sync/constants";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import type { ComandaCocina } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
+import { isEstadoPanelActivo, normalizeEstadoPanel } from "@/types/panel";
 import type { ComandaPostres } from "@/types/postres";
 
 export function usePanel() {
@@ -57,8 +58,12 @@ export function usePanel() {
     [recargar],
   );
 
-  const cocinaActivas = comandasCocina.filter((c) => c.estadoPanel !== "servido");
-  const postresActivas = comandasPostres.filter((c) => c.estadoPanel !== "servido");
+  const cocinaActivas = comandasCocina.filter((c) =>
+    isEstadoPanelActivo(normalizeEstadoPanel(c.estadoPanel)),
+  );
+  const postresActivas = comandasPostres.filter((c) =>
+    isEstadoPanelActivo(normalizeEstadoPanel(c.estadoPanel)),
+  );
 
   return {
     comandasCocina,

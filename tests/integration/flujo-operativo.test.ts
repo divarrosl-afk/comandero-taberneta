@@ -29,18 +29,18 @@ describe("flujo operativo local (integración)", () => {
     const panelCocina = getComandasSync();
     expect(panelCocina.some((c) => c.id === "flow-c1")).toBe(true);
 
-    await actualizarEstadoComanda("flow-c1", "en_preparacion");
+    await actualizarEstadoComanda("flow-c1", "bebidas");
     expect(getComandasSync().find((c) => c.id === "flow-c1")?.estadoPanel).toBe(
-      "en_preparacion",
+      "bebidas",
     );
 
     const postres = comandaPostresFixture({ id: "flow-p1" });
     await guardarPostres(postres);
     expect(getPostresSync().some((p) => p.id === "flow-p1")).toBe(true);
 
-    await actualizarEstadoPostres("flow-p1", "listo");
+    await actualizarEstadoPostres("flow-p1", "tiene_primeros");
     expect(getPostresSync().find((p) => p.id === "flow-p1")?.estadoPanel).toBe(
-      "listo",
+      "tiene_primeros",
     );
 
     const historial = getHistorialEntradas();

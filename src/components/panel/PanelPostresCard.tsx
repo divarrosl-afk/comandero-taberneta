@@ -4,7 +4,7 @@ import { getEstadoXLabel } from "@/data/postres-catalogo";
 import { formatHora } from "@/lib/historial/items";
 import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { EstadoPanelBadge } from "@/components/panel/EstadoPanelBadge";
-import { EstadoPanelSelector } from "@/components/panel/EstadoPanelSelector";
+import { SemaforoPanelSelector } from "@/components/panel/SemaforoPanelSelector";
 import type { EstadoPanel } from "@/types/panel";
 import type { ComandaPostres } from "@/types/postres";
 
@@ -67,10 +67,9 @@ export function PanelPostresCard({
         )}
       </div>
 
-      <EstadoPanelSelector
+      <SemaforoPanelSelector
         value={comanda.estadoPanel}
         onChange={onCambiarEstado}
-        compact
       />
     </article>
   );

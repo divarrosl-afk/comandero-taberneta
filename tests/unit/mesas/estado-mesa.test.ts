@@ -20,7 +20,7 @@ import {
 describe("estado-mesa", () => {
   it("calcula pendiente si hay comanda activa", () => {
     vi.mocked(getComandasSync).mockReturnValue([
-      comandaCocinaFixture({ mesa: "C1", estadoPanel: "en_preparacion" }),
+      comandaCocinaFixture({ mesa: "C1", estadoPanel: "bebidas" }),
     ]);
     vi.mocked(getPostresSync).mockReturnValue([]);
     expect(getEstadoMesa("C1")).toBe("pendiente");
@@ -34,7 +34,7 @@ describe("estado-mesa", () => {
 
   it("estado manual cobrando prevalece", () => {
     vi.mocked(getComandasSync).mockReturnValue([
-      comandaCocinaFixture({ mesa: "C1", estadoPanel: "pendiente" }),
+      comandaCocinaFixture({ mesa: "C1", estadoPanel: "sentados" }),
     ]);
     vi.mocked(getPostresSync).mockReturnValue([]);
     marcarMesaCobrando("C1");
@@ -53,18 +53,18 @@ describe("estado-mesa", () => {
 
   it("pendiente cuando hay comanda activa en mesa", () => {
     vi.mocked(getComandasSync).mockReturnValue([
-      comandaCocinaFixture({ mesa: "C2", estadoPanel: "pendiente" }),
+      comandaCocinaFixture({ mesa: "C2", estadoPanel: "sentados" }),
     ]);
     vi.mocked(getPostresSync).mockReturnValue([]);
     expect(getEstadoMesa("C2")).toBe("pendiente");
   });
 
-  it("servida cuando todas las comandas están servidas", () => {
+  it("servida cuando todas las comandas están en marcha cuenta", () => {
     vi.mocked(getComandasSync).mockReturnValue([
-      comandaCocinaFixture({ mesa: "C3", estadoPanel: "servido" }),
+      comandaCocinaFixture({ mesa: "C3", estadoPanel: "marcha_cuenta" }),
     ]);
     vi.mocked(getPostresSync).mockReturnValue([
-      comandaPostresFixture({ mesa: "C3", estadoPanel: "servido" }),
+      comandaPostresFixture({ mesa: "C3", estadoPanel: "marcha_cuenta" }),
     ]);
     expect(getEstadoMesa("C3")).toBe("servida");
   });

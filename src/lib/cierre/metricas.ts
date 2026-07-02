@@ -9,14 +9,12 @@ import type {
   ResumenCierre,
 } from "@/types/cierre";
 import type { EstadoPanel } from "@/types/panel";
+import { ESTADOS_PANEL } from "@/types/panel";
 import type { ComandaPostres } from "@/types/postres";
 
-const ESTADOS_VACIOS: Record<EstadoPanel, number> = {
-  pendiente: 0,
-  en_preparacion: 0,
-  listo: 0,
-  servido: 0,
-};
+const ESTADOS_VACIOS: Record<EstadoPanel, number> = Object.fromEntries(
+  ESTADOS_PANEL.map((e) => [e.id, 0]),
+) as Record<EstadoPanel, number>;
 
 function acumularPlatos(
   mapa: Map<string, number>,

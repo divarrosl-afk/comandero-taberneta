@@ -7,8 +7,8 @@ describe("postresRepositoryLocal", () => {
     await postresRepositoryLocal.crear(comandaPostresFixture({ id: "repo-p1" }));
     const updated = await postresRepositoryLocal.actualizarEstado(
       "repo-p1",
-      "listo",
+      "tiene_primeros",
     );
-    expect(updated?.estadoPanel).toBe("listo");
+    expect(updated?.estadoPanel).toBe("tiene_primeros");
   });
 });

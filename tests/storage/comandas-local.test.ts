@@ -16,8 +16,8 @@ describe("comandas-local storage", () => {
 
   it("actualiza estado", () => {
     guardarComandaLocal(comandaCocinaFixture({ id: "s2" }));
-    const updated = actualizarEstadoComandaLocal("s2", "listo");
-    expect(updated?.estadoPanel).toBe("listo");
+    const updated = actualizarEstadoComandaLocal("s2", "tiene_primeros");
+    expect(updated?.estadoPanel).toBe("tiene_primeros");
   });
 
   it("elimina comanda", () => {

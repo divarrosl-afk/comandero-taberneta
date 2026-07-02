@@ -3,6 +3,11 @@ import { getComandasSync } from "@/lib/comandas/comandas-service";
 import { getPostresSync } from "@/lib/postres/postres-service";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { usesRemoteData } from "@/lib/data/backend";
+import {
+  isEstadoPanelActivo,
+  isEstadoPanelTerminal,
+  normalizeEstadoPanel,
+} from "@/types/panel";
 import type {
   EstadoMesaOperativo,
   MesaEstadoPersistido,
@@ -49,19 +54,18 @@ function setEstadoPersistido(
 function calcularEstadoDesdeComandas(mesaId: string): EstadoMesaOperativo {
   const cocina = getComandasSync().filter((c) => comandaPerteneceAMesa(c, mesaId));
   const postres = getPostresSync().filter((c) => comandaPerteneceAMesa(c, mesaId));
-  const todas = [...cocina, ...postres];
+  const todas = [...cocina, ...postres].map((c) => ({
+    ...c,
+    estadoPanel: normalizeEstadoPanel(c.estadoPanel),
+  }));
 
   if (todas.length === 0) return "libre";
 
-  const pendientes = todas.some(
-    (c) =>
-      c.estadoPanel === "pendiente" ||
-      c.estadoPanel === "en_preparacion" ||
-      c.estadoPanel === "listo",
-  );
-  if (pendientes) return "pendiente";
+  if (todas.every((c) => c.estadoPanel === "mesa_libre")) return "libre";
 
-  if (todas.every((c) => c.estadoPanel === "servido")) return "servida";
+  if (todas.every((c) => isEstadoPanelTerminal(c.estadoPanel))) return "servida";
+
+  if (todas.some((c) => isEstadoPanelActivo(c.estadoPanel))) return "pendiente";
 
   return "ocupada";
 }

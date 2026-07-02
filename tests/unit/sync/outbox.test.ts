@@ -24,11 +24,11 @@ describe("outbox IndexedDB", () => {
 
   it("estado en create pendiente no duplica op", async () => {
     await enqueueCocinaCreate(comandaCocinaFixture({ id: "o3" }));
-    await enqueueCocinaEstado("o3", "listo");
+    await enqueueCocinaEstado("o3", "tiene_primeros");
     expect(await countOutbox()).toBe(1);
     const entries = await listOutboxEntries();
     expect((entries[0].payload as { estadoPanel: string }).estadoPanel).toBe(
-      "listo",
+      "tiene_primeros",
     );
   });
 

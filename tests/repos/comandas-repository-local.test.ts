@@ -16,8 +16,8 @@ describe("comandasRepositoryLocal", () => {
     );
     const updated = await comandasRepositoryLocal.actualizarEstado(
       "repo-c2",
-      "en_preparacion",
+      "bebidas",
     );
-    expect(updated?.estadoPanel).toBe("en_preparacion");
+    expect(updated?.estadoPanel).toBe("bebidas");
   });
 });

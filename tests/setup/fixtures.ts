@@ -39,7 +39,7 @@ export function comandaCocinaFixture(
     observaciones: [],
     creadaEn: `${FECHA_HOY}T12:00:00.000Z`,
     enviada: true,
-    estadoPanel: "pendiente",
+    estadoPanel: "sentados",
     ...overrides,
   };
 }
@@ -57,7 +57,7 @@ export function comandaPostresFixture(
     observaciones: [],
     creadaEn: `${FECHA_HOY}T13:00:00.000Z`,
     enviada: true,
-    estadoPanel: "pendiente",
+    estadoPanel: "sentados",
     ...overrides,
   };
 }

@@ -1,5 +1,6 @@
 import type { ComandaCocina, TipoServicio } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
+import { normalizeEstadoPanel } from "@/types/panel";
 import type { ComandaPostres, EstadoPostreX } from "@/types/postres";
 
 export interface ComandaPersistMeta {
@@ -70,7 +71,7 @@ export function rowToComandaCocina(row: DbComandaCocina): ComandaCocina {
     observaciones: Array.isArray(row.observaciones) ? row.observaciones : [],
     creadaEn: row.creada_en,
     enviada: row.enviada ?? true,
-    estadoPanel: row.estado_panel ?? "pendiente",
+    estadoPanel: normalizeEstadoPanel(row.estado_panel),
   };
 }
 
@@ -116,7 +117,7 @@ export function rowToComandaPostres(row: DbComandaPostres): ComandaPostres {
     observaciones: Array.isArray(row.observaciones) ? row.observaciones : [],
     creadaEn: row.creada_en,
     enviada: row.enviada ?? true,
-    estadoPanel: row.estado_panel ?? "pendiente",
+    estadoPanel: normalizeEstadoPanel(row.estado_panel),
   };
 }
 

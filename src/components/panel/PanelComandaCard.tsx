@@ -4,9 +4,11 @@ import { etiquetaTipoPlato } from "@/lib/comanda/tipo-plato";
 import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { formatHora } from "@/lib/historial/items";
 import { EstadoPanelBadge } from "@/components/panel/EstadoPanelBadge";
-import { EstadoPanelSelector } from "@/components/panel/EstadoPanelSelector";
+import { SemaforoPanelSelector } from "@/components/panel/SemaforoPanelSelector";
+import { PostresMarcaBanner } from "@/components/panel/PostresMarcaBanner";
 import type { ComandaCocina, PlatoComanda } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
+import type { ComandaPostres } from "@/types/postres";
 
 function lineaPlato(plato: PlatoComanda): string {
   const cantidad = plato.cantidad > 1 ? ` x${plato.cantidad}` : "";
@@ -48,11 +50,13 @@ function BloqueSeccion({
 
 interface PanelComandaCardProps {
   comanda: ComandaCocina;
+  postresMesa?: ComandaPostres;
   onCambiarEstado: (estado: EstadoPanel) => void;
 }
 
 export function PanelComandaCard({
   comanda,
+  postresMesa,
   onCambiarEstado,
 }: PanelComandaCardProps) {
   return (
@@ -68,6 +72,8 @@ export function PanelComandaCard({
         </div>
         <EstadoPanelBadge estado={comanda.estadoPanel} />
       </header>
+
+      {postresMesa && <PostresMarcaBanner comanda={postresMesa} />}
 
       <div className="mb-4 space-y-3 rounded-xl bg-background p-3">
         <BloqueSeccion
@@ -95,10 +101,9 @@ export function PanelComandaCard({
         <BloqueSeccion titulo="Observaciones" lineas={comanda.observaciones} />
       </div>
 
-      <EstadoPanelSelector
+      <SemaforoPanelSelector
         value={comanda.estadoPanel}
         onChange={onCambiarEstado}
-        compact
       />
     </article>
   );

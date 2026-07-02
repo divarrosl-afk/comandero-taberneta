@@ -1,5 +1,6 @@
 import type { ComandaCocina } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
+import { normalizeEstadoPanel } from "@/types/panel";
 
 const STORAGE_KEY = "comandero-taberneta:comandas";
 
@@ -27,7 +28,7 @@ function normalizarComanda(comanda: ComandaCocina): ComandaCocina {
     bebidas: comanda.bebidas.map(normalizarPlato),
     extras: comanda.extras ?? [],
     observaciones: comanda.observaciones ?? [],
-    estadoPanel: comanda.estadoPanel ?? "pendiente",
+    estadoPanel: normalizeEstadoPanel(comanda.estadoPanel),
   };
 }
 
