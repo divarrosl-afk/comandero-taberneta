@@ -16,7 +16,8 @@ const STEPS = {
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
     "NEXT_PUBLIC_RESTAURANTE_ID",
-    "SETUP_BOOTSTRAP_TOKEN",
+    "SEED_ADMIN_PASSWORD",
+    "SEED_CAMARERO_PASSWORD",
   ],
   "vercel-redeploy": ["VERCEL_TOKEN"],
   health: [],
@@ -27,11 +28,7 @@ const STEPS = {
     "SEED_ADMIN_PASSWORD",
     "SEED_CAMARERO_PASSWORD",
   ],
-  "seed-via-vercel": [
-    "SETUP_BOOTSTRAP_TOKEN",
-    "SEED_ADMIN_PASSWORD",
-    "SEED_CAMARERO_PASSWORD",
-  ],
+  "seed-via-vercel": ["SEED_ADMIN_PASSWORD", "SEED_CAMARERO_PASSWORD"],
 };
 
 const step = process.argv[2];

@@ -10,10 +10,6 @@ async function main() {
   const adminPassword = process.env.SEED_ADMIN_PASSWORD?.trim();
   const camareroPassword = process.env.SEED_CAMARERO_PASSWORD?.trim();
 
-  if (!token) {
-    console.error("Falta SETUP_BOOTSTRAP_TOKEN");
-    process.exit(1);
-  }
   if (!adminPassword || !camareroPassword) {
     console.error("Faltan SEED_ADMIN_PASSWORD o SEED_CAMARERO_PASSWORD");
     process.exit(1);
@@ -27,12 +23,12 @@ async function main() {
 
   while (Date.now() - start < maxMs) {
     try {
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
       const res = await fetch(url, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({ adminPassword, camareroPassword }),
       });
 

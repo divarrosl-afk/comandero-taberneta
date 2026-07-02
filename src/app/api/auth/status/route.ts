@@ -2,8 +2,33 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { usesRemoteData } from "@/lib/data/backend";
+import { countPerfiles, seedSupabaseUsers } from "@/lib/setup/seed-users";
 
-/** Diagnóstico de usuarios (sin datos personales). */
+async function tryAutoSeed(restauranteId: string): Promise<{
+  userCount: number;
+  seeded: boolean;
+  seedError?: string;
+}> {
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD?.trim();
+  const camareroPassword = process.env.SEED_CAMARERO_PASSWORD?.trim();
+  if (!adminPassword || !camareroPassword) {
+    return { userCount: await countPerfiles(restauranteId), seeded: false };
+  }
+
+  try {
+    const result = await seedSupabaseUsers({ adminPassword, camareroPassword });
+    return { userCount: result.userCount, seeded: true };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Error de seed";
+    return {
+      userCount: await countPerfiles(restauranteId),
+      seeded: false,
+      seedError: message,
+    };
+  }
+}
+
+/** Diagnóstico de usuarios (sin datos personales). Auto-seed si hay SEED_* en Vercel. */
 export async function GET() {
   if (!usesRemoteData()) {
     return NextResponse.json({ seedRequired: false, userCount: 0 });
@@ -15,16 +40,21 @@ export async function GET() {
     return NextResponse.json({ seedRequired: true, userCount: 0 });
   }
 
-  const { count, error } = await admin
-    .from("perfiles")
-    .select("*", { count: "exact", head: true })
-    .eq("restaurante_id", env.restauranteId)
-    .is("deleted_at", null);
+  let userCount = await countPerfiles(env.restauranteId);
+  let seeded = false;
+  let seedError: string | undefined;
 
-  const userCount = error ? 0 : (count ?? 0);
+  if (userCount === 0) {
+    const auto = await tryAutoSeed(env.restauranteId);
+    userCount = auto.userCount;
+    seeded = auto.seeded;
+    seedError = auto.seedError;
+  }
 
   return NextResponse.json({
     seedRequired: userCount === 0,
     userCount,
+    ...(seeded ? { seeded: true } : {}),
+    ...(seedError ? { seedError } : {}),
   });
 }
