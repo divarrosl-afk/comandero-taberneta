@@ -31,8 +31,7 @@ const ALCANCE_COMANDA: SeccionCatalogo[] = [
   "bebidas",
 ];
 
-function origenInicial(seccion: SeccionPlatos): OrigenPlatos {
-  if (seccion === "primeros" || seccion === "segundos") return "menu";
+function origenInicial(_seccion: SeccionPlatos): OrigenPlatos {
   return "carta-almuerzo";
 }
 

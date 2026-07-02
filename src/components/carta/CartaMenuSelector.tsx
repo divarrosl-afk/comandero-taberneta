@@ -561,6 +561,16 @@ export function CartaMenuSelector({
             onSelect={onSelect}
             onInfo={setFicha}
           />
+        ) : origen === "menu" ? (
+          <GridProductos
+            lista={activos}
+            menu={menu}
+            seccionPlatos={seccionPlatos}
+            seccion={seccion}
+            ventasPorId={ventasPorId}
+            onSelect={onSelect}
+            onInfo={setFicha}
+          />
         ) : menuActivo ? (
           <>
             {renderListaConDestacados("Menú del día", menuLista)}

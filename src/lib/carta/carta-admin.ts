@@ -128,7 +128,7 @@ export function filtrarProductosComanda(
     }
 
     if (opts.origen === "menu") {
-      return true;
+      return p.tipo === "menu-dia" || p.tipo === "ambos";
     }
 
     if (opts.origen === "carta-almuerzo") {

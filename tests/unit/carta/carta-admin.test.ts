@@ -65,4 +65,16 @@ describe("filtrarProductosComanda carta completa", () => {
     });
     expect(filtrados).toHaveLength(1);
   });
+
+  it("con origen menú no muestra productos de carta", () => {
+    const filtrados = filtrarProductosComanda(productos, {
+      uso: "primeros",
+      origen: "menu",
+    });
+
+    expect(
+      filtrados.every((p) => p.tipo === "menu-dia" || p.tipo === "ambos"),
+    ).toBe(true);
+    expect(filtrados.some((p) => p.nombre === "Patatas bravas")).toBe(false);
+  });
 });

@@ -54,17 +54,25 @@ export function ProductosRapidosGrid({
     }
 
     if (origen) {
-      let filtrados = filtrarProductosComanda(productos, { uso, origen });
+      if (origen === "menu") {
+        if (!menu?.activo) return [];
 
-      if (origen === "menu" && menu?.activo && seccionPlatos) {
-        filtrados = filtrados.filter((p) =>
-          productoEnMenuHoy(
-            p,
-            menu,
-            seccionPlatos as "primeros" | "segundos",
-          ),
+        const filtrados = filtrarProductosComanda(productos, { uso, origen })
+          .filter((p) =>
+            productoEnMenuHoy(
+              p,
+              menu,
+              seccionPlatos as "primeros" | "segundos",
+            ),
+          );
+
+        return filtrados.sort(
+          (a, b) =>
+            a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es"),
         );
       }
+
+      const filtrados = filtrarProductosComanda(productos, { uso, origen });
 
       return filtrados.sort(
         (a, b) =>
@@ -87,6 +95,16 @@ export function ProductosRapidosGrid({
     menu,
     seccionPlatos,
   ]);
+
+  if (!enBusqueda && origen === "menu" && !menu?.activo) {
+    return (
+      <p className="rounded-xl border border-dashed border-border bg-background px-3 py-6 text-center text-sm text-muted">
+        El menú del día no está activo hoy. Usa{" "}
+        <span className="font-semibold text-primary">Carta almuerzo</span> para
+        añadir platos.
+      </p>
+    );
+  }
 
   if (enBusqueda && lista.length === 0) {
     return (
