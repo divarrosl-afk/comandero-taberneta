@@ -7,6 +7,8 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { ProductosRapidosGrid } from "@/components/catalogo/ProductosRapidosGrid";
 import { CatalogoBuscadorRapido } from "@/components/catalogo/CatalogoBuscadorRapido";
 import { PlatoCard } from "@/components/comanda/nueva/PlatoCard";
+import { OrigenPlatosSelector } from "@/components/comanda/nueva/OrigenPlatosSelector";
+import type { OrigenPlatos } from "@/lib/carta/carta-admin";
 import type { SeccionCatalogo } from "@/types/catalogo";
 import type {
   ModificacionId,
@@ -28,6 +30,11 @@ const ALCANCE_COMANDA: SeccionCatalogo[] = [
   "segundos",
   "bebidas",
 ];
+
+function origenInicial(seccion: SeccionPlatos): OrigenPlatos {
+  if (seccion === "primeros" || seccion === "segundos") return "menu";
+  return "carta-almuerzo";
+}
 
 interface SeccionPlatosPanelProps {
   titulo: string;
@@ -65,6 +72,10 @@ export function SeccionPlatosPanel({
   onCycleSalsa,
 }: SeccionPlatosPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
+  const [origen, setOrigen] = useState<OrigenPlatos>(() => origenInicial(seccion));
+
+  const conSelectorOrigen =
+    seccion === "entrantes" || seccion === "primeros" || seccion === "segundos";
 
   return (
     <>
@@ -95,11 +106,20 @@ export function SeccionPlatosPanel({
           />
         )}
 
+        {conSelectorOrigen && (
+          <OrigenPlatosSelector
+            value={origen}
+            onChange={setOrigen}
+            incluirMenu={seccion === "primeros" || seccion === "segundos"}
+          />
+        )}
+
         <ProductosRapidosGrid
           seccion={SECCION_A_CATALOGO[seccion]}
           seccionPlatos={seccion}
           alcanceSecciones={ALCANCE_COMANDA}
           busqueda={busqueda}
+          origen={conSelectorOrigen ? origen : undefined}
           onSelect={onSelectCatalogo}
         />
 

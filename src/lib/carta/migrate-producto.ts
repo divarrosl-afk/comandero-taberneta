@@ -1,24 +1,15 @@
 import {
-  decodeCartaServicio,
+  decodeProductoMeta,
 } from "@/lib/carta/carta-servicio-meta";
 import { createId } from "@/lib/id/create-id";
 import type {
   CartaServicio,
+  CategoriaCarta,
   ProductoCatalogo,
   SeccionCatalogo,
   TipoProducto,
+  UsoComanda,
 } from "@/types/catalogo";
-
-function inferirCartaServicio(
-  seccion: SeccionCatalogo,
-  cartaServicio?: CartaServicio,
-): CartaServicio | undefined {
-  if (cartaServicio) return cartaServicio;
-  if (seccion === "bebidas") return "bebidas";
-  if (seccion === "postres") return "postres";
-  if (seccion === "extras" || seccion === "salsas") return "almuerzo";
-  return "almuerzo";
-}
 
 function inferirTipo(
   seccion: SeccionCatalogo,
@@ -31,6 +22,31 @@ function inferirTipo(
   }
   if (suplemento && suplemento > 0) return "menu-dia";
   return "ambos";
+}
+
+function inferirCartaServicio(
+  seccion: SeccionCatalogo,
+  cartaServicio?: CartaServicio,
+): CartaServicio | undefined {
+  if (cartaServicio) return cartaServicio;
+  if (seccion === "bebidas") return "bebidas";
+  if (seccion === "postres") return "postres";
+  if (seccion === "extras" || seccion === "salsas") return "almuerzo";
+  return undefined;
+}
+
+function inferirUsosComanda(
+  seccion: SeccionCatalogo,
+  usos?: UsoComanda[],
+): UsoComanda[] | undefined {
+  if (usos?.length) return usos;
+  if (seccion === "entrantes") return ["entrantes"];
+  if (seccion === "primeros") return ["primeros"];
+  if (seccion === "segundos") return ["segundos"];
+  if (seccion === "bebidas") return ["bebidas"];
+  if (seccion === "postres") return ["postres"];
+  if (seccion === "extras" || seccion === "salsas") return ["extras"];
+  return undefined;
 }
 
 /** Migra productos antiguos al esquema ampliado sin perder datos */
@@ -47,10 +63,14 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
     raw.suplemento && raw.suplemento > 0 ? raw.suplemento : undefined;
 
   const tipo = inferirTipo(seccion, suplemento, raw.tipo);
-  const decoded = decodeCartaServicio(raw.notasInternas);
+  const decoded = decodeProductoMeta(raw.notasInternas);
   const cartaServicio = inferirCartaServicio(
     seccion,
-    raw.cartaServicio ?? decoded.cartaServicio,
+    raw.cartaServicio ?? decoded.meta.cartaServicio,
+  );
+  const usosComanda = inferirUsosComanda(
+    seccion,
+    raw.usosComanda ?? decoded.meta.usosComanda,
   );
 
   return {
@@ -59,6 +79,9 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
     nombreCorto: raw.nombreCorto?.trim() || undefined,
     seccion,
     tipo,
+    cartaServicio,
+    categoriaCarta: raw.categoriaCarta ?? decoded.meta.categoriaCarta,
+    usosComanda,
     precio: precioCarta,
     precioCarta,
     precioMenu: raw.precioMenu && raw.precioMenu > 0 ? raw.precioMenu : undefined,
@@ -70,7 +93,6 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
     descripcionCamarero: raw.descripcionCamarero?.trim() || undefined,
     ingredientes: Array.isArray(raw.ingredientes) ? raw.ingredientes : [],
     alergenos: Array.isArray(raw.alergenos) ? raw.alergenos : [],
-    cartaServicio,
     notasInternas: decoded.notasLimpias?.trim() || undefined,
     tiempoPreparacion:
       raw.tiempoPreparacion && raw.tiempoPreparacion > 0

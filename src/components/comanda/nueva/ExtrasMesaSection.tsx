@@ -17,7 +17,11 @@ export function ExtrasMesaSection({ extras, onCycle }: ExtrasMesaSectionProps) {
   const catalogoExtras = useMemo(
     () =>
       productos
-        .filter((p) => p.seccion === "extras" && p.activo)
+        .filter(
+          (p) =>
+            p.activo &&
+            (p.usosComanda?.includes("extras") || p.seccion === "extras"),
+        )
         .sort((a, b) => {
           if (a.favorito !== b.favorito) return a.favorito ? -1 : 1;
           return a.nombre.localeCompare(b.nombre, "es");

@@ -9,8 +9,40 @@ export type SeccionCatalogo =
 
 export type TipoProducto = "carta" | "menu-dia" | "ambos";
 
-/** Carta a la que pertenece el producto (admin y futura carta cenas) */
+/** Carta a la que pertenece el producto */
 export type CartaServicio = "almuerzo" | "cenas" | "bebidas" | "postres";
+
+/** Uso en la pantalla de nueva comanda */
+export type UsoComanda =
+  | "entrantes"
+  | "primeros"
+  | "segundos"
+  | "bebidas"
+  | "postres"
+  | "extras";
+
+/** Categoría dentro de cada carta (admin) */
+export type CategoriaCarta =
+  | "tapas"
+  | "hamburguesas"
+  | "carnesGuisadas"
+  | "carnesBrasa"
+  | "ensaladas"
+  | "infantil"
+  | "bocadillosCalientes"
+  | "bocadillosFrios"
+  | "torradas"
+  | "platosCombinados"
+  | "extrasSuplementos"
+  | "tapasYRaciones"
+  | "brasa"
+  | "blancos"
+  | "tintos"
+  | "rosados"
+  | "cavas"
+  | "corpinnats"
+  | "refrescos"
+  | "postres";
 
 export const CARTAS_SERVICIO: {
   id: CartaServicio;
@@ -20,8 +52,51 @@ export const CARTAS_SERVICIO: {
   { id: "almuerzo", label: "Carta almuerzo", disponible: true },
   { id: "bebidas", label: "Vinos y bebidas", disponible: true },
   { id: "postres", label: "Postres", disponible: true },
-  { id: "cenas", label: "Carta cenas", disponible: false },
+  { id: "cenas", label: "Carta cenas", disponible: true },
 ];
+
+export const CATEGORIAS_CARTA: Record<
+  CartaServicio,
+  { id: CategoriaCarta; label: string }[]
+> = {
+  almuerzo: [
+    { id: "tapas", label: "Tapas" },
+    { id: "hamburguesas", label: "Hamburguesas" },
+    { id: "carnesGuisadas", label: "Carnes guisadas" },
+    { id: "carnesBrasa", label: "Carnes brasa" },
+    { id: "ensaladas", label: "Ensaladas" },
+    { id: "infantil", label: "Infantil" },
+    { id: "bocadillosCalientes", label: "Bocadillos calientes" },
+    { id: "bocadillosFrios", label: "Bocadillos fríos" },
+    { id: "torradas", label: "Torradas" },
+    { id: "platosCombinados", label: "Platos combinados" },
+    { id: "extrasSuplementos", label: "Extras / suplementos" },
+  ],
+  cenas: [
+    { id: "tapasYRaciones", label: "Tapas y raciones" },
+    { id: "hamburguesas", label: "Hamburguesas" },
+    { id: "torradas", label: "Torradas" },
+    { id: "brasa", label: "Brasa" },
+  ],
+  bebidas: [
+    { id: "blancos", label: "Blancos" },
+    { id: "tintos", label: "Tintos" },
+    { id: "rosados", label: "Rosados" },
+    { id: "cavas", label: "Cavas" },
+    { id: "corpinnats", label: "Corpinnats" },
+    { id: "refrescos", label: "Refrescos y cervezas" },
+  ],
+  postres: [{ id: "postres", label: "Postres" }],
+};
+
+export function labelCategoriaCarta(
+  carta: CartaServicio,
+  categoria: CategoriaCarta,
+): string {
+  return (
+    CATEGORIAS_CARTA[carta].find((c) => c.id === categoria)?.label ?? categoria
+  );
+}
 
 export type AlergenoId =
   | "gluten"
@@ -44,6 +119,10 @@ export interface ProductoCatalogo {
   tipo: TipoProducto;
   /** Carta de servicio (almuerzo, cenas, bebidas, postres) */
   cartaServicio?: CartaServicio;
+  /** Categoría dentro de la carta (tapas, vinos, etc.) */
+  categoriaCarta?: CategoriaCarta;
+  /** Secciones de comanda donde aparece el producto */
+  usosComanda?: UsoComanda[];
   /** @deprecated Usar precioCarta — se mantiene por compatibilidad */
   precio?: number;
   precioCarta?: number;

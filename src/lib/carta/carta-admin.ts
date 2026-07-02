@@ -1,4 +1,10 @@
-import type { CartaServicio, ProductoCatalogo } from "@/types/catalogo";
+import type {
+  CartaServicio,
+  CategoriaCarta,
+  ProductoCatalogo,
+  UsoComanda,
+} from "@/types/catalogo";
+import { CATEGORIAS_CARTA } from "@/types/catalogo";
 
 export function productoPerteneceACarta(
   producto: ProductoCatalogo,
@@ -6,41 +12,84 @@ export function productoPerteneceACarta(
 ): boolean {
   const servicio = producto.cartaServicio;
   if (carta === "almuerzo") {
-    return (
-      servicio === "almuerzo" ||
-      (!servicio &&
-        producto.seccion !== "bebidas" &&
-        producto.seccion !== "postres")
-    );
+    return servicio === "almuerzo";
   }
   if (carta === "bebidas") {
-    return servicio === "bebidas" || producto.seccion === "bebidas";
+    return servicio === "bebidas";
   }
   if (carta === "postres") {
-    return servicio === "postres" || producto.seccion === "postres";
+    return servicio === "postres";
   }
   return servicio === "cenas";
 }
 
-export function seccionesDeCarta(carta: CartaServicio) {
-  if (carta === "bebidas") {
-    return [{ id: "bebidas" as const, label: "Bebidas" }];
+export function categoriasDeCarta(carta: CartaServicio) {
+  return CATEGORIAS_CARTA[carta];
+}
+
+export function productoEnCategoria(
+  producto: ProductoCatalogo,
+  categoria: CategoriaCarta,
+): boolean {
+  return producto.categoriaCarta === categoria;
+}
+
+export function productoParaUsoComanda(
+  producto: ProductoCatalogo,
+  uso: UsoComanda,
+): boolean {
+  if (producto.usosComanda?.length) {
+    return producto.usosComanda.includes(uso);
   }
-  if (carta === "postres") {
-    return [{ id: "postres" as const, label: "Postres" }];
+  if (uso === "entrantes") return producto.seccion === "entrantes";
+  if (uso === "primeros") return producto.seccion === "primeros";
+  if (uso === "segundos") return producto.seccion === "segundos";
+  if (uso === "bebidas") return producto.seccion === "bebidas";
+  if (uso === "postres") return producto.seccion === "postres";
+  if (uso === "extras") {
+    return producto.seccion === "extras" || producto.seccion === "salsas";
   }
-  if (carta === "cenas") {
-    return [
-      { id: "entrantes" as const, label: "Entrantes" },
-      { id: "primeros" as const, label: "Primeros" },
-      { id: "segundos" as const, label: "Segundos" },
-    ];
-  }
-  return [
-    { id: "entrantes" as const, label: "Entrantes" },
-    { id: "primeros" as const, label: "Primeros" },
-    { id: "segundos" as const, label: "Segundos" },
-    { id: "extras" as const, label: "Extras" },
-    { id: "salsas" as const, label: "Salsas" },
-  ];
+  return false;
+}
+
+export type OrigenPlatos = "menu" | "carta-almuerzo" | "carta-cenas";
+
+export function filtrarProductosComanda(
+  productos: ProductoCatalogo[],
+  opts: {
+    uso: UsoComanda;
+    origen?: OrigenPlatos;
+    cartaServicio?: CartaServicio;
+    categoriaCarta?: CategoriaCarta;
+  },
+): ProductoCatalogo[] {
+  return productos.filter((p) => {
+    if (!p.activo) return false;
+    if (!productoParaUsoComanda(p, opts.uso)) return false;
+
+    if (opts.categoriaCarta && p.categoriaCarta !== opts.categoriaCarta) {
+      return false;
+    }
+
+    if (opts.origen === "menu") {
+      return true;
+    }
+
+    if (opts.origen === "carta-almuerzo") {
+      return (
+        p.cartaServicio === "almuerzo" &&
+        (p.tipo === "carta" || p.tipo === "ambos")
+      );
+    }
+
+    if (opts.origen === "carta-cenas") {
+      return p.cartaServicio === "cenas" && p.tipo === "carta";
+    }
+
+    if (opts.cartaServicio && p.cartaServicio !== opts.cartaServicio) {
+      return false;
+    }
+
+    return true;
+  });
 }

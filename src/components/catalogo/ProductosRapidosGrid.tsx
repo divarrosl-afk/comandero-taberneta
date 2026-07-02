@@ -4,7 +4,13 @@ import { useMemo } from "react";
 import { useCatalogo } from "@/hooks/useCatalogo";
 import { buscarEnCatalogo } from "@/lib/catalogo/search";
 import { getVentasPorProductoId } from "@/lib/catalogo/popularidad";
+import {
+  filtrarProductosComanda,
+  type OrigenPlatos,
+} from "@/lib/carta/carta-admin";
 import { CartaMenuSelector } from "@/components/carta/CartaMenuSelector";
+import { useMenuDia } from "@/hooks/useMenuDia";
+import { productoEnMenuHoy } from "@/lib/carta/format-producto";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 import type { SeccionPlatos } from "@/types/comanda";
 
@@ -13,6 +19,7 @@ interface ProductosRapidosGridProps {
   seccionPlatos?: SeccionPlatos;
   alcanceSecciones?: SeccionCatalogo[];
   busqueda?: string;
+  origen?: OrigenPlatos;
   onSelect: (producto: ProductoCatalogo) => void;
 }
 
@@ -21,39 +28,84 @@ export function ProductosRapidosGrid({
   seccionPlatos,
   alcanceSecciones,
   busqueda = "",
+  origen,
   onSelect,
 }: ProductosRapidosGridProps) {
   const { productos } = useCatalogo();
+  const { menu } = useMenuDia();
   const ventasPorId = useMemo(
     () => getVentasPorProductoId(productos),
     [productos],
   );
 
-  const alcance = useMemo(
-    () => alcanceSecciones ?? [seccion],
-    [alcanceSecciones, seccion],
-  );
+  const uso = seccionPlatos ?? seccion;
   const enBusqueda = busqueda.trim().length > 0;
 
   const lista = useMemo(() => {
     if (enBusqueda) {
-      return buscarEnCatalogo(productos, busqueda, {
+      const alcance = alcanceSecciones ?? [seccion];
+      const resultados = buscarEnCatalogo(productos, busqueda, {
         secciones: alcance,
         soloActivos: true,
       });
+      if (!origen) return resultados;
+      return filtrarProductosComanda(resultados, { uso, origen });
+    }
+
+    if (origen) {
+      let filtrados = filtrarProductosComanda(productos, { uso, origen });
+
+      if (origen === "menu" && menu?.activo && seccionPlatos) {
+        filtrados = filtrados.filter((p) =>
+          productoEnMenuHoy(
+            p,
+            menu,
+            seccionPlatos as "primeros" | "segundos",
+          ),
+        );
+      }
+
+      return filtrados.sort(
+        (a, b) =>
+          a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es"),
+      );
     }
 
     return buscarEnCatalogo(productos, "", {
       secciones: [seccion],
       soloActivos: true,
     });
-  }, [productos, busqueda, enBusqueda, alcance, seccion]);
+  }, [
+    productos,
+    busqueda,
+    enBusqueda,
+    alcanceSecciones,
+    seccion,
+    origen,
+    uso,
+    menu,
+    seccionPlatos,
+  ]);
 
   if (enBusqueda && lista.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border bg-background px-3 py-6 text-center text-sm text-muted">
         Sin resultados para «{busqueda}». Prueba nombre corto, ingrediente o
         «sin gluten».
+      </p>
+    );
+  }
+
+  if (!enBusqueda && origen && lista.length === 0) {
+    const mensaje =
+      origen === "menu"
+        ? "No hay platos de menú configurados para hoy en esta sección."
+        : origen === "carta-almuerzo"
+          ? "No hay platos de carta almuerzo en esta sección."
+          : "No hay platos de carta cenas en esta sección.";
+    return (
+      <p className="rounded-xl border border-dashed border-border bg-background px-3 py-6 text-center text-sm text-muted">
+        {mensaje}
       </p>
     );
   }
@@ -65,6 +117,7 @@ export function ProductosRapidosGrid({
       productos={lista}
       ventasPorId={ventasPorId}
       modoBusqueda={enBusqueda}
+      origen={origen}
       onSelect={onSelect}
     />
   );

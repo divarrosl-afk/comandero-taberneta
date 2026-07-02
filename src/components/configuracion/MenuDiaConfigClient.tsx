@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { useCatalogo } from "@/hooks/useCatalogo";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import type { MenuDiaConfig } from "@/types/menu-dia";
+import { productoParaUsoComanda } from "@/lib/carta/carta-admin";
 import { nombreBoton } from "@/types/catalogo";
 
 function SelectorPlatos({
@@ -57,10 +58,7 @@ export function MenuDiaConfigClient() {
     () =>
       productos
         .filter(
-          (p) =>
-            p.activo &&
-            p.seccion === "primeros" &&
-            (p.tipo === "menu-dia" || p.tipo === "ambos"),
+          (p) => p.activo && productoParaUsoComanda(p, "primeros"),
         )
         .map((p) => ({ id: p.id, nombre: nombreBoton(p) })),
     [productos],
@@ -70,10 +68,7 @@ export function MenuDiaConfigClient() {
     () =>
       productos
         .filter(
-          (p) =>
-            p.activo &&
-            p.seccion === "segundos" &&
-            (p.tipo === "menu-dia" || p.tipo === "ambos"),
+          (p) => p.activo && productoParaUsoComanda(p, "segundos"),
         )
         .map((p) => ({ id: p.id, nombre: nombreBoton(p) })),
     [productos],

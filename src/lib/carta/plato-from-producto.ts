@@ -25,11 +25,11 @@ export function platoFieldsFromProducto(
     );
 
   const puedeMenu =
-    producto.tipo === "menu-dia" || producto.tipo === "ambos";
-  const puedeCarta =
-    producto.tipo === "carta" || producto.tipo === "ambos";
+    producto.tipo === "menu-dia" ||
+    producto.tipo === "ambos" ||
+    enMenu;
 
-  if (enMenu && puedeMenu && opts.menu?.activo) {
+  if (enMenu && opts.menu?.activo) {
     const suplemento =
       producto.suplemento ??
       (opts.seccion === "primeros"
@@ -42,7 +42,10 @@ export function platoFieldsFromProducto(
     } else {
       fields.tipoSeleccion = "menu";
     }
-  } else if (puedeCarta && aplicaMenu) {
+  } else if (
+    (producto.tipo === "carta" || producto.tipo === "ambos") &&
+    aplicaMenu
+  ) {
     fields.tipoSeleccion = "carta";
   } else if (producto.suplemento && aplicaMenu) {
     fields.tipoSeleccion = "menu_suplemento";

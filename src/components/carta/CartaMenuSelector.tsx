@@ -13,6 +13,7 @@ import {
   type ProductoCatalogo,
   type SeccionCatalogo,
 } from "@/types/catalogo";
+import type { OrigenPlatos } from "@/lib/carta/carta-admin";
 import type { SeccionPlatos } from "@/types/comanda";
 
 interface CartaMenuSelectorProps {
@@ -21,6 +22,7 @@ interface CartaMenuSelectorProps {
   productos: ProductoCatalogo[];
   ventasPorId?: Map<string, number>;
   modoBusqueda?: boolean;
+  origen?: OrigenPlatos;
   onSelect: (producto: ProductoCatalogo) => void;
 }
 
@@ -212,6 +214,7 @@ export function CartaMenuSelector({
   productos,
   ventasPorId = new Map(),
   modoBusqueda = false,
+  origen,
   onSelect,
 }: CartaMenuSelectorProps) {
   const { menu } = useMenuDia();
@@ -223,7 +226,9 @@ export function CartaMenuSelector({
   );
 
   const conMenu = seccionPlatos === "primeros" || seccionPlatos === "segundos";
-  const menuActivo = Boolean(menu?.activo && conMenu && !modoBusqueda);
+  const menuActivo = Boolean(
+    menu?.activo && conMenu && !modoBusqueda && !origen,
+  );
   const conHistorial = hayHistorialVentas();
 
   const { menuLista, cartaLista, restoLista } = useMemo(() => {
@@ -344,6 +349,15 @@ export function CartaMenuSelector({
     );
   };
 
+  const tituloOrigen =
+    origen === "menu"
+      ? "Menú del día"
+      : origen === "carta-almuerzo"
+        ? "Carta almuerzo"
+        : origen === "carta-cenas"
+          ? "Carta cenas"
+          : "Platos";
+
   return (
     <>
       <div className="space-y-4">
@@ -365,7 +379,7 @@ export function CartaMenuSelector({
             {renderListaConDestacados("Otros", restoLista)}
           </>
         ) : (
-          renderListaConDestacados("Platos", activos)
+          renderListaConDestacados(tituloOrigen, activos)
         )}
       </div>
 

@@ -1,7 +1,7 @@
-import { crearBebidasBase, crearCartaAlmuerzo } from "@/data/carta-almuerzo";
+import { crearCatalogoCartas } from "@/data/cartas-catalogo";
 import type { ProductoCatalogo } from "@/types/catalogo";
 
-/** Catálogo inicial — carta almuerzo real + bebidas base (vinos pendientes) */
+/** Catálogo inicial — cartas reales del restaurante */
 export function crearCatalogoDefault(): ProductoCatalogo[] {
-  return [...crearCartaAlmuerzo(), ...crearBebidasBase()];
+  return crearCatalogoCartas();
 }
