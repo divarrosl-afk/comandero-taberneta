@@ -413,12 +413,15 @@ export function formatKitchenTicket(
     lineas.push(...lineasSeccion("PRIMEROS", comanda.primeros, width));
     lineas.push(...lineasSeccion("SEGUNDOS", comanda.segundos, width));
 
-    const extrasCocina = comanda.extras.filter((e) => !BARRA_EXTRA_RE.test(e.nombre));
-    lineas.push(...lineasExtras(extrasCocina, width));
+    if (destino === "completo") {
+      lineas.push(...lineasExtras(comanda.extras, width));
+    } else {
+      const extrasCocina = comanda.extras.filter((e) => !BARRA_EXTRA_RE.test(e.nombre));
+      lineas.push(...lineasExtras(extrasCocina, width));
+    }
   }
 
-  // BEBIDAS siempre en ticket completo y también en cocina (nunca fuera del ticket)
-  if (incluirBarra || destino === "cocina") {
+  if (incluirBarra || destino === "cocina" || destino === "completo") {
     lineas.push(...lineasSeccion("BEBIDAS", comanda.bebidas, width));
 
     if (destino === "barra") {

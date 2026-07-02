@@ -1,15 +1,14 @@
 import type { HistorialEntrada } from "@/lib/historial/items";
 import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { comandaPostresToTexto } from "@/lib/postres/format-ticket";
-import {
-  comandaToTicketBarra,
-  comandaToTicketCocina,
-} from "@/modules/impresion-wifi/format-tickets";
+import { comandaToTicketImpresion } from "@/modules/impresion-wifi/format-tickets";
 import { printTicket } from "@/modules/impresion-wifi/print-ticket";
 import type { PrintBatchResult } from "@/modules/impresion-wifi/types";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi/types";
 import type { ComandaCocina } from "@/types/comanda";
 import type { ComandaPostres } from "@/types/postres";
+
+const COPIAS_TICKET_COMPLETO = 2;
 
 function ticketOptionsForComanda(comanda: { mesa: string; mesaCodigo?: string }) {
   return { nombreMesa: getNombreMesaComanda(comanda) };
@@ -23,40 +22,32 @@ function buildSummary(results: Awaited<ReturnType<typeof printTicket>>[]): strin
     }
     const printed = results.every((r) => r.status === "printed" || !r.status);
     return printed
-      ? `${PRINT_MESSAGES.enviada} · ${PRINT_MESSAGES.impreso}`
+      ? `${PRINT_MESSAGES.enviada} · ${PRINT_MESSAGES.impreso} (2 copias)`
       : PRINT_MESSAGES.enviada;
   }
-  const failed = results.filter((r) => !r.ok).map((r) => r.destino);
-  return `${PRINT_MESSAGES.error} (${failed.join(", ")})`;
+  const failed = results.filter((r) => !r.ok).length;
+  return `${PRINT_MESSAGES.error} (${failed}/${results.length} copias)`;
 }
 
 export async function imprimirComandaCocina(
   comanda: ComandaCocina,
 ): Promise<PrintBatchResult> {
   const ticketOptions = ticketOptionsForComanda(comanda);
+  const ticket = comandaToTicketImpresion(comanda, ticketOptions);
+  const meta = {
+    tipo: "cocina" as const,
+    comandaId: comanda.id,
+    mesa: comanda.mesa,
+    camarero: comanda.camarero,
+  };
 
-  const jobs = [
-    printTicket(comandaToTicketCocina(comanda, ticketOptions), "cocina", {
-      tipo: "cocina",
-      comandaId: comanda.id,
-      mesa: comanda.mesa,
-      camarero: comanda.camarero,
-    }),
-  ];
-
-  const ticketBarra = comandaToTicketBarra(comanda, ticketOptions);
-  if (ticketBarra) {
-    jobs.push(
-      printTicket(ticketBarra, "barra", {
-        tipo: "barra",
-        comandaId: comanda.id,
-        mesa: comanda.mesa,
-        camarero: comanda.camarero,
-      }),
-    );
+  const results: Awaited<ReturnType<typeof printTicket>>[] = [];
+  for (let copia = 0; copia < COPIAS_TICKET_COMPLETO; copia++) {
+    const result = await printTicket(ticket, "cocina", meta);
+    results.push(result);
+    if (!result.ok) break;
   }
 
-  const results = await Promise.all(jobs);
   return {
     results,
     allOk: results.every((r) => r.ok),
@@ -84,7 +75,7 @@ export async function imprimirComandaPostres(
   };
 }
 
-/** Reimprime cocina+barra o postres regenerando el ticket (mismo formato que envío). */
+/** Reimprime 2 copias del ticket completo (cocina + barra). */
 export async function reimprimirEntrada(
   entrada: HistorialEntrada,
 ): Promise<PrintBatchResult> {
