@@ -42,7 +42,7 @@ export function ComandaTicketPreview({ comanda }: ComandaTicketPreviewProps) {
     <div className="mx-auto w-full max-w-none rounded-2xl border-2 border-stone-700 shadow-lg">
       <div className="bg-stone-800 px-3 py-2">
         <p className="text-center text-xs font-medium uppercase tracking-widest text-stone-400">
-          Vista previa · Ticket cocina/barra · 80 mm
+          Vista previa · Ticket completo (2 copias) · 80 mm
         </p>
       </div>
       <div

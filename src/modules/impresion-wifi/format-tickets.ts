@@ -7,32 +7,34 @@ import type { ComandaCocina } from "@/types/comanda";
 
 export type { TicketFormatOptions };
 
-export function comandaToTicketCocina(
+/** Ticket completo con marcadores ESC/POS — impresión (2 copias idénticas). */
+export function comandaToTicketImpresion(
   comanda: ComandaCocina,
   options?: TicketFormatOptions,
 ): string {
-  return formatKitchenTicket(comanda, "cocina", options);
+  return formatKitchenTicket(comanda, "completo", options);
 }
 
-export function comandaToTicketBarra(
-  comanda: ComandaCocina,
-  options?: TicketFormatOptions,
-): string | null {
-  const tieneBebidas = comanda.bebidas.length > 0;
-  const extrasBarra = comanda.extras.filter((e) =>
-    /hielo|limón|limon|pan|cubiertos/i.test(e.nombre),
-  );
-  const tieneObs = comanda.observaciones.length > 0;
-
-  if (!tieneBebidas && !extrasBarra.length && !tieneObs) return null;
-
-  return formatKitchenTicket(comanda, "barra", options);
-}
-
-/** Ticket completo cocina (incluye bebidas) — útil para reimpresión */
+/** Vista previa / texto plano sin marcadores de impresora. */
 export function comandaToTicketCompleto(
   comanda: ComandaCocina,
   options?: TicketFormatOptions,
 ): string {
   return formatKitchenTicketPlain(comanda, "completo", options);
+}
+
+/** @deprecated Usar comandaToTicketImpresion — mismo ticket completo */
+export function comandaToTicketCocina(
+  comanda: ComandaCocina,
+  options?: TicketFormatOptions,
+): string {
+  return comandaToTicketImpresion(comanda, options);
+}
+
+/** @deprecated Ticket barra reducido eliminado — usar comandaToTicketImpresion */
+export function comandaToTicketBarra(
+  _comanda: ComandaCocina,
+  _options?: TicketFormatOptions,
+): string | null {
+  return null;
 }

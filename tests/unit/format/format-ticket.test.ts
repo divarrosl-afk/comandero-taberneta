@@ -7,7 +7,10 @@ import {
   stripTicketMarkers,
   toTicketUpper,
 } from "@/lib/comanda/ticket-kitchen";
-import { comandaToTicketBarra, comandaToTicketCocina } from "@/modules/impresion-wifi/format-tickets";
+import {
+  comandaToTicketBarra,
+  comandaToTicketImpresion,
+} from "@/modules/impresion-wifi/format-tickets";
 import { comandaPostresToTexto } from "@/lib/postres/format-ticket";
 import { comandaCocinaFixture, comandaPostresFixture } from "../../setup/fixtures";
 import type { ComandaCocina, PlatoComanda } from "@/types/comanda";
@@ -131,27 +134,26 @@ describe("ticket-kitchen", () => {
     expect(texto).not.toContain(" - MH");
   });
 
-  it("agrupa bebidas en ticket barra", () => {
-    const texto = formatKitchenTicketPlain(comandaEjemplo(), "barra", {
+  it("agrupa bebidas en ticket completo", () => {
+    const texto = formatKitchenTicketPlain(comandaEjemplo(), "completo", {
       nombreMesa: "12",
     });
     expect(texto).toContain("3 AGUAS");
     expect(texto).toContain("2 REFRESCOS");
     expect(texto).toContain("VINO NEGRO CASA");
-    expect(texto).not.toContain("PRIMEROS");
+    expect(texto).toContain("PRIMEROS");
   });
 
-  it("cocina incluye bebidas al final", () => {
-    const marcado = comandaToTicketCocina(comandaEjemplo(), { nombreMesa: "12" });
+  it("ticket impresión incluye todas las secciones", () => {
+    const marcado = comandaToTicketImpresion(comandaEjemplo(), { nombreMesa: "12" });
     const texto = stripTicketMarkers(marcado);
     expect(texto).toContain("3 AGUAS");
     expect(texto).toContain("SEGUNDOS");
-    const idxSegundos = texto.indexOf("SEGUNDOS");
-    const idxBebidas = texto.indexOf("BEBIDAS");
-    expect(idxBebidas).toBeGreaterThan(idxSegundos);
+    expect(texto).toContain("BEBIDAS");
+    expect(texto).toContain("ENTRANTES");
   });
 
-  it("barra devuelve null si no hay bebidas ni extras de barra", () => {
+  it("ticket barra reducido eliminado", () => {
     const comanda = comandaCocinaFixture({ bebidas: [], extras: [], observaciones: [] });
     expect(comandaToTicketBarra(comanda)).toBeNull();
   });
