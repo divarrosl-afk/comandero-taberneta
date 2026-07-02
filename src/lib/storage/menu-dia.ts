@@ -19,6 +19,12 @@ function normalizar(config: Partial<MenuDiaConfig>): MenuDiaConfig {
     postresIncluidosIds: Array.isArray(config.postresIncluidosIds)
       ? config.postresIncluidosIds
       : [],
+    primerosImportados: Array.isArray(config.primerosImportados)
+      ? config.primerosImportados
+      : undefined,
+    segundosImportados: Array.isArray(config.segundosImportados)
+      ? config.segundosImportados
+      : undefined,
     observaciones: config.observaciones?.trim() || undefined,
     activo: config.activo ?? false,
   };

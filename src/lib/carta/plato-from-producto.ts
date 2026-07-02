@@ -16,13 +16,15 @@ export function platoFieldsFromProducto(
 
   const aplicaMenu =
     opts.seccion === "primeros" || opts.seccion === "segundos";
+  const esImportadoPdf = producto.id.startsWith("menu-imp-");
   const enMenu =
     aplicaMenu &&
-    productoEnMenuHoy(
-      producto,
-      opts.menu,
-      opts.seccion as "primeros" | "segundos",
-    );
+    (esImportadoPdf ||
+      productoEnMenuHoy(
+        producto,
+        opts.menu,
+        opts.seccion as "primeros" | "segundos",
+      ));
 
   const puedeMenu =
     producto.tipo === "menu-dia" ||

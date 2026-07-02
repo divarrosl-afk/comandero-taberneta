@@ -8,6 +8,7 @@ import {
   matchMenuConCatalogo,
   type MenuDiaMatchResult,
 } from "@/lib/menu-dia/match-catalogo";
+import { importadosDesdeMatch } from "@/lib/menu-dia/menu-platos-comanda";
 import type { MenuDiaParseado } from "@/lib/menu-dia/parse-menu-texto";
 import type { MenuDiaConfig } from "@/types/menu-dia";
 import type { ProductoCatalogo } from "@/types/catalogo";
@@ -72,37 +73,55 @@ export function MenuDiaImportPanel({
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const analizarTexto = (contenido: string) => {
+  const aplicarResultado = async (
+    parsed: MenuDiaParseado,
+    matchResult: MenuDiaMatchResult,
+  ) => {
+    const { primerosIds, segundosIds, suplementosProducto } =
+      idsDesdeMatch(matchResult);
+    const { primerosImportados, segundosImportados } =
+      importadosDesdeMatch(matchResult);
+
+    await onAplicar(
+      {
+        fecha: parsed.fecha,
+        precioMenu: parsed.precioMenu,
+        primerosIds,
+        segundosIds,
+        primerosImportados,
+        segundosImportados,
+        observaciones: parsed.observaciones,
+        activo: primerosImportados.length > 0 || segundosImportados.length > 0,
+      },
+      suplementosProducto,
+    );
+  };
+
+  const analizarTexto = async (contenido: string) => {
     setError(null);
-    const res = fetch("/api/menu-dia/import", {
+    const r = await fetch("/api/menu-dia/import", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ texto: contenido }),
-    })
-      .then(async (r) => {
-        if (!r.ok) throw new Error("Error al analizar");
-        return r.json() as Promise<{
-          parsed: MenuDiaParseado;
-        }>;
-      })
-      .then((data) => {
-        setParsed(data.parsed);
-        setMatch(
-          matchMenuConCatalogo(
-            data.parsed.primeros,
-            data.parsed.segundos,
-            productos,
-          ),
-        );
-      });
-    return res;
+    });
+    if (!r.ok) throw new Error("Error al analizar");
+    const data = (await r.json()) as { parsed: MenuDiaParseado };
+    setParsed(data.parsed);
+    const matchResult = matchMenuConCatalogo(
+      data.parsed.primeros,
+      data.parsed.segundos,
+      productos,
+    );
+    setMatch(matchResult);
+    return { parsed: data.parsed, matchResult };
   };
 
   const handleAnalizar = async () => {
     if (!texto.trim()) return;
     setCargando(true);
     try {
-      await analizarTexto(texto);
+      const { parsed, matchResult } = await analizarTexto(texto);
+      await aplicarResultado(parsed, matchResult);
     } catch {
       setError("No se pudo leer el texto del menú");
     } finally {
@@ -127,13 +146,13 @@ export function MenuDiaImportPanel({
       };
       setTexto(data.texto);
       setParsed(data.parsed);
-      setMatch(
-        matchMenuConCatalogo(
-          data.parsed.primeros,
-          data.parsed.segundos,
-          productos,
-        ),
+      const matchResult = matchMenuConCatalogo(
+        data.parsed.primeros,
+        data.parsed.segundos,
+        productos,
       );
+      setMatch(matchResult);
+      await aplicarResultado(data.parsed, matchResult);
     } catch {
       setError("No se pudo leer el PDF. Prueba a pegar el texto.");
     } finally {
@@ -143,27 +162,15 @@ export function MenuDiaImportPanel({
 
   const handleAplicar = async () => {
     if (!parsed || !match) return;
-    const { primerosIds, segundosIds, suplementosProducto } =
-      idsDesdeMatch(match);
-
-    await onAplicar(
-      {
-        fecha: parsed.fecha,
-        precioMenu: parsed.precioMenu,
-        primerosIds,
-        segundosIds,
-        observaciones: parsed.observaciones,
-        activo: primerosIds.length > 0 || segundosIds.length > 0,
-      },
-      suplementosProducto,
-    );
+    await aplicarResultado(parsed, match);
   };
 
   return (
-    <SectionCard title="Importar menú (PDF o texto)">
-      <p className="mb-3 text-xs text-muted">
-        Sube el PDF del menú del día o pega el texto. Se detectan platos,
-        precio, fecha y suplementos (+3 €, +5 €…).
+    <SectionCard title="Menú del día — subir PDF">
+      <p className="mb-3 text-sm text-muted">
+        Sube el PDF que generas en la app cada mañana. Los platos aparecen
+        automáticamente en <strong>nueva comanda → Menú</strong> (primeros y
+        segundos), listos para pulsar.
       </p>
 
       <input
@@ -185,7 +192,7 @@ export function MenuDiaImportPanel({
           onClick={() => inputRef.current?.click()}
           disabled={cargando}
         >
-          Subir PDF
+          {cargando ? "Cargando menú…" : "Subir PDF de hoy"}
         </Button>
         <Button size="sm" onClick={handleAnalizar} disabled={cargando || !texto.trim()}>
           {cargando ? "Leyendo…" : "Analizar texto"}
@@ -225,14 +232,17 @@ export function MenuDiaImportPanel({
 
           {match.sinMatch.length > 0 && (
             <p className="text-xs text-amber-800">
-              {match.sinMatch.length} plato(s) sin coincidencia — revísalos en
-              carta o selecciónalos a mano abajo.
+              {match.sinMatch.length} plato(s) sin coincidencia en carta — igual
+              aparecen en comanda con el nombre del PDF.
             </p>
           )}
 
-          <Button fullWidth onClick={handleAplicar}>
-            Aplicar al menú de hoy
-          </Button>
+          {parsed && (
+            <p className="rounded-xl bg-green-50 px-3 py-2 text-sm font-medium text-green-900">
+              Menú activo · {parsed.primeros.length} primeros,{" "}
+              {parsed.segundos.length} segundos en comandas
+            </p>
+          )}
         </div>
       )}
     </SectionCard>

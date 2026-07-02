@@ -1,7 +1,7 @@
 import { encodeProductoMeta } from "@/lib/carta/carta-servicio-meta";
 import { migrarProducto } from "@/lib/carta/migrate-producto";
 import type { ProductoCatalogo } from "@/types/catalogo";
-import type { MenuDiaConfig } from "@/types/menu-dia";
+import type { MenuDiaConfig, PlatoMenuDiaImportado } from "@/types/menu-dia";
 import type { MesaConfig } from "@/types/mesas";
 import type { Rol, Sesion } from "@/types/auth";
 import type { ImpresoraConfig } from "@/types/impresora";
@@ -65,6 +65,8 @@ export interface DbMenuDia {
   suplemento_primeros: number | null;
   suplemento_segundos: number | null;
   observaciones: string | null;
+  primeros_importados: PlatoMenuDiaImportado[] | null;
+  segundos_importados: PlatoMenuDiaImportado[] | null;
   activo: boolean;
 }
 
@@ -211,6 +213,8 @@ export function rowToMenuDia(row: DbMenuDia): MenuDiaConfig {
     suplementoPrimeros: row.suplemento_primeros ?? undefined,
     suplementoSegundos: row.suplemento_segundos ?? undefined,
     observaciones: row.observaciones ?? undefined,
+    primerosImportados: row.primeros_importados ?? undefined,
+    segundosImportados: row.segundos_importados ?? undefined,
     activo: row.activo,
   };
 }
@@ -231,6 +235,8 @@ export function menuDiaToRow(
     suplemento_primeros: config.suplementoPrimeros ?? null,
     suplemento_segundos: config.suplementoSegundos ?? null,
     observaciones: config.observaciones ?? null,
+    primeros_importados: config.primerosImportados ?? null,
+    segundos_importados: config.segundosImportados ?? null,
     activo: config.activo,
   };
 }

@@ -8,6 +8,7 @@ import { ProductosRapidosGrid } from "@/components/catalogo/ProductosRapidosGrid
 import { CatalogoBuscadorRapido } from "@/components/catalogo/CatalogoBuscadorRapido";
 import { PlatoCard } from "@/components/comanda/nueva/PlatoCard";
 import { OrigenPlatosSelector } from "@/components/comanda/nueva/OrigenPlatosSelector";
+import { useMenuDia } from "@/hooks/useMenuDia";
 import type { OrigenPlatos } from "@/lib/carta/carta-admin";
 import type { SeccionCatalogo } from "@/types/catalogo";
 import type {
@@ -31,7 +32,13 @@ const ALCANCE_COMANDA: SeccionCatalogo[] = [
   "bebidas",
 ];
 
-function origenInicial(_seccion: SeccionPlatos): OrigenPlatos {
+function origenInicial(
+  seccion: SeccionPlatos,
+  menuActivo: boolean,
+): OrigenPlatos {
+  if ((seccion === "primeros" || seccion === "segundos") && menuActivo) {
+    return "menu";
+  }
   return "carta-almuerzo";
 }
 
@@ -71,7 +78,10 @@ export function SeccionPlatosPanel({
   onCycleSalsa,
 }: SeccionPlatosPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
-  const [origen, setOrigen] = useState<OrigenPlatos>(() => origenInicial(seccion));
+  const { menu } = useMenuDia();
+  const [origen, setOrigen] = useState<OrigenPlatos>(() =>
+    origenInicial(seccion, menu?.activo ?? false),
+  );
 
   const conSelectorOrigen =
     seccion === "entrantes" || seccion === "primeros" || seccion === "segundos";

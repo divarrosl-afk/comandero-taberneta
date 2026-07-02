@@ -130,7 +130,8 @@ export function MenuDiaConfigClient() {
         </Link>
         <h1 className="text-2xl font-bold text-primary">Menú del día</h1>
         <p className="mt-1 text-sm text-muted">
-          Selecciona platos de la carta para el menú de hoy
+          Sube el PDF de cada mañana → los platos salen en comandas al elegir
+          Menú
         </p>
         <Link
           href="/configuracion/carta"
@@ -139,6 +140,10 @@ export function MenuDiaConfigClient() {
           ← Editar carta
         </Link>
       </header>
+
+      <div className="mb-6">
+        <MenuDiaImportPanel productos={productos} onAplicar={aplicarImport} />
+      </div>
 
       <section className="mb-6 space-y-4 rounded-2xl border border-border bg-card p-4">
         <div className="grid grid-cols-2 gap-3">
@@ -236,9 +241,9 @@ export function MenuDiaConfigClient() {
         </button>
       </section>
 
-      <div className="mb-6">
-        <MenuDiaImportPanel productos={productos} onAplicar={aplicarImport} />
-      </div>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
+        Ajuste manual (opcional)
+      </p>
 
       <div className="space-y-4">
         <SelectorPlatos

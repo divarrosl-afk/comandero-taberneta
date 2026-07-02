@@ -11,6 +11,7 @@ import {
 } from "@/lib/carta/carta-admin";
 import { CartaMenuSelector } from "@/components/carta/CartaMenuSelector";
 import { useMenuDia } from "@/hooks/useMenuDia";
+import { productosMenuParaComanda } from "@/lib/menu-dia/menu-platos-comanda";
 import { productoEnMenuHoy } from "@/lib/carta/format-producto";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 import type { SeccionPlatos } from "@/types/comanda";
@@ -56,6 +57,16 @@ export function ProductosRapidosGrid({
     if (origen) {
       if (origen === "menu") {
         if (!menu?.activo) return [];
+
+        const delMenu = productosMenuParaComanda(
+          menu,
+          seccionPlatos as "primeros" | "segundos",
+          productos,
+        );
+
+        if (delMenu.length > 0) {
+          return delMenu;
+        }
 
         const filtrados = filtrarProductosComanda(productos, { uso, origen })
           .filter((p) =>

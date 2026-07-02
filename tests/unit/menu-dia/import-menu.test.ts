@@ -59,3 +59,39 @@ describe("match-catalogo", () => {
     expect(match.segundos[0].productoId).toBe("p-entrecot");
   });
 });
+
+describe("menu-platos-comanda", () => {
+  it("muestra nombres del PDF en comanda aunque no haya match en carta", async () => {
+    const { productosMenuParaComanda } = await import(
+      "@/lib/menu-dia/menu-platos-comanda"
+    );
+
+    const lista = productosMenuParaComanda(
+      {
+        fecha: "2026-06-28",
+        precioMenu: 22,
+        primerosIds: [],
+        segundosIds: [],
+        postresIncluidosIds: [],
+        activo: true,
+        primerosImportados: [
+          {
+            id: "menu-imp-primeros-0-ensalada",
+            nombre: "Ensalada de piña, manzana…",
+          },
+          {
+            id: "menu-imp-primeros-1-foie",
+            nombre: "Foie con mermelada de higos",
+            suplemento: 3,
+          },
+        ],
+      },
+      "primeros",
+      [],
+    );
+
+    expect(lista).toHaveLength(2);
+    expect(lista[0].nombre).toContain("Ensalada");
+    expect(lista[1].suplemento).toBe(3);
+  });
+});
