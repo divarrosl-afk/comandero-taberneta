@@ -1,9 +1,31 @@
-import { crearCatalogoDefault } from "@/data/catalogo-default";
+import {
+  CATALOGO_VERSION,
+  crearCatalogoDefault,
+} from "@/data/catalogo-default";
 import { migrarProducto } from "@/lib/carta/migrate-producto";
 import { createId } from "@/lib/id/create-id";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 
 const STORAGE_KEY = "comandero-taberneta:catalogo";
+const VERSION_KEY = "comandero-taberneta:catalogo-version";
+
+function guardarVersion(): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(VERSION_KEY, String(CATALOGO_VERSION));
+}
+
+function necesitaActualizarCatalogo(): boolean {
+  if (typeof window === "undefined") return false;
+  const guardada = Number(localStorage.getItem(VERSION_KEY) ?? 0);
+  return guardada !== CATALOGO_VERSION;
+}
+
+function instalarCatalogoDefault(): ProductoCatalogo[] {
+  const defaults = crearCatalogoDefault();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
+  guardarVersion();
+  return defaults;
+}
 
 function normalizar(producto: ProductoCatalogo): ProductoCatalogo {
   const m = migrarProducto(producto);
@@ -24,18 +46,20 @@ export function getCatalogo(): ProductoCatalogo[] {
   if (typeof window === "undefined") return crearCatalogoDefault();
 
   try {
+    if (necesitaActualizarCatalogo()) {
+      return instalarCatalogoDefault();
+    }
+
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const defaults = crearCatalogoDefault();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
-      return defaults;
+      return instalarCatalogoDefault();
     }
     const parsed = JSON.parse(raw) as Partial<ProductoCatalogo>[];
     return Array.isArray(parsed)
       ? parsed.map((p) => normalizar(migrarProducto(p)))
-      : crearCatalogoDefault();
+      : instalarCatalogoDefault();
   } catch {
-    return crearCatalogoDefault();
+    return instalarCatalogoDefault();
   }
 }
 
@@ -48,9 +72,7 @@ export function guardarCatalogo(productos: ProductoCatalogo[]): void {
 }
 
 export function resetCatalogo(): ProductoCatalogo[] {
-  const defaults = crearCatalogoDefault();
-  guardarCatalogo(defaults);
-  return defaults;
+  return instalarCatalogoDefault();
 }
 
 export function getProductosPorSeccion(

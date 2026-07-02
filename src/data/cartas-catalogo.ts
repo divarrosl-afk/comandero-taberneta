@@ -8,22 +8,29 @@ import type {
   UsoComanda,
 } from "@/types/catalogo";
 
+const USOS_PLATO: UsoComanda[] = ["entrantes", "primeros", "segundos"];
+
 const USO_POR_CATEGORIA_ALMUERZO: Record<
   keyof typeof CARTAS_RESTAURANTE.cartaAlmuerzo,
   UsoComanda[]
 > = {
-  tapas: ["entrantes"],
-  hamburguesas: ["segundos"],
-  carnesGuisadas: ["segundos"],
-  carnesBrasa: ["segundos"],
-  ensaladas: ["primeros"],
-  infantil: ["primeros", "segundos"],
-  bocadillosCalientes: ["entrantes"],
-  bocadillosFrios: ["entrantes"],
-  torradas: ["entrantes"],
-  platosCombinados: ["entrantes"],
+  tapas: USOS_PLATO,
+  hamburguesas: USOS_PLATO,
+  carnesGuisadas: USOS_PLATO,
+  carnesBrasa: USOS_PLATO,
+  ensaladas: USOS_PLATO,
+  infantil: USOS_PLATO,
+  bocadillosCalientes: USOS_PLATO,
+  bocadillosFrios: USOS_PLATO,
+  torradas: USOS_PLATO,
+  platosCombinados: USOS_PLATO,
   extrasSuplementos: ["extras"],
 };
+
+const DESCRIPCION_CARNES_BRASA =
+  "Guarnición obligatoria: patatas fritas, patata al caliu o judías. Suplementos: champiñones +2€, escalivada +3€";
+
+const DESCRIPCION_INFANTIL = "Acompañado de patatas fritas";
 
 const USO_POR_CATEGORIA_CENAS: Record<
   keyof typeof CARTAS_RESTAURANTE.cartaCenas,
@@ -55,8 +62,17 @@ function seccionDeUso(usos: UsoComanda[]): SeccionCatalogo {
   return "entrantes";
 }
 
-function descripcionItem(item: ItemCarta): string | undefined {
+function descripcionItem(
+  item: ItemCarta,
+  categoria?: CategoriaCarta,
+): string | undefined {
   const partes: string[] = [];
+  if (categoria === "carnesBrasa") {
+    partes.push(DESCRIPCION_CARNES_BRASA);
+  }
+  if (categoria === "infantil") {
+    partes.push(DESCRIPCION_INFANTIL);
+  }
   if (item.descripcion) partes.push(item.descripcion);
   if (item.zona) partes.push(item.zona);
   if (item.bodega) partes.push(item.bodega);
@@ -110,7 +126,7 @@ function expandirItem(
     ordenBase: number;
   },
 ): ProductoCatalogo[] {
-  const desc = descripcionItem(item);
+  const desc = descripcionItem(item, meta.categoriaCarta);
   const result: ProductoCatalogo[] = [];
   let orden = meta.ordenBase;
 
@@ -126,7 +142,7 @@ function expandirItem(
   };
 
   if (item.medio !== undefined && item.grande !== undefined) {
-    push(`${prefijo} ${item.nombre} (1/2)`, item.medio, `${item.nombre} 1/2`);
+    push(`${prefijo} ${item.nombre} (medio)`, item.medio, `${item.nombre} medio`);
     push(`${prefijo} ${item.nombre} (grande)`, item.grande, item.nombre);
     return result;
   }
