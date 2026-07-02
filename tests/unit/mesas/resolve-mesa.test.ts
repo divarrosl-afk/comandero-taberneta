@@ -4,6 +4,7 @@ import {
   getNombreMesaComanda,
   isUuid,
   resolveNombreMesaComanda,
+  resolveZonaMesaComanda,
 } from "@/lib/mesas/resolve-mesa";
 import { guardarMesasConfig } from "@/lib/storage/mesas";
 import type { MesaConfig } from "@/types/mesas";
@@ -34,6 +35,11 @@ describe("resolve-mesa", () => {
     expect(
       resolveNombreMesaComanda({ mesa: MESA_UUID }, mesas),
     ).toBe("12");
+  });
+
+  it("resolveZonaMesaComanda devuelve zona de la mesa", () => {
+    const mesas = [mesaFixture()];
+    expect(resolveZonaMesaComanda({ mesa: MESA_UUID }, mesas)).toBe("comedor");
   });
 
   it("getNombreMesaComanda usa mesaCodigo cuando mesa es UUID", () => {

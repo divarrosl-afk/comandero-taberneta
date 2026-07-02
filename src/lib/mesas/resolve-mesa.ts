@@ -1,5 +1,5 @@
 import { getMesasConfig } from "@/lib/storage/mesas";
-import type { MesaConfig } from "@/types/mesas";
+import type { MesaConfig, ZonaMesa } from "@/types/mesas";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -39,6 +39,38 @@ export function getMesaCodigo(ref: string | null): string | undefined {
 export interface MesaComandaRef {
   mesa: string;
   mesaCodigo?: string;
+}
+
+/** Resuelve la config de mesa con lista cargada o localStorage. */
+export function resolveMesaConfigComanda(
+  comanda: MesaComandaRef,
+  mesas?: readonly MesaConfig[],
+): MesaConfig | undefined {
+  const ref = comanda.mesa?.trim();
+  const codigoRef = comanda.mesaCodigo?.trim().toUpperCase();
+
+  if (mesas?.length && ref) {
+    const found = mesas.find(
+      (m) =>
+        m.id === ref ||
+        m.codigo === ref.toUpperCase() ||
+        (codigoRef && m.codigo === codigoRef) ||
+        m.id === codigoRef,
+    );
+    if (found) return found;
+  }
+
+  const porRef = findMesaConfig(ref);
+  if (porRef) return porRef;
+  if (codigoRef) return findMesaConfig(codigoRef);
+  return undefined;
+}
+
+export function resolveZonaMesaComanda(
+  comanda: MesaComandaRef,
+  mesas?: readonly MesaConfig[],
+): ZonaMesa {
+  return resolveMesaConfigComanda(comanda, mesas)?.zona ?? "comedor";
 }
 
 /** Resuelve nombre con lista de mesas cargada (panel, mesas operativas). */

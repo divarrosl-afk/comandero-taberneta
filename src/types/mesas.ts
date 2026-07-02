@@ -50,6 +50,15 @@ export const ZONAS_MESA: { id: ZonaMesa; label: string }[] = [
   { id: "rambla", label: "Rambla" },
 ];
 
+/** Orden de secciones en panel cocina/barra */
+export const ZONAS_PANEL_ORDEN: ZonaMesa[] = [
+  "barra",
+  "rambla",
+  "comedor",
+  "fachada",
+  "terraza",
+];
+
 export const ESTADOS_MESA: {
   id: EstadoMesaOperativo;
   label: string;

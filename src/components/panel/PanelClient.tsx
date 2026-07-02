@@ -10,8 +10,10 @@ import { PanelDetalleSheet } from "@/components/panel/PanelDetalleSheet";
 import { PanelPostresCard } from "@/components/panel/PanelPostresCard";
 import { PanelPostresTile } from "@/components/panel/PanelPostresTile";
 import { comandaPerteneceAMesa } from "@/lib/mesas/resolve-mesa";
+import { agruparComandasPorZona } from "@/lib/panel/agrupar-por-zona";
 import { useMesas } from "@/hooks/useMesas";
 import { usePanel } from "@/hooks/usePanel";
+import { labelZona } from "@/types/mesas";
 import type { ComandaCocina } from "@/types/comanda";
 import type { ComandaPostres } from "@/types/postres";
 
@@ -38,6 +40,7 @@ export function PanelClient() {
 
   const listaCocina = tab === "cocina" ? cocinaActivas : [];
   const listaPostres = tab === "postres" ? postresActivas : [];
+  const cocinaPorZona = agruparComandasPorZona(listaCocina, mesas);
 
   const postresDeMesa = (comanda: ComandaCocina) =>
     comandasPostres.find(
@@ -110,23 +113,33 @@ export function PanelClient() {
         </nav>
 
         {tab === "cocina" && (
-          <div className="min-h-0 flex-1 overflow-y-auto pb-4">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4">
             {listaCocina.length === 0 ? (
               <p className="rounded-2xl border-2 border-dashed border-border bg-card p-8 text-center text-muted">
                 No hay comandas de cocina activas
               </p>
             ) : (
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-                {listaCocina.map((comanda) => (
-                  <PanelComandaTile
-                    key={comanda.id}
-                    comanda={comanda}
-                    mesas={mesas}
-                    postresMesa={postresDeMesa(comanda)}
-                    onClick={() => setDetalleCocina(comanda)}
-                  />
-                ))}
-              </div>
+              cocinaPorZona.map(({ zona, comandas }) => (
+                <section key={zona}>
+                  <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">
+                    {labelZona(zona)}
+                    <span className="ml-2 font-semibold text-foreground">
+                      ({comandas.length})
+                    </span>
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+                    {comandas.map((comanda) => (
+                      <PanelComandaTile
+                        key={comanda.id}
+                        comanda={comanda}
+                        mesas={mesas}
+                        postresMesa={postresDeMesa(comanda)}
+                        onClick={() => setDetalleCocina(comanda)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))
             )}
           </div>
         )}
