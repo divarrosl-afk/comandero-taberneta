@@ -77,6 +77,68 @@ curl -X POST http://localhost:3100/test-print
 
 ---
 
+## Windows (CMD) — paso a paso
+
+En **Windows no** se ponen variables con `VAR=valor` en CMD. Van en el archivo **`print-server\.env`** editado con Notepad.
+
+### 1. Actualizar código
+
+```cmd
+cd %USERPROFILE%\Documents\comandero-taberneta
+git checkout main
+git pull origin main
+```
+
+### 2. Crear / editar `.env`
+
+```cmd
+copy print-server\.env.example print-server\.env
+notepad print-server\.env
+```
+
+Pega la **service_role key** real de Supabase (empieza por `eyJ...`). Guarda el archivo.
+
+Comprobar:
+
+```cmd
+print-server\windows\check-env.bat
+```
+
+### 3. Liberar puerto 3100 (si sale EADDRINUSE)
+
+```cmd
+print-server\windows\stop-print-server.bat
+```
+
+### 4. Arrancar
+
+```cmd
+npm run print-server
+```
+
+Debes ver:
+
+```
+[cloud-poller] ACTIVO · cada 3000ms
+   Cloud:   ACTIVO · poll 3000ms
+```
+
+O usa el script:
+
+```cmd
+print-server\windows\start-print-server.bat
+```
+
+### 5. Comprobar
+
+```cmd
+curl http://localhost:3100/health
+```
+
+Busca `"cloudPolling":true`. Si falta, `missingCloudEnv` te dice qué línea falta en `.env`.
+
+---
+
 ## Si no imprime desde el móvil
 
 | Comprobación | Cómo |
