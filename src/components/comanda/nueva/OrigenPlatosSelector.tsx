@@ -47,7 +47,8 @@ export function OrigenPlatosSelector({
       </div>
       <p className="text-xs text-muted">
         {opciones.find((o) => o.id === value)?.label}
-        {value === "carta-almuerzo" && " · tapas, ensaladas, carnes, bocadillos…"}
+        {value === "carta-almuerzo" &&
+          " · tapas, ensaladas, carnes, bocadillos… (toda la carta)"}
         {value === "carta-cenas" && " · tapas, torradas y brasa de noche"}
       </p>
     </div>

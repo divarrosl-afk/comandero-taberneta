@@ -106,11 +106,21 @@ export function filtrarProductosComanda(
     categoriaCarta?: CategoriaCarta;
   },
 ): ProductoCatalogo[] {
+  const esCarta =
+    opts.origen === "carta-almuerzo" || opts.origen === "carta-cenas";
+  const cartaCompleta =
+    esCarta && (opts.uso === "primeros" || opts.uso === "segundos");
+
   return productos.filter((p) => {
     if (!p.activo) return false;
-    if (!productoParaUsoComanda(p, opts.uso)) return false;
+
+    if (!cartaCompleta && !productoParaUsoComanda(p, opts.uso)) return false;
 
     if (opts.categoriaCarta && p.categoriaCarta !== opts.categoriaCarta) {
+      return false;
+    }
+
+    if (cartaCompleta && p.categoriaCarta === "extrasSuplementos") {
       return false;
     }
 
