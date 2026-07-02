@@ -34,6 +34,7 @@ export function getVercelEnvVars() {
     SUPABASE_SERVICE_ROLE_KEY: readEnv("SUPABASE_SERVICE_ROLE_KEY"),
     NEXT_PUBLIC_RESTAURANTE_ID: readEnv("NEXT_PUBLIC_RESTAURANTE_ID"),
     NEXT_PUBLIC_DATA_BACKEND: "supabase",
+    SETUP_BOOTSTRAP_TOKEN: readEnv("SETUP_BOOTSTRAP_TOKEN"),
   };
 }
 
@@ -59,7 +60,10 @@ export async function vercelRequest(path, { method = "GET", body, token, teamSlu
 
 export async function upsertVercelEnv(key, value, { token, projectId, teamSlug }) {
   const targets = ["production", "preview", "development"];
-  const type = key.includes("KEY") ? "encrypted" : "plain";
+  const type =
+    key.includes("KEY") || key.includes("TOKEN") || key.includes("PASSWORD")
+      ? "encrypted"
+      : "plain";
 
   try {
     await vercelRequest(`/v10/projects/${projectId}/env`, {
