@@ -28,14 +28,20 @@ export function getVercelEnvVars() {
     readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY") ||
     readEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
 
-  return {
+  const vars = {
     NEXT_PUBLIC_SUPABASE_URL: readEnv("NEXT_PUBLIC_SUPABASE_URL"),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey,
     SUPABASE_SERVICE_ROLE_KEY: readEnv("SUPABASE_SERVICE_ROLE_KEY"),
     NEXT_PUBLIC_RESTAURANTE_ID: readEnv("NEXT_PUBLIC_RESTAURANTE_ID"),
     NEXT_PUBLIC_DATA_BACKEND: "supabase",
-    SETUP_BOOTSTRAP_TOKEN: readEnv("SETUP_BOOTSTRAP_TOKEN"),
+    SEED_ADMIN_PASSWORD: readEnv("SEED_ADMIN_PASSWORD"),
+    SEED_CAMARERO_PASSWORD: readEnv("SEED_CAMARERO_PASSWORD"),
   };
+
+  const bootstrap = readEnv("SETUP_BOOTSTRAP_TOKEN");
+  if (bootstrap) vars.SETUP_BOOTSTRAP_TOKEN = bootstrap;
+
+  return vars;
 }
 
 export async function vercelRequest(path, { method = "GET", body, token, teamSlug }) {

@@ -34,7 +34,8 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_RESTAURANTE_ID: ${{ secrets.NEXT_PUBLIC_RESTAURANTE_ID }}
-          SETUP_BOOTSTRAP_TOKEN: ${{ secrets.SETUP_BOOTSTRAP_TOKEN }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          SEED_CAMARERO_PASSWORD: ${{ secrets.SEED_CAMARERO_PASSWORD }}
         run: node scripts/ci/validate-secrets.mjs vercel-env
 
       - name: Configure Vercel env
@@ -47,4 +48,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_RESTAURANTE_ID: ${{ secrets.NEXT_PUBLIC_RESTAURANTE_ID }}
           SETUP_BOOTSTRAP_TOKEN: ${{ secrets.SETUP_BOOTSTRAP_TOKEN }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          SEED_CAMARERO_PASSWORD: ${{ secrets.SEED_CAMARERO_PASSWORD }}
         run: node scripts/ci/configure-vercel-env.mjs
