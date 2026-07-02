@@ -20,6 +20,8 @@
     "ci:vercel-env": "node scripts/ci/configure-vercel-env.mjs",
     "ci:vercel-redeploy": "node scripts/ci/redeploy-vercel.mjs",
     "ci:health": "node scripts/ci/verify-print-health.mjs",
+    "ci:seed": "node scripts/ci/seed-via-vercel.mjs",
+    "ci:verify-auth": "node scripts/ci/verify-auth-status.mjs",
     "deploy:cloud-print": "node scripts/deploy-cloud-print-all.mjs",
     "setup:all": "node scripts/setup-all.mjs"
   },

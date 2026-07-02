@@ -24,10 +24,11 @@ Guía para configurar **secretos en GitHub Actions** sin guardarlos en el reposi
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → **API** → **Project URL** | Ej. `https://vhlzbfrzmqljngwegbde.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → **API** → **anon** *o* **publishable key** del wizard nuevo | En Vercel va como variable pública; en GitHub va como **Secret** para no filtrarla en forks/logs |
 | `NEXT_PUBLIC_RESTAURANTE_ID` | UUID del restaurante en `schema.sql` | `b1c2d3e4-f5a6-4789-a012-3456789abcde` |
-| `SEED_ADMIN_PASSWORD` | Contraseña que elijas para `divarro` | Solo para workflow **Supabase seed** |
-| `SEED_CAMARERO_PASSWORD` | Contraseña para `david`, `ingrid`, `cocina` | Solo para workflow **Supabase seed** |
+| `SEED_ADMIN_PASSWORD` | Contraseña que elijas para `divarro` | Usuario admin en producción |
+| `SEED_CAMARERO_PASSWORD` | Contraseña para `david`, `ingrid`, `cocina` | Camareros en producción |
+| `SETUP_BOOTSTRAP_TOKEN` | Token aleatorio largo (p. ej. `openssl rand -hex 32`) | Protege `POST /api/setup/seed` — **mismo valor** en GitHub y Vercel |
 
-Sin los secretos `SEED_*`, la migración crea tablas pero **no hay usuarios** para iniciar sesión.
+Sin `SEED_*` y `SETUP_BOOTSTRAP_TOKEN`, la migración crea tablas pero **no hay usuarios** para iniciar sesión.
 
 ### Opcionales (no hace falta crearlos si usas el proyecto por defecto)
 
@@ -82,7 +83,7 @@ b1c2d3e4-f5a6-4789-a012-3456789abcde
 
 ## 4. Comprobar que los secretos están creados
 
-En GitHub → **Settings** → **Secrets and variables** → **Actions** debes ver **6 secretos** con esos nombres exactos (mayúsculas y guiones bajos).
+En GitHub → **Settings** → **Secrets and variables** → **Actions** debes ver **9 secretos** con esos nombres exactos (mayúsculas y guiones bajos).
 
 No podrás volver a ver los valores; solo editarlos o borrarlos.
 
@@ -98,16 +99,19 @@ Tras crear los secretos, en **Actions** del repo:
 | **Vercel configure** | Sincroniza env en Vercel | Los 6 de la tabla |
 | **Vercel redeploy** | Redeploy producción `main` | `VERCEL_TOKEN` |
 | **Verify print health** | Comprueba `/api/print-jobs/health` | ninguno (endpoint público) |
-| **Supabase seed** | Crea usuarios Auth + perfiles | + `SEED_ADMIN_PASSWORD`, `SEED_CAMARERO_PASSWORD` |
-| **Production setup** | Los 4 pasos en orden | Los 6 de la tabla |
+| **Supabase seed** | Crea usuarios Auth + perfiles (directo a Supabase) | + `SEED_*` |
+| **Production setup** | Migrate → Vercel env → redeploy → seed API → health + auth | Los 9 de la tabla |
 
 ### Ejecución recomendada (primera vez)
 
-1. Añade también `SEED_ADMIN_PASSWORD` y `SEED_CAMARERO_PASSWORD`
-2. **Production setup** → **Run workflow** (incluye seed si hay secretos)
-3. O manualmente: **Supabase migrate** → **Supabase seed** → **Vercel configure** → **Vercel redeploy**
+1. Genera `SETUP_BOOTSTRAP_TOKEN`: `openssl rand -hex 32`
+2. Añade `SEED_ADMIN_PASSWORD`, `SEED_CAMARERO_PASSWORD` y `SETUP_BOOTSTRAP_TOKEN`
+3. **Production setup** → **Run workflow** (pipeline completo automático)
+4. Alternativa manual: **Supabase migrate** → **Vercel configure** → **Vercel redeploy** → seed vía API
 
 Login tras seed: usuario `divarro` + la contraseña de `SEED_ADMIN_PASSWORD` (no es `admin` del modo local).
+
+Tras **Production setup**, `/api/auth/status` debe devolver `userCount: 4` y `seedRequired: false`.
 
 ---
 
