@@ -313,7 +313,25 @@ function SelectorPorCategorias({
     });
   };
 
-  if (grupos.length === 0) return null;
+  const sinCategoria = useMemo(
+    () => productos.filter((p) => !p.categoriaCarta),
+    [productos],
+  );
+
+  if (grupos.length === 0 && sinCategoria.length === 0) {
+    if (productos.length === 0) return null;
+    return (
+      <GridProductos
+        lista={productos}
+        menu={menu}
+        seccionPlatos={seccionPlatos}
+        seccion={seccion}
+        ventasPorId={ventasPorId}
+        onSelect={onSelect}
+        onInfo={onInfo}
+      />
+    );
+  }
 
   return (
     <div className="space-y-2">
@@ -337,6 +355,25 @@ function SelectorPorCategorias({
           />
         </CategoriaAcordeon>
       ))}
+      {sinCategoria.length > 0 && (
+        <CategoriaAcordeon
+          id="sin-categoria"
+          label="Otros"
+          count={sinCategoria.length}
+          abierta={abiertas.has("sin-categoria")}
+          onToggle={() => toggle("sin-categoria")}
+        >
+          <GridProductos
+            lista={sinCategoria}
+            menu={menu}
+            seccionPlatos={seccionPlatos}
+            seccion={seccion}
+            ventasPorId={ventasPorId}
+            onSelect={onSelect}
+            onInfo={onInfo}
+          />
+        </CategoriaAcordeon>
+      )}
     </div>
   );
 }

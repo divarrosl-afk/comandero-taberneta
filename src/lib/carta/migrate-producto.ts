@@ -1,3 +1,4 @@
+import { crearCatalogoDefault } from "@/data/catalogo-default";
 import {
   decodeProductoMeta,
 } from "@/lib/carta/carta-servicio-meta";
@@ -27,12 +28,61 @@ function inferirTipo(
 function inferirCartaServicio(
   seccion: SeccionCatalogo,
   cartaServicio?: CartaServicio,
+  tipo?: TipoProducto,
 ): CartaServicio | undefined {
   if (cartaServicio) return cartaServicio;
   if (seccion === "bebidas") return "bebidas";
   if (seccion === "postres") return "postres";
   if (seccion === "extras" || seccion === "salsas") return "almuerzo";
+  if (tipo === "carta") return "almuerzo";
   return undefined;
+}
+
+function normalizarNombreCatalogo(nombre: string): string {
+  return nombre
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "");
+}
+
+let referenciaPorNombre: Map<string, ProductoCatalogo> | null = null;
+
+function referenciaCatalogoDefault(): Map<string, ProductoCatalogo> {
+  if (!referenciaPorNombre) {
+    referenciaPorNombre = new Map();
+    for (const producto of crearCatalogoDefault()) {
+      const clave = normalizarNombreCatalogo(producto.nombre);
+      if (!referenciaPorNombre.has(clave)) {
+        referenciaPorNombre.set(clave, producto);
+      }
+    }
+  }
+  return referenciaPorNombre;
+}
+
+function enriquecerProductoDesdeDefault(
+  producto: ProductoCatalogo,
+): ProductoCatalogo {
+  const ref = referenciaCatalogoDefault().get(
+    normalizarNombreCatalogo(producto.nombre),
+  );
+  if (!ref) return producto;
+
+  return {
+    ...producto,
+    cartaServicio: producto.cartaServicio ?? ref.cartaServicio,
+    categoriaCarta: producto.categoriaCarta ?? ref.categoriaCarta,
+    usosComanda: producto.usosComanda?.length
+      ? producto.usosComanda
+      : ref.usosComanda,
+    tipo:
+      producto.tipo === "carta" ||
+      producto.tipo === "menu-dia" ||
+      producto.tipo === "ambos"
+        ? producto.tipo
+        : ref.tipo,
+  };
 }
 
 function inferirUsosComanda(
@@ -62,18 +112,19 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
   const suplemento =
     raw.suplemento && raw.suplemento > 0 ? raw.suplemento : undefined;
 
-  const tipo = inferirTipo(seccion, suplemento, raw.tipo);
   const decoded = decodeProductoMeta(raw.notasInternas);
+  const tipo = inferirTipo(seccion, suplemento, raw.tipo);
   const cartaServicio = inferirCartaServicio(
     seccion,
     raw.cartaServicio ?? decoded.meta.cartaServicio,
+    tipo,
   );
   const usosComanda = inferirUsosComanda(
     seccion,
     raw.usosComanda ?? decoded.meta.usosComanda,
   );
 
-  return {
+  return enriquecerProductoDesdeDefault({
     id: raw.id ?? createId(),
     nombre: (raw.nombre ?? "").trim(),
     nombreCorto: raw.nombreCorto?.trim() || undefined,
@@ -99,5 +150,5 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
         ? raw.tiempoPreparacion
         : undefined,
     recomendado: raw.recomendado ?? false,
-  };
+  });
 }

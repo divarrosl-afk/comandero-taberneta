@@ -109,7 +109,10 @@ export function filtrarProductosComanda(
   const esCarta =
     opts.origen === "carta-almuerzo" || opts.origen === "carta-cenas";
   const cartaCompleta =
-    esCarta && (opts.uso === "primeros" || opts.uso === "segundos");
+    esCarta &&
+    (opts.uso === "entrantes" ||
+      opts.uso === "primeros" ||
+      opts.uso === "segundos");
 
   return productos.filter((p) => {
     if (!p.activo) return false;
