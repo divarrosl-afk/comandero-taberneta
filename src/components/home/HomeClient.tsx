@@ -66,7 +66,7 @@ const accionesBase = [
   },
   {
     titulo: "Carta",
-    descripcion: "Platos, precios, ingredientes y alérgenos",
+    descripcion: "Almuerzo, bebidas, postres y cenas",
     href: "/configuracion/carta",
     disponible: true,
     adminOnly: true,

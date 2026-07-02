@@ -1,5 +1,24 @@
+import {
+  decodeCartaServicio,
+} from "@/lib/carta/carta-servicio-meta";
 import { createId } from "@/lib/id/create-id";
-import type { ProductoCatalogo, SeccionCatalogo, TipoProducto } from "@/types/catalogo";
+import type {
+  CartaServicio,
+  ProductoCatalogo,
+  SeccionCatalogo,
+  TipoProducto,
+} from "@/types/catalogo";
+
+function inferirCartaServicio(
+  seccion: SeccionCatalogo,
+  cartaServicio?: CartaServicio,
+): CartaServicio | undefined {
+  if (cartaServicio) return cartaServicio;
+  if (seccion === "bebidas") return "bebidas";
+  if (seccion === "postres") return "postres";
+  if (seccion === "extras" || seccion === "salsas") return "almuerzo";
+  return "almuerzo";
+}
 
 function inferirTipo(
   seccion: SeccionCatalogo,
@@ -28,6 +47,11 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
     raw.suplemento && raw.suplemento > 0 ? raw.suplemento : undefined;
 
   const tipo = inferirTipo(seccion, suplemento, raw.tipo);
+  const decoded = decodeCartaServicio(raw.notasInternas);
+  const cartaServicio = inferirCartaServicio(
+    seccion,
+    raw.cartaServicio ?? decoded.cartaServicio,
+  );
 
   return {
     id: raw.id ?? createId(),
@@ -46,7 +70,8 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
     descripcionCamarero: raw.descripcionCamarero?.trim() || undefined,
     ingredientes: Array.isArray(raw.ingredientes) ? raw.ingredientes : [],
     alergenos: Array.isArray(raw.alergenos) ? raw.alergenos : [],
-    notasInternas: raw.notasInternas?.trim() || undefined,
+    cartaServicio,
+    notasInternas: decoded.notasLimpias?.trim() || undefined,
     tiempoPreparacion:
       raw.tiempoPreparacion && raw.tiempoPreparacion > 0
         ? raw.tiempoPreparacion

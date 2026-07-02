@@ -1,3 +1,4 @@
+import { encodeCartaServicioMeta } from "@/lib/carta/carta-servicio-meta";
 import { migrarProducto } from "@/lib/carta/migrate-producto";
 import type { ProductoCatalogo } from "@/types/catalogo";
 import type { MenuDiaConfig } from "@/types/menu-dia";
@@ -155,7 +156,8 @@ export function productoToRow(
     descripcion_camarero: p.descripcionCamarero ?? null,
     ingredientes: p.ingredientes,
     alergenos: p.alergenos,
-    notas_internas: p.notasInternas ?? null,
+    notas_internas:
+      encodeCartaServicioMeta(p.cartaServicio, p.notasInternas) ?? null,
     tiempo_preparacion: p.tiempoPreparacion ?? null,
   };
 }

@@ -9,6 +9,20 @@ export type SeccionCatalogo =
 
 export type TipoProducto = "carta" | "menu-dia" | "ambos";
 
+/** Carta a la que pertenece el producto (admin y futura carta cenas) */
+export type CartaServicio = "almuerzo" | "cenas" | "bebidas" | "postres";
+
+export const CARTAS_SERVICIO: {
+  id: CartaServicio;
+  label: string;
+  disponible: boolean;
+}[] = [
+  { id: "almuerzo", label: "Carta almuerzo", disponible: true },
+  { id: "bebidas", label: "Vinos y bebidas", disponible: true },
+  { id: "postres", label: "Postres", disponible: true },
+  { id: "cenas", label: "Carta cenas", disponible: false },
+];
+
 export type AlergenoId =
   | "gluten"
   | "lactosa"
@@ -28,6 +42,8 @@ export interface ProductoCatalogo {
   nombreCorto?: string;
   seccion: SeccionCatalogo;
   tipo: TipoProducto;
+  /** Carta de servicio (almuerzo, cenas, bebidas, postres) */
+  cartaServicio?: CartaServicio;
   /** @deprecated Usar precioCarta — se mantiene por compatibilidad */
   precio?: number;
   precioCarta?: number;
