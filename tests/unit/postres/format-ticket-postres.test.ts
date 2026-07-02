@@ -40,4 +40,17 @@ describe("comandaPostresToTexto secciones", () => {
     expect(texto).toContain("CAFES");
     expect(texto).toContain("X: SIN CAFÉ");
   });
+
+  it("no imprime X de postres en sección postres", () => {
+    const texto = comandaPostresToTexto(
+      comandaPostresFixture({
+        postres: [{ id: "p1", nombre: "Flan", cantidad: 1 }],
+        estadoX: "pendiente",
+      }),
+    );
+
+    expect(texto).toContain("FLAN");
+    expect(texto).not.toContain("X: PENDIENTE");
+    expect(texto).not.toContain("X: SIN POSTRE");
+  });
 });

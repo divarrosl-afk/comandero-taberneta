@@ -53,7 +53,7 @@ export function comandaPostresFixture(
     camarero: "ingrid",
     postres: [{ id: "d1", nombre: "Flan", cantidad: 1 }],
     cafes: [],
-    estadoX: "pendiente",
+    estadoX: null,
     estadoXCafe: null,
     clH: false,
     observaciones: [],

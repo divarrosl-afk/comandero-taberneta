@@ -1,6 +1,6 @@
 "use client";
 
-import { getEstadoXCafeLabel, getEstadoXLabel } from "@/data/postres-catalogo";
+import { getEstadoXCafeLabel } from "@/data/postres-catalogo";
 import { formatHora } from "@/lib/historial/items";
 import { resolveNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { EstadoPanelBadge } from "@/components/panel/EstadoPanelBadge";
@@ -35,7 +35,7 @@ export function PanelPostresCard({
       </header>
 
       <div className="mb-4 space-y-3 rounded-xl bg-background p-3">
-        {(comanda.postres.length > 0 || comanda.estadoX) && (
+        {comanda.postres.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-bold uppercase tracking-wide text-accent">
               Postres
@@ -49,11 +49,6 @@ export function PanelPostresCard({
                 </li>
               ))}
             </ul>
-            {comanda.estadoX && (
-              <p className="text-sm font-semibold">
-                X: {getEstadoXLabel(comanda.estadoX)}
-              </p>
-            )}
           </div>
         )}
 

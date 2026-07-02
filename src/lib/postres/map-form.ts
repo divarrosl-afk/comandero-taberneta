@@ -32,7 +32,7 @@ export function formToComandaPostres(
     camarero: CAMARERO_EQUIPO,
     postres,
     cafes,
-    estadoX: form.estadoX,
+    estadoX: null,
     estadoXCafe: form.estadoXCafe,
     clH: false,
     observaciones: form.observaciones.map((o) => o.trim()).filter(Boolean),
@@ -55,7 +55,6 @@ export function formPostresEsValido(form: PostresFormState): boolean {
     form.mesa !== null &&
     (formTienePostres(form) ||
       formTieneCafes(form) ||
-      form.estadoX !== null ||
       form.estadoXCafe !== null)
   );
 }

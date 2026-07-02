@@ -1,9 +1,6 @@
 import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { sectionHeader, TICKET_WIDTH_80MM } from "@/lib/comanda/ticket-kitchen";
-import {
-  getEstadoXCafeLabel,
-  getEstadoXLabel,
-} from "@/data/postres-catalogo";
+import { getEstadoXCafeLabel } from "@/data/postres-catalogo";
 import { normalizeComandaPostres } from "@/lib/postres/normalize-comanda";
 import type { ComandaPostres, PostreItem } from "@/types/postres";
 import type { TicketFormatOptions } from "@/lib/comanda/ticket-kitchen";
@@ -19,7 +16,7 @@ function lineaItem(item: PostreItem): string {
 }
 
 function tieneSeccionPostres(comanda: ComandaPostres): boolean {
-  return comanda.postres.length > 0 || comanda.estadoX !== null;
+  return comanda.postres.length > 0;
 }
 
 function tieneSeccionCafes(comanda: ComandaPostres): boolean {
@@ -47,12 +44,6 @@ export function comandaPostresToTexto(
     lineas.push(sectionHeader("POSTRES", width), "");
 
     normalizada.postres.forEach((p) => lineas.push(lineaItem(p)));
-
-    if (normalizada.estadoX) {
-      if (normalizada.postres.length) lineas.push("");
-      lineas.push(`X: ${getEstadoXLabel(normalizada.estadoX).toUpperCase()}`);
-    }
-
     lineas.push("");
   }
 

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { BottomBar } from "@/components/ui/BottomBar";
 import { MesaSelector } from "@/components/comanda/MesaSelector";
 import { CabeceraComanda } from "@/components/comanda/nueva/CabeceraComanda";
-import { EstadoXSelector } from "@/components/postres/nueva/EstadoXSelector";
 import { CafesSeccionPanel } from "@/components/postres/nueva/CafesSeccionPanel";
 import { PostresObservacionesSection } from "@/components/postres/nueva/PostresObservacionesSection";
 import { PostresSeccionPanel } from "@/components/postres/nueva/PostresSeccionPanel";
@@ -40,7 +39,6 @@ interface PostresEditViewProps {
   onRemoveCafe: PostresFormActions["removeCafe"];
   onDuplicateCafe: PostresFormActions["duplicateCafe"];
   onClearCafes: PostresFormActions["clearCafes"];
-  onSetEstadoX: PostresFormActions["setEstadoX"];
   onSetEstadoXCafe: PostresFormActions["setEstadoXCafe"];
   onSetObservacion: PostresFormActions["setObservacion"];
   onAddObservacion: PostresFormActions["addObservacion"];
@@ -52,7 +50,7 @@ interface PostresEditViewProps {
 
 function getValidationHint(form: PostresFormActions["form"]): string | undefined {
   if (!form.mesa) return "Selecciona una mesa";
-  return "Añade al menos un postre, café o X";
+  return "Añade al menos un postre, café o X sin café";
 }
 
 export function PostresEditView({
@@ -72,7 +70,6 @@ export function PostresEditView({
   onRemoveCafe,
   onDuplicateCafe,
   onClearCafes,
-  onSetEstadoX,
   onSetEstadoXCafe,
   onSetObservacion,
   onAddObservacion,
@@ -147,7 +144,6 @@ export function PostresEditView({
         {tab === "postres" && (
           <PostresSeccionPanel
             postres={form.postres}
-            estadoX={form.estadoX}
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
             onUpdate={onUpdatePostre}
@@ -156,7 +152,6 @@ export function PostresEditView({
             onRemove={onRemovePostre}
             onDuplicate={onDuplicatePostre}
             onClear={onClearPostres}
-            onSetEstadoX={onSetEstadoX}
           />
         )}
 

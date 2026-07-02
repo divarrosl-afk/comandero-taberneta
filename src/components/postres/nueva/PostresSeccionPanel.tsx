@@ -6,14 +6,12 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { PostreCard } from "@/components/postres/nueva/PostreCard";
 import { PostresFrecuentesGrid } from "@/components/postres/nueva/PostresFrecuentesGrid";
-import { EstadoXSelector } from "@/components/postres/nueva/EstadoXSelector";
 import { CatalogoBuscadorRapido } from "@/components/catalogo/CatalogoBuscadorRapido";
 import type { ProductoCatalogo } from "@/types/catalogo";
-import type { EstadoPostreX, PostreFormItem } from "@/types/postres";
+import type { PostreFormItem } from "@/types/postres";
 
 interface PostresSeccionPanelProps {
   postres: PostreFormItem[];
-  estadoX: EstadoPostreX | null;
   busqueda?: string;
   onBusquedaChange?: (value: string) => void;
   onUpdate: (id: string, cambios: Partial<PostreFormItem>) => void;
@@ -22,12 +20,10 @@ interface PostresSeccionPanelProps {
   onRemove: (id: string) => void;
   onDuplicate: (id: string) => void;
   onClear: () => void;
-  onSetEstadoX: (estado: EstadoPostreX | null) => void;
 }
 
 export function PostresSeccionPanel({
   postres,
-  estadoX,
   busqueda = "",
   onBusquedaChange,
   onUpdate,
@@ -36,7 +32,6 @@ export function PostresSeccionPanel({
   onRemove,
   onDuplicate,
   onClear,
-  onSetEstadoX,
 }: PostresSeccionPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
 
@@ -84,8 +79,6 @@ export function PostresSeccionPanel({
           ))}
         </div>
       </SectionCard>
-
-      <EstadoXSelector value={estadoX} onChange={onSetEstadoX} />
 
       <ConfirmDialog
         open={confirmClear}

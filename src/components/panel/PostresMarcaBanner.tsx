@@ -1,6 +1,6 @@
 "use client";
 
-import { getEstadoXCafeLabel, getEstadoXLabel } from "@/data/postres-catalogo";
+import { getEstadoXCafeLabel } from "@/data/postres-catalogo";
 import { getEstadoPanelLabel } from "@/types/panel";
 import type { ComandaPostres } from "@/types/postres";
 
@@ -16,12 +16,6 @@ export function PostresMarcaBanner({ comanda }: PostresMarcaBannerProps) {
       </p>
       <p className="mt-0.5 text-sm font-semibold text-purple-950">
         {getEstadoPanelLabel(comanda.estadoPanel)}
-        {comanda.estadoX && (
-          <span className="font-medium text-purple-700">
-            {" "}
-            · X: {getEstadoXLabel(comanda.estadoX)}
-          </span>
-        )}
         {comanda.estadoXCafe && (
           <span className="font-medium text-purple-700">
             {" "}
