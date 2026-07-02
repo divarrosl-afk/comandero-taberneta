@@ -62,10 +62,10 @@ export function MesaCard({ mesa, onCobrando, onLiberar }: MesaCardProps) {
             </Link>
           </div>
           <Link
-            href={`/historial?mesa=${encodeURIComponent(mesa.id)}`}
+            href={`/panel?mesa=${encodeURIComponent(mesa.id)}`}
             className="flex min-h-10 w-full items-center justify-center rounded-xl border border-border text-xs font-semibold"
           >
-            Ver comandas ({total})
+            Ver comanda{total > 0 ? ` (${total})` : ""}
           </Link>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" fullWidth onClick={onCobrando}>

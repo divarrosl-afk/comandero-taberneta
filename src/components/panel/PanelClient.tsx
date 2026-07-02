@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/Button";
 import { PanelComandaCard } from "@/components/panel/PanelComandaCard";
@@ -19,7 +20,9 @@ import type { ComandaPostres } from "@/types/postres";
 
 type PanelTab = "cocina" | "postres";
 
-export function PanelClient() {
+function PanelContent() {
+  const searchParams = useSearchParams();
+  const mesaFiltro = searchParams.get("mesa");
   const [tab, setTab] = useState<PanelTab>("cocina");
   const [detalleCocina, setDetalleCocina] = useState<ComandaCocina | null>(
     null,
@@ -40,7 +43,26 @@ export function PanelClient() {
 
   const listaCocina = tab === "cocina" ? cocinaActivas : [];
   const listaPostres = tab === "postres" ? postresActivas : [];
-  const cocinaPorZona = agruparComandasPorZona(listaCocina, mesas);
+  const cocinaVisibles = mesaFiltro
+    ? listaCocina.filter((c) => comandaPerteneceAMesa(c, mesaFiltro))
+    : listaCocina;
+  const cocinaPorZona = agruparComandasPorZona(cocinaVisibles, mesas);
+  const mesaAbiertaRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!mesaFiltro) {
+      mesaAbiertaRef.current = null;
+      return;
+    }
+    if (mesaAbiertaRef.current === mesaFiltro) return;
+    const comanda = cocinaActivas.find((c) =>
+      comandaPerteneceAMesa(c, mesaFiltro),
+    );
+    if (comanda) {
+      setDetalleCocina(comanda);
+      mesaAbiertaRef.current = mesaFiltro;
+    }
+  }, [mesaFiltro, cocinaActivas]);
 
   const postresDeMesa = (comanda: ComandaCocina) =>
     comandasPostres.find(
@@ -50,15 +72,14 @@ export function PanelClient() {
     );
 
   return (
-    <RequireAuth>
-      <main className="mx-auto flex min-h-dvh max-w-6xl flex-col px-3 py-3 sm:px-4">
-        <header className="mb-3 shrink-0">
-          <Link
-            href="/"
-            className="mb-2 inline-block text-sm font-semibold text-accent"
-          >
-            ← Inicio
-          </Link>
+    <main className="mx-auto flex min-h-dvh max-w-6xl flex-col px-3 py-3 sm:px-4">
+      <header className="mb-3 shrink-0">
+        <Link
+          href={mesaFiltro ? "/mesas" : "/"}
+          className="mb-2 inline-block text-sm font-semibold text-accent"
+        >
+          ← {mesaFiltro ? "Mesas" : "Inicio"}
+        </Link>
           <div className="flex items-center justify-between gap-3">
             <div>
               <h1 className="text-xl font-bold text-primary sm:text-2xl">
@@ -114,9 +135,11 @@ export function PanelClient() {
 
         {tab === "cocina" && (
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4">
-            {listaCocina.length === 0 ? (
+            {cocinaVisibles.length === 0 ? (
               <p className="rounded-2xl border-2 border-dashed border-border bg-card p-8 text-center text-muted">
-                No hay comandas de cocina activas
+                {mesaFiltro
+                  ? "No hay comanda de cocina activa en esta mesa"
+                  : "No hay comandas de cocina activas"}
               </p>
             ) : (
               cocinaPorZona.map(({ zona, comandas }) => (
@@ -198,6 +221,21 @@ export function PanelClient() {
           )}
         </PanelDetalleSheet>
       </main>
+  );
+}
+
+export function PanelClient() {
+  return (
+    <RequireAuth>
+      <Suspense
+        fallback={
+          <main className="mx-auto flex min-h-dvh max-w-6xl items-center justify-center px-4">
+            <p className="text-muted">Cargando panel…</p>
+          </main>
+        }
+      >
+        <PanelContent />
+      </Suspense>
     </RequireAuth>
   );
 }
