@@ -3,6 +3,10 @@ import { getSupabaseEnv } from "@/lib/supabase/env";
 
 let supabaseClient: SupabaseClient | null = null;
 
+export function resetSupabaseClient(): void {
+  supabaseClient = null;
+}
+
 export function getSupabaseClient(): SupabaseClient | null {
   const env = getSupabaseEnv();
   if (!env) return null;

@@ -47,15 +47,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <DataLayerProvider>
-          <SyncWorkerProvider>
-            <SupabaseConfigGuard>
+        <SupabaseConfigGuard>
+          <DataLayerProvider>
+            <SyncWorkerProvider>
               <AuthProvider>
                 <AuthShell>{children}</AuthShell>
               </AuthProvider>
-            </SupabaseConfigGuard>
-          </SyncWorkerProvider>
-        </DataLayerProvider>
+            </SyncWorkerProvider>
+          </DataLayerProvider>
+        </SupabaseConfigGuard>
       </body>
     </html>
   );
