@@ -11,9 +11,12 @@
  *   node scripts/setup-vercel-cloud-print.mjs
  */
 const TOKEN = process.env.VERCEL_TOKEN?.trim();
-const PROJECT_ID =
-  process.env.VERCEL_PROJECT_ID?.trim() ?? "prj_ei4K1jhbYegz3SKHmBrcdl3XHNZI";
-const TEAM_SLUG = process.env.VERCEL_TEAM_SLUG?.trim() ?? "divarro";
+function readEnv(name, fallback = "") {
+  const value = process.env[name]?.trim();
+  return value && value.length > 0 ? value : fallback;
+}
+const PROJECT_ID = readEnv("VERCEL_PROJECT_ID", "prj_ei4K1jhbYegz3SKHmBrcdl3XHNZI");
+const TEAM_SLUG = readEnv("VERCEL_TEAM_SLUG", "divarro");
 
 const REQUIRED = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL?.trim(),

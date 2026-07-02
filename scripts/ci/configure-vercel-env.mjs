@@ -16,6 +16,14 @@ async function main() {
     console.error("Falta VERCEL_TOKEN");
     process.exit(1);
   }
+  if (!projectId) {
+    console.error(
+      "Falta VERCEL_PROJECT_ID — añade el secreto en GitHub o usa el proyecto por defecto.",
+    );
+    process.exit(1);
+  }
+
+  console.log(`→ Proyecto Vercel: ${projectId} (team: ${teamSlug})`);
 
   const vars = getVercelEnvVars();
   for (const [key, value] of Object.entries(vars)) {

@@ -25,11 +25,11 @@ Guía para configurar **secretos en GitHub Actions** sin guardarlos en el reposi
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → **API** → **anon** *o* **publishable key** del wizard nuevo | En Vercel va como variable pública; en GitHub va como **Secret** para no filtrarla en forks/logs |
 | `NEXT_PUBLIC_RESTAURANTE_ID` | UUID del restaurante en `schema.sql` | `b1c2d3e4-f5a6-4789-a012-3456789abcde` |
 
-### Opcionales (solo si tu proyecto Vercel no es el por defecto)
+### Opcionales (no hace falta crearlos si usas el proyecto por defecto)
 
 | Nombre | Valor por defecto en scripts |
 |--------|------------------------------|
-| `VERCEL_PROJECT_ID` | `prj_ei4K1jhbYegz3SKHmBrcdl3XHNZI` |
+| `VERCEL_PROJECT_ID` | `prj_ei4K1jhbYegz3SKHmBrcdl3XHNZI` — **no crees el secreto vacío**; si no lo tienes, omítelo |
 | `VERCEL_TEAM_SLUG` | `divarro` |
 | `VERCEL_PRODUCTION_URL` | `https://comandero-taberneta.vercel.app` |
 
