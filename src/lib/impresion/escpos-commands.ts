@@ -15,6 +15,18 @@ export const CMD_ALIGN_LEFT = Buffer.from([ESC, 0x61, 0x00]);
 /** ESC a 1 — alineación centro */
 export const CMD_ALIGN_CENTER = Buffer.from([ESC, 0x61, 0x01]);
 
+/** ESC E 1 — negrita on */
+export const CMD_BOLD_ON = Buffer.from([ESC, 0x45, 0x01]);
+
+/** ESC E 0 — negrita off */
+export const CMD_BOLD_OFF = Buffer.from([ESC, 0x45, 0x00]);
+
+/** GS ! 0x11 — doble alto y ancho */
+export const CMD_DOUBLE_ON = Buffer.from([GS, 0x21, 0x11]);
+
+/** GS ! 0x00 — tamaño normal */
+export const CMD_DOUBLE_OFF = Buffer.from([GS, 0x21, 0x00]);
+
 export const CMD_LF = Buffer.from([0x0a]);
 
 /** GS V 1 — corte parcial */

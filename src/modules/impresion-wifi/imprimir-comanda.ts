@@ -1,4 +1,5 @@
 import { comandaPostresToTexto } from "@/lib/postres/format-ticket";
+import { getNombreMesa } from "@/lib/storage/mesas";
 import {
   comandaToTicketBarra,
   comandaToTicketCocina,
@@ -27,8 +28,10 @@ function buildSummary(results: Awaited<ReturnType<typeof printTicket>>[]): strin
 export async function imprimirComandaCocina(
   comanda: ComandaCocina,
 ): Promise<PrintBatchResult> {
+  const ticketOptions = { nombreMesa: getNombreMesa(comanda.mesa) };
+
   const jobs = [
-    printTicket(comandaToTicketCocina(comanda), "cocina", {
+    printTicket(comandaToTicketCocina(comanda, ticketOptions), "cocina", {
       tipo: "cocina",
       comandaId: comanda.id,
       mesa: comanda.mesa,
@@ -36,7 +39,7 @@ export async function imprimirComandaCocina(
     }),
   ];
 
-  const ticketBarra = comandaToTicketBarra(comanda);
+  const ticketBarra = comandaToTicketBarra(comanda, ticketOptions);
   if (ticketBarra) {
     jobs.push(
       printTicket(ticketBarra, "barra", {

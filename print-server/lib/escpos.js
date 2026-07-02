@@ -17,7 +17,19 @@ const TCP_PRINT_TIMEOUT_MS = 20_000;
 const CMD_INIT = Buffer.from([ESC, 0x40]);
 const CMD_CP858 = Buffer.from([ESC, 0x74, 19]);
 const CMD_ALIGN_LEFT = Buffer.from([ESC, 0x61, 0x00]);
+const CMD_ALIGN_CENTER = Buffer.from([ESC, 0x61, 0x01]);
+const CMD_BOLD_ON = Buffer.from([ESC, 0x45, 0x01]);
+const CMD_BOLD_OFF = Buffer.from([ESC, 0x45, 0x00]);
+const CMD_DOUBLE_ON = Buffer.from([GS, 0x21, 0x11]);
+const CMD_DOUBLE_OFF = Buffer.from([GS, 0x21, 0x00]);
 const CMD_LF = Buffer.from([0x0a]);
+
+const MARK_CENTER = "@C@";
+const MARK_SEP = "@S@";
+const MARK_SECTION = "@T@";
+const MARK_URGENT = "@U@";
+const MARK_DISH = "@D@";
+const MARK_INDENT = "@I@";
 
 const UNICODE_TO_CP858 = { 0x20ac: 0xd5 };
 
@@ -83,11 +95,11 @@ function centerLine(line, width) {
 
 function normalizeSeparator(line, width) {
   const t = line.trim();
-  if (/^[-=]+$/.test(t)) return "-".repeat(width);
+  if (/^[-=]+$/.test(t)) return "=".repeat(width);
   return line;
 }
 
-function isCenteredLine(line, index) {
+function isLegacyCenteredLine(line, index) {
   const t = line.trim();
   if (!t) return false;
   if (index === 0) return true;
@@ -96,6 +108,73 @@ function isCenteredLine(line, index) {
   if (/^TEST ESC\/POS$/i.test(t)) return true;
   if (/^Gracias$/i.test(t)) return true;
   return false;
+}
+
+function hasTicketMarkers(text) {
+  return text.includes("@C@") || text.includes("@D@") || text.includes("@S@");
+}
+
+function parseTicketLine(raw, paperWidth) {
+  if (raw === MARK_SEP) {
+    return {
+      text: "=".repeat(paperWidth),
+      style: { center: false, bold: false, double: false, width: paperWidth },
+    };
+  }
+  if (raw.startsWith(MARK_CENTER)) {
+    return {
+      text: raw.slice(MARK_CENTER.length),
+      style: { center: true, bold: true, double: false, width: paperWidth },
+    };
+  }
+  if (raw.startsWith(MARK_SECTION)) {
+    return {
+      text: raw.slice(MARK_SECTION.length),
+      style: { center: true, bold: true, double: false, width: paperWidth },
+    };
+  }
+  if (raw.startsWith(MARK_URGENT)) {
+    const text = raw.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
+    return {
+      text,
+      style: { center: true, bold: true, double: true, width: Math.floor(paperWidth / 2) },
+    };
+  }
+  if (raw.startsWith(MARK_DISH)) {
+    return {
+      text: raw.slice(MARK_DISH.length),
+      style: { center: false, bold: true, double: true, width: Math.floor(paperWidth / 2) },
+    };
+  }
+  if (raw.startsWith(MARK_INDENT)) {
+    return {
+      text: raw.slice(MARK_INDENT.length),
+      style: { center: false, bold: false, double: false, width: paperWidth },
+    };
+  }
+  return {
+    text: raw,
+    style: { center: false, bold: false, double: false, width: paperWidth },
+  };
+}
+
+function appendStyledLine(chunks, text, style) {
+  const effectiveWidth = style.width;
+  const lines = style.center
+    ? wrapLine(text, effectiveWidth).map((l) => centerLine(l, effectiveWidth))
+    : wrapLine(text, effectiveWidth);
+
+  for (const line of lines) {
+    if (style.center) chunks.push(CMD_ALIGN_CENTER);
+    else chunks.push(CMD_ALIGN_LEFT);
+    if (style.bold) chunks.push(CMD_BOLD_ON);
+    if (style.double) chunks.push(CMD_DOUBLE_ON);
+    chunks.push(encodeToCp858(line));
+    chunks.push(CMD_LF);
+    if (style.double) chunks.push(CMD_DOUBLE_OFF);
+    if (style.bold) chunks.push(CMD_BOLD_OFF);
+    chunks.push(CMD_ALIGN_LEFT);
+  }
 }
 
 function appendLine(chunks, line, width) {
@@ -136,6 +215,7 @@ export function buildEscPosBuffer(ticketText, anchoPapel = "80mm") {
   const width = charsPerLine(anchoPapel);
   const chunks = [CMD_INIT, CMD_CP858, CMD_ALIGN_LEFT];
   const lines = ticketText.split(/\r?\n/);
+  const marked = hasTicketMarkers(ticketText);
 
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
@@ -143,8 +223,19 @@ export function buildEscPosBuffer(ticketText, anchoPapel = "80mm") {
       chunks.push(CMD_LF);
       continue;
     }
+
+    if (marked) {
+      const { text, style } = parseTicketLine(raw, width);
+      if (text.trim()) {
+        appendStyledLine(chunks, text, style);
+      } else {
+        chunks.push(CMD_LF);
+      }
+      continue;
+    }
+
     const line = normalizeSeparator(raw, width);
-    const output = isCenteredLine(line, i) ? centerLine(line, width) : line;
+    const output = isLegacyCenteredLine(line, i) ? centerLine(line, width) : line;
     appendLine(chunks, output, width);
   }
 

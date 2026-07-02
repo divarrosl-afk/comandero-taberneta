@@ -1,14 +1,17 @@
 "use client";
 
-import type { ComandaCocina } from "@/types/comanda";
 import { comandaToTexto } from "@/lib/comanda/format-ticket";
+import { getNombreMesa } from "@/lib/storage/mesas";
+import type { ComandaCocina } from "@/types/comanda";
 
 interface ComandaTicketPreviewProps {
   comanda: ComandaCocina;
 }
 
 export function ComandaTicketPreview({ comanda }: ComandaTicketPreviewProps) {
-  const texto = comandaToTexto(comanda);
+  const texto = comandaToTexto(comanda, {
+    nombreMesa: getNombreMesa(comanda.mesa),
+  });
 
   return (
     <div className="overflow-hidden rounded-2xl border-2 border-stone-700 shadow-lg">
