@@ -99,8 +99,15 @@ Tras crear los secretos, en **Actions** del repo:
 | **Vercel configure** | Sincroniza env en Vercel | Los 6 de la tabla |
 | **Vercel redeploy** | Redeploy producción `main` | `VERCEL_TOKEN` |
 | **Verify print health** | Comprueba `/api/print-jobs/health` | ninguno (endpoint público) |
-| **Supabase seed** | Crea usuarios Auth + perfiles (directo a Supabase) | + `SEED_*` |
+| **Supabase seed** | Crea usuarios Auth + perfiles | `NEXT_PUBLIC_*`, `SUPABASE_SERVICE_ROLE_KEY` + contraseñas (secretos **o** inputs al ejecutar) |
 | **Production setup** | Migrate → Vercel env → redeploy → seed API → health + auth | Los 9 de la tabla |
+
+### Ejecutar Supabase seed (sin secretos SEED_*)
+
+1. **Actions** → **Supabase seed** → **Run workflow**
+2. Rellena **admin_password** (p. ej. la misma que usabas en local)
+3. Rellena **camarero_password** (puede ser la misma para david/ingrid/cocina)
+4. Tras éxito: login con `divarro` + la contraseña que pusiste en **admin_password**
 
 ### Ejecución recomendada (primera vez)
 

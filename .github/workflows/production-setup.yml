@@ -35,6 +35,32 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: node scripts/bootstrap-supabase-db.mjs
 
+  supabase-seed:
+    name: "1b · Seed usuarios Supabase"
+    needs: supabase-migrate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Seed usuarios (directo a Supabase)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_RESTAURANTE_ID: ${{ secrets.NEXT_PUBLIC_RESTAURANTE_ID }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          SEED_CAMARERO_PASSWORD: ${{ secrets.SEED_CAMARERO_PASSWORD }}
+        run: |
+          if [ -z "$SEED_ADMIN_PASSWORD" ] || [ -z "$SEED_CAMARERO_PASSWORD" ]; then
+            echo "⏭ Sin secretos SEED_* — ejecuta workflow «Supabase seed» con contraseñas"
+            exit 0
+          fi
+          node scripts/ci/validate-secrets.mjs seed
+          node scripts/seed-supabase.mjs
+
   vercel-configure:
     name: "2 · Vercel configure"
     needs: supabase-migrate
@@ -53,8 +79,6 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_RESTAURANTE_ID: ${{ secrets.NEXT_PUBLIC_RESTAURANTE_ID }}
-          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
-          SEED_CAMARERO_PASSWORD: ${{ secrets.SEED_CAMARERO_PASSWORD }}
         run: node scripts/ci/validate-secrets.mjs vercel-env
       - name: Configure Vercel env
         env:
@@ -134,7 +158,7 @@ jobs:
 
   verify-auth:
     name: "6 · Verify login ready"
-    needs: seed-via-vercel
+    needs: [seed-via-vercel, supabase-seed]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

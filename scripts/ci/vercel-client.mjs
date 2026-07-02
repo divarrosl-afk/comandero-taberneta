@@ -34,12 +34,16 @@ export function getVercelEnvVars() {
     SUPABASE_SERVICE_ROLE_KEY: readEnv("SUPABASE_SERVICE_ROLE_KEY"),
     NEXT_PUBLIC_RESTAURANTE_ID: readEnv("NEXT_PUBLIC_RESTAURANTE_ID"),
     NEXT_PUBLIC_DATA_BACKEND: "supabase",
-    SEED_ADMIN_PASSWORD: readEnv("SEED_ADMIN_PASSWORD"),
-    SEED_CAMARERO_PASSWORD: readEnv("SEED_CAMARERO_PASSWORD"),
   };
 
   const bootstrap = readEnv("SETUP_BOOTSTRAP_TOKEN");
   if (bootstrap) vars.SETUP_BOOTSTRAP_TOKEN = bootstrap;
+
+  const adminPassword = readEnv("SEED_ADMIN_PASSWORD");
+  if (adminPassword) vars.SEED_ADMIN_PASSWORD = adminPassword;
+
+  const camareroPassword = readEnv("SEED_CAMARERO_PASSWORD");
+  if (camareroPassword) vars.SEED_CAMARERO_PASSWORD = camareroPassword;
 
   return vars;
 }
