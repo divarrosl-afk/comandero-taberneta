@@ -33,8 +33,13 @@ export interface MesaEstadoPersistido {
   actualizadaEn: string;
 }
 
+import type { EstadoPanel } from "@/types/panel";
+import { getEstadoPanelLabel, getEstadoPanelStyle } from "@/types/panel";
+
 export interface MesaOperativa extends MesaConfig {
   estado: EstadoMesaOperativo;
+  /** Semáforo de marcha del panel cocina (si hay comanda activa) */
+  estadoPanel: EstadoPanel | null;
 }
 
 export const ZONAS_MESA: { id: ZonaMesa; label: string }[] = [
@@ -70,6 +75,20 @@ export function estiloEstadoMesa(estado: EstadoMesaOperativo): string {
     ESTADOS_MESA.find((e) => e.id === estado)?.color ??
     "bg-stone-100 text-stone-700 border-stone-300"
   );
+}
+
+/** Etiqueta visible: semáforo cocina si existe; si no, estado operativo. */
+export function labelMesaOperativa(mesa: MesaOperativa): string {
+  if (mesa.estado === "cobrando") return labelEstadoMesa("cobrando");
+  if (mesa.estadoPanel) return getEstadoPanelLabel(mesa.estadoPanel);
+  return labelEstadoMesa(mesa.estado);
+}
+
+/** Color de tarjeta: semáforo cocina si existe; si no, estado operativo. */
+export function estiloMesaOperativa(mesa: MesaOperativa): string {
+  if (mesa.estado === "cobrando") return estiloEstadoMesa("cobrando");
+  if (mesa.estadoPanel) return getEstadoPanelStyle(mesa.estadoPanel);
+  return estiloEstadoMesa(mesa.estado);
 }
 
 export function codigoVarianteB(codigoPrincipal: string): string {

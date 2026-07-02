@@ -4,9 +4,11 @@ import { getPostresSync } from "@/lib/postres/postres-service";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { usesRemoteData } from "@/lib/data/backend";
 import {
+  indiceEstadoPanel,
   isEstadoPanelActivo,
   isEstadoPanelTerminal,
   normalizeEstadoPanel,
+  type EstadoPanel,
 } from "@/types/panel";
 import type {
   EstadoMesaOperativo,
@@ -68,6 +70,52 @@ function calcularEstadoDesdeComandas(mesaId: string): EstadoMesaOperativo {
   if (todas.some((c) => isEstadoPanelActivo(c.estadoPanel))) return "pendiente";
 
   return "ocupada";
+}
+
+function elegirEstadoPanelMasAvanzado(estados: EstadoPanel[]): EstadoPanel {
+  return estados.reduce((mejor, actual) =>
+    indiceEstadoPanel(actual) > indiceEstadoPanel(mejor) ? actual : mejor,
+  );
+}
+
+/** Estado de marcha del panel cocina para mostrar en la vista mesas. */
+export function getEstadoPanelMesa(mesaId: string): EstadoPanel | null {
+  const persistido = getEstadoPersistido(mesaId);
+  if (persistido?.manual) {
+    if (persistido.estado === "libre") return "mesa_libre";
+    if (persistido.estado === "cobrando") return null;
+  }
+
+  const { cocina, postres } = getComandasDeMesa(mesaId);
+  const cocinaEstados = cocina.map((c) =>
+    normalizeEstadoPanel(c.estadoPanel),
+  );
+  const postresEstados = postres.map((c) =>
+    normalizeEstadoPanel(c.estadoPanel),
+  );
+  const todas = [...cocinaEstados, ...postresEstados];
+
+  if (todas.length === 0) {
+    return getEstadoMesa(mesaId) === "ocupada" ? null : "mesa_libre";
+  }
+
+  if (todas.every((e) => e === "mesa_libre")) return "mesa_libre";
+
+  const activasCocina = cocinaEstados.filter(isEstadoPanelActivo);
+  if (activasCocina.length > 0) {
+    return elegirEstadoPanelMasAvanzado(activasCocina);
+  }
+
+  const activasPostres = postresEstados.filter(isEstadoPanelActivo);
+  if (activasPostres.length > 0) {
+    return elegirEstadoPanelMasAvanzado(activasPostres);
+  }
+
+  if (todas.every(isEstadoPanelTerminal)) {
+    return elegirEstadoPanelMasAvanzado(todas);
+  }
+
+  return null;
 }
 
 export function getEstadoMesa(mesaId: string): EstadoMesaOperativo {

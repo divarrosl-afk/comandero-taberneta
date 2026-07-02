@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getMesasRepository } from "@/lib/mesas/mesas-service";
 import { guardarMesasConfig } from "@/lib/storage/mesas";
-import { getEstadoMesa } from "@/lib/mesas/estado-mesa";
+import { getEstadoMesa, getEstadoPanelMesa } from "@/lib/mesas/estado-mesa";
 import { OPERATIVA_POLL_MS } from "@/lib/sync/constants";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { usesRemoteData } from "@/lib/data/backend";
@@ -119,6 +119,7 @@ export function useMesasOperativas() {
     return activas.map((m) => ({
       ...m,
       estado: getEstadoMesa(m.id),
+      estadoPanel: getEstadoPanelMesa(m.id),
     }));
   }, [activas, revision]);
 

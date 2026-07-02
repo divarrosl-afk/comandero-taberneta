@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import {
-  estiloEstadoMesa,
-  labelEstadoMesa,
+  estiloMesaOperativa,
+  labelMesaOperativa,
   type MesaOperativa,
 } from "@/types/mesas";
 import { getComandasDeMesa } from "@/lib/mesas/estado-mesa";
@@ -24,7 +24,7 @@ export function MesaCard({ mesa, onCobrando, onLiberar }: MesaCardProps) {
     <article
       className={[
         "rounded-xl border-2 bg-card p-3 transition",
-        estiloEstadoMesa(mesa.estado),
+        estiloMesaOperativa(mesa),
       ].join(" ")}
     >
       <button
@@ -34,7 +34,9 @@ export function MesaCard({ mesa, onCobrando, onLiberar }: MesaCardProps) {
       >
         <div>
           <p className="text-lg font-bold">{mesa.nombreVisible}</p>
-          <p className="text-xs opacity-80">{labelEstadoMesa(mesa.estado)}</p>
+          <p className="text-xs font-semibold opacity-90">
+            {labelMesaOperativa(mesa)}
+          </p>
         </div>
         {total > 0 && (
           <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs font-bold">
