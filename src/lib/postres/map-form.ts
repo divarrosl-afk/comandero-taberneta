@@ -1,4 +1,4 @@
-import { getCamareroNombre } from "@/data/camareros";
+import { CAMARERO_EQUIPO } from "@/lib/comanda/camarero-equipo";
 import { postreTieneContenido } from "@/lib/postres/postre-factory";
 import { generarIdPostres } from "@/lib/postres/postres-service";
 import type { ComandaPostres, PostresFormState } from "@/types/postres";
@@ -6,13 +6,12 @@ import type { ComandaPostres, PostresFormState } from "@/types/postres";
 export function formToComandaPostres(
   form: PostresFormState,
 ): ComandaPostres | null {
-  const camarero = getCamareroNombre(form.camareroId);
-  if (!form.mesa || !camarero) return null;
+  if (!form.mesa) return null;
 
   return {
     id: generarIdPostres(),
     mesa: form.mesa,
-    camarero,
+    camarero: CAMARERO_EQUIPO,
     postres: form.postres
       .filter(postreTieneContenido)
       .map((p) => ({
@@ -37,7 +36,6 @@ export function formTienePostres(form: PostresFormState): boolean {
 export function formPostresEsValido(form: PostresFormState): boolean {
   return (
     form.mesa !== null &&
-    form.camareroId !== null &&
     (formTienePostres(form) || form.estadoX !== null || form.clH)
   );
 }

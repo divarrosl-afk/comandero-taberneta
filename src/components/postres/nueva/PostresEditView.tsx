@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { BottomBar } from "@/components/ui/BottomBar";
-import { CamareroSelector } from "@/components/comanda/CamareroSelector";
 import { MesaSelector } from "@/components/comanda/MesaSelector";
 import { CabeceraComanda } from "@/components/comanda/nueva/CabeceraComanda";
 import { ClHButton } from "@/components/postres/nueva/ClHButton";
@@ -28,9 +27,7 @@ interface PostresEditViewProps {
   form: PostresFormActions["form"];
   borradorRecuperado: boolean;
   esValido: boolean;
-  puedeCambiarCamarero: boolean;
   onSetMesa: PostresFormActions["setMesa"];
-  onSetCamarero: PostresFormActions["setCamarero"];
   onUpdatePostre: PostresFormActions["updatePostre"];
   onAddPostre: PostresFormActions["addPostre"];
   onAddPostreFrecuente: PostresFormActions["addPostreFrecuente"];
@@ -49,7 +46,6 @@ interface PostresEditViewProps {
 
 function getValidationHint(form: PostresFormActions["form"]): string | undefined {
   if (!form.mesa) return "Selecciona una mesa";
-  if (!form.camareroId) return "Selecciona un camarero";
   return "Añade al menos un postre, X o C/L + H";
 }
 
@@ -57,9 +53,7 @@ export function PostresEditView({
   form,
   borradorRecuperado,
   esValido,
-  puedeCambiarCamarero,
   onSetMesa,
-  onSetCamarero,
   onUpdatePostre,
   onAddPostre,
   onAddPostreFrecuente,
@@ -106,7 +100,7 @@ export function PostresEditView({
         </div>
       )}
 
-      <CabeceraComanda mesa={form.mesa} camareroId={form.camareroId} />
+      <CabeceraComanda mesa={form.mesa} />
 
       <nav className="sticky top-[4.5rem] z-10 -mx-4 border-b border-border bg-background/95 px-2 py-2 backdrop-blur">
         <div className="mx-auto flex max-w-lg gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -135,11 +129,6 @@ export function PostresEditView({
         {tab === "mesa" && (
           <div className="space-y-6">
             <MesaSelector mesaSeleccionada={form.mesa} onSelect={onSetMesa} />
-            <CamareroSelector
-              camareroSeleccionado={form.camareroId}
-              onSelect={onSetCamarero}
-              soloLectura={!puedeCambiarCamarero}
-            />
           </div>
         )}
 

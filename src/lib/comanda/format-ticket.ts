@@ -26,10 +26,7 @@ function lineaExtra(nombre: string, cantidad: number): string {
 }
 
 export function comandaToTexto(comanda: ComandaCocina): string {
-  const lineas: string[] = [
-    `MESA ${comanda.mesa} · CAMARERO ${comanda.camarero.toUpperCase()}`,
-    "",
-  ];
+  const lineas: string[] = [`MESA ${comanda.mesa}`, ""];
 
   const secciones: [string, PlatoComanda[]][] = [
     ["ENTRANTES", comanda.entrantes],

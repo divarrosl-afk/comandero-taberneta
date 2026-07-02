@@ -2,10 +2,7 @@ import { comandaToTexto } from "@/lib/comanda/format-ticket";
 import type { ComandaCocina } from "@/types/comanda";
 
 function cabecera(comanda: ComandaCocina): string[] {
-  return [
-    `MESA ${comanda.mesa} · CAMARERO ${comanda.camarero.toUpperCase()}`,
-    "",
-  ];
+  return [`MESA ${comanda.mesa}`, ""];
 }
 
 export function comandaToTicketCocina(comanda: ComandaCocina): string {

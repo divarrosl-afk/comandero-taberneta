@@ -8,10 +8,7 @@ function lineaPostre(postre: PostreItem): string {
 }
 
 export function comandaPostresToTexto(comanda: ComandaPostres): string {
-  const lineas: string[] = [
-    `MESA ${comanda.mesa} · CAMARERO ${comanda.camarero.toUpperCase()}`,
-    "",
-  ];
+  const lineas: string[] = [`MESA ${comanda.mesa}`, ""];
 
   if (comanda.postres.length) {
     lineas.push("POSTRES");

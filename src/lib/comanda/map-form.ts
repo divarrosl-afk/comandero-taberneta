@@ -1,5 +1,5 @@
-import { getCamareroNombre } from "@/data/camareros";
 import { getExtraLabel, getModificacionLabel, getSalsaLabel } from "@/data/comanda-catalogo";
+import { CAMARERO_EQUIPO } from "@/lib/comanda/camarero-equipo";
 import { generarIdComanda } from "@/lib/comandas/comandas-service";
 import { tipoSeleccionToPlatoFields } from "@/lib/comanda/tipo-plato";
 import { platoTieneContenido } from "@/lib/comanda/plato-factory";
@@ -63,13 +63,12 @@ function inferirTipoServicio(form: ComandaFormState): TipoServicio {
 }
 
 export function formToComanda(form: ComandaFormState): ComandaCocina | null {
-  const camarero = getCamareroNombre(form.camareroId);
-  if (!form.mesa || !camarero) return null;
+  if (!form.mesa) return null;
 
   return {
     id: generarIdComanda(),
     mesa: form.mesa,
-    camarero,
+    camarero: CAMARERO_EQUIPO,
     tipoServicio: inferirTipoServicio(form),
     entrantes: form.entrantes.filter(platoTieneContenido).map(mapPlatoBase),
     primeros: form.primeros.filter(platoTieneContenido).map(mapPlatoConTipo),
@@ -95,5 +94,5 @@ export function formTienePlatos(form: ComandaFormState): boolean {
 }
 
 export function formEsValido(form: ComandaFormState): boolean {
-  return form.mesa !== null && form.camareroId !== null && formTienePlatos(form);
+  return form.mesa !== null && formTienePlatos(form);
 }
