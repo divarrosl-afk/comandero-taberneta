@@ -2,6 +2,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadLocalEnv } from "./lib/load-env.js";
 import { tcpConnectTest, printTestTicket } from "./lib/escpos.js";
 import { startCloudPoller, getCloudPollerStatus } from "./lib/cloud-poller.js";
 import {
@@ -14,6 +15,7 @@ import {
 } from "./lib/queue.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+loadLocalEnv(path.join(__dirname, ".env"));
 const LOG_DIR = path.join(__dirname, "logs");
 const LOG_FILE = path.join(LOG_DIR, "tickets.log");
 
@@ -110,6 +112,9 @@ const server = http.createServer(async (req, res) => {
       queuePending: pending.length,
       authRequired: Boolean(API_KEY),
       cloudPolling: cloud.cloudPolling,
+      cloudPollMs: cloud.cloudPollMs,
+      supabaseConfigured: cloud.supabaseConfigured,
+      missingCloudEnv: cloud.missingCloudEnv,
       cloud: {
         pollIntervalMs: cloud.pollIntervalMs,
         restauranteIdConfigured: cloud.restauranteIdConfigured,
@@ -254,7 +259,15 @@ const server = http.createServer(async (req, res) => {
 
 loadQueue();
 void processQueue();
-startCloudPoller();
+
+try {
+  startCloudPoller();
+} catch (err) {
+  console.error(
+    "[cloud-poller] No se pudo iniciar (el servidor local sigue activo):",
+    err instanceof Error ? err.message : err,
+  );
+}
 
 setInterval(() => {
   void processQueue();
@@ -272,4 +285,12 @@ server.listen(PORT, HOST, () => {
     console.info(`   Debug:   ${path.join(LOG_DIR, "last-ticket.bin")}`);
   }
   if (API_KEY) console.info("   Auth:    X-Print-Key requerido");
+  const cloud = getCloudPollerStatus();
+  if (cloud.cloudPolling) {
+    console.info(`   Cloud:   ACTIVO · poll ${cloud.cloudPollMs}ms`);
+  } else if (cloud.missingCloudEnv.length > 0) {
+    console.info(
+      `   Cloud:   INACTIVO · faltan ${cloud.missingCloudEnv.join(", ")}`,
+    );
+  }
 });

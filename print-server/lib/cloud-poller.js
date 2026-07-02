@@ -4,14 +4,16 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { buildEscPosBuffer, printTcp } from "./escpos.js";
-
-const POLL_MS = Number(process.env.CLOUD_POLL_MS ?? 3000);
-const RESTAURANTE_ID = process.env.SUPABASE_RESTAURANTE_ID?.trim();
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+import {
+  getMissingCloudEnv,
+  isSupabaseConfigured,
+  readCloudEnv,
+} from "./supabase-env.js";
 
 let supabase = null;
+let supabaseKey = "";
 let polling = false;
+let pollerStarted = false;
 
 const stats = {
   startedAt: null,
@@ -24,34 +26,36 @@ const stats = {
 };
 
 function getClient() {
-  if (!SUPABASE_URL || !SERVICE_KEY) return null;
-  if (!supabase) {
-    supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
+  const { supabaseUrl, serviceRoleKey } = readCloudEnv();
+  if (!supabaseUrl || !serviceRoleKey) return null;
+
+  if (!supabase || supabaseKey !== serviceRoleKey) {
+    supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    supabaseKey = serviceRoleKey;
   }
-  return supabase;
-}
 
-function missingConfigReason() {
-  const missing = [];
-  if (!SUPABASE_URL) missing.push("NEXT_PUBLIC_SUPABASE_URL");
-  if (!SERVICE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-  if (!RESTAURANTE_ID) missing.push("SUPABASE_RESTAURANTE_ID");
-  return missing;
+  return supabase;
 }
 
 /** Estado público para /health (sin secretos). */
 export function getCloudPollerStatus() {
-  const missing = missingConfigReason();
-  const active = missing.length === 0;
+  const { supabaseUrl, serviceRoleKey, restauranteId, pollMs } = readCloudEnv();
+  const missingEnv = getMissingCloudEnv();
+  const configured = isSupabaseConfigured();
+  const active = configured && pollerStarted;
+
   return {
     cloudPolling: active,
-    pollIntervalMs: POLL_MS,
-    restauranteIdConfigured: Boolean(RESTAURANTE_ID),
-    supabaseUrlConfigured: Boolean(SUPABASE_URL),
-    serviceRoleConfigured: Boolean(SERVICE_KEY),
-    missingEnv: missing,
+    cloudPollMs: pollMs,
+    supabaseConfigured: configured,
+    missingCloudEnv: missingEnv,
+    pollIntervalMs: pollMs,
+    restauranteIdConfigured: Boolean(restauranteId),
+    supabaseUrlConfigured: Boolean(supabaseUrl),
+    serviceRoleConfigured: Boolean(serviceRoleKey),
+    missingEnv,
     stats: {
       startedAt: stats.startedAt,
       lastPollAt: stats.lastPollAt,
@@ -76,8 +80,10 @@ async function processJob(job) {
 
 export async function pollCloudPrintJobs() {
   if (polling) return;
+
+  const { restauranteId } = readCloudEnv();
   const client = getClient();
-  if (!client || !RESTAURANTE_ID) return;
+  if (!client || !restauranteId) return;
 
   polling = true;
   stats.lastPollAt = new Date().toISOString();
@@ -86,7 +92,7 @@ export async function pollCloudPrintJobs() {
     const { data: jobs, error } = await client
       .from("print_jobs")
       .select("*")
-      .eq("restaurante_id", RESTAURANTE_ID)
+      .eq("restaurante_id", restauranteId)
       .in("status", ["queued", "error"])
       .lt("attempts", 8)
       .order("created_at", { ascending: true })
@@ -156,28 +162,52 @@ export async function pollCloudPrintJobs() {
         );
       }
     }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    stats.lastError = msg;
+    stats.totalErrors += 1;
+    console.error(`[cloud-poller] Error inesperado: ${msg}`);
   } finally {
     polling = false;
   }
 }
 
 export function startCloudPoller() {
-  const missing = missingConfigReason();
+  const missing = getMissingCloudEnv();
   if (missing.length > 0) {
+    pollerStarted = false;
     console.warn(
       `[cloud-poller] INACTIVO — faltan variables: ${missing.join(", ")}`,
     );
     console.warn(
       "[cloud-poller] Sin esto, Vercel encola en Supabase pero el Lenovo no imprime.",
     );
-    return;
+    return { started: false, missing };
   }
 
+  const { supabaseUrl, restauranteId, pollMs } = readCloudEnv();
+  pollerStarted = true;
   stats.startedAt = new Date().toISOString();
-  console.info(`[cloud-poller] ACTIVO · cada ${POLL_MS}ms`);
-  console.info(`[cloud-poller] Restaurante ${RESTAURANTE_ID}`);
-  console.info(`[cloud-poller] Supabase ${SUPABASE_URL}`);
 
-  void pollCloudPrintJobs();
-  setInterval(() => void pollCloudPrintJobs(), POLL_MS);
+  console.info(`[cloud-poller] ACTIVO · cada ${pollMs}ms`);
+  console.info(`[cloud-poller] Restaurante ${restauranteId}`);
+  console.info(`[cloud-poller] Supabase ${supabaseUrl}`);
+
+  void pollCloudPrintJobs().catch((err) => {
+    console.error(
+      "[cloud-poller] Error en primer poll:",
+      err instanceof Error ? err.message : err,
+    );
+  });
+
+  setInterval(() => {
+    void pollCloudPrintJobs().catch((err) => {
+      console.error(
+        "[cloud-poller] Error en poll:",
+        err instanceof Error ? err.message : err,
+      );
+    });
+  }, pollMs);
+
+  return { started: true, missing: [] };
 }
