@@ -96,6 +96,8 @@ npm run seed:supabase
 
 Documentación completa: [`docs/supabase/SEED.md`](docs/supabase/SEED.md).
 
+**Producción (Vercel + impresión cloud):** secretos en GitHub Actions — [`docs/GITHUB-SECRETS.md`](docs/GITHUB-SECRETS.md).
+
 ### Volver a modo local
 
 ```env

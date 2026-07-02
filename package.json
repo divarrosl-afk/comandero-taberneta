@@ -16,6 +16,10 @@
     "db:bootstrap": "node scripts/bootstrap-supabase-db.mjs",
     "db:migrate:print-jobs": "node scripts/apply-print-jobs-migration.mjs",
     "vercel:cloud-print": "node scripts/setup-vercel-cloud-print.mjs",
+    "ci:validate-secrets": "node scripts/ci/validate-secrets.mjs",
+    "ci:vercel-env": "node scripts/ci/configure-vercel-env.mjs",
+    "ci:vercel-redeploy": "node scripts/ci/redeploy-vercel.mjs",
+    "ci:health": "node scripts/ci/verify-print-health.mjs",
     "deploy:cloud-print": "node scripts/deploy-cloud-print-all.mjs",
     "setup:all": "node scripts/setup-all.mjs"
   },
