@@ -63,6 +63,40 @@ export function productoParaUsoComanda(
 
 export type OrigenPlatos = "menu" | "carta-almuerzo" | "carta-cenas";
 
+export function origenACartaServicio(
+  origen?: OrigenPlatos,
+): CartaServicio | null {
+  if (origen === "carta-almuerzo") return "almuerzo";
+  if (origen === "carta-cenas") return "cenas";
+  return null;
+}
+
+export function agruparProductosPorCategoria(
+  productos: ProductoCatalogo[],
+  carta: CartaServicio,
+): { id: CategoriaCarta; label: string; productos: ProductoCatalogo[] }[] {
+  const porCategoria = new Map<CategoriaCarta, ProductoCatalogo[]>();
+
+  for (const producto of productos) {
+    const cat = producto.categoriaCarta;
+    if (!cat) continue;
+    const lista = porCategoria.get(cat) ?? [];
+    lista.push(producto);
+    porCategoria.set(cat, lista);
+  }
+
+  return categoriasDeCarta(carta)
+    .filter((c) => porCategoria.has(c.id))
+    .map((c) => ({
+      id: c.id,
+      label: c.label,
+      productos: (porCategoria.get(c.id) ?? []).sort(
+        (a, b) =>
+          a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es"),
+      ),
+    }));
+}
+
 export function filtrarProductosComanda(
   productos: ProductoCatalogo[],
   opts: {

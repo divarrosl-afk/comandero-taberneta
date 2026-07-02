@@ -1,19 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { FichaPlatoRapida } from "@/components/carta/FichaPlatoRapida";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import { dividirDestacados } from "@/lib/catalogo/search";
 import { hayHistorialVentas } from "@/lib/catalogo/popularidad";
 import { productoEnMenuHoy } from "@/lib/carta/format-producto";
 import {
+  agruparProductosPorCategoria,
+  origenACartaServicio,
+  type OrigenPlatos,
+} from "@/lib/carta/carta-admin";
+import {
+  labelCategoriaCarta,
   labelSeccion,
   nombreBoton,
   precioCartaDe,
+  type CartaServicio,
   type ProductoCatalogo,
   type SeccionCatalogo,
 } from "@/types/catalogo";
-import type { OrigenPlatos } from "@/lib/carta/carta-admin";
 import type { SeccionPlatos } from "@/types/comanda";
 
 interface CartaMenuSelectorProps {
@@ -149,7 +155,12 @@ function GridProductos({
             producto={producto}
             badge={
               modoBusqueda
-                ? labelSeccion(producto.seccion)
+                ? producto.categoriaCarta
+                  ? labelCategoriaCarta(
+                      producto.cartaServicio ?? "almuerzo",
+                      producto.categoriaCarta,
+                    )
+                  : labelSeccion(producto.seccion)
                 : ventas > 0
                   ? `🔥 ${ventas}`
                   : undefined
@@ -208,6 +219,128 @@ function BloqueDestacados({
   );
 }
 
+function CategoriaAcordeon({
+  id,
+  label,
+  count,
+  abierta,
+  onToggle,
+  children,
+}: {
+  id: string;
+  label: string;
+  count: number;
+  abierta: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border-2 border-border bg-card">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={abierta}
+        aria-controls={`categoria-${id}`}
+        className="flex min-h-12 w-full items-center justify-between gap-2 px-3 py-2.5 text-left font-bold transition active:bg-border/30"
+      >
+        <span className="text-sm">
+          {label}
+          <span className="ml-1.5 text-xs font-medium text-muted">({count})</span>
+        </span>
+        <span
+          className={[
+            "text-xs text-muted transition-transform",
+            abierta ? "rotate-180" : "",
+          ].join(" ")}
+          aria-hidden="true"
+        >
+          ▼
+        </span>
+      </button>
+      {abierta && (
+        <div id={`categoria-${id}`} className="border-t border-border p-2">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SelectorPorCategorias({
+  productos,
+  carta,
+  menu,
+  seccionPlatos,
+  seccion,
+  ventasPorId,
+  onSelect,
+  onInfo,
+}: {
+  productos: ProductoCatalogo[];
+  carta: CartaServicio;
+  menu: ReturnType<typeof useMenuDia>["menu"];
+  seccionPlatos?: SeccionPlatos;
+  seccion: SeccionCatalogo;
+  ventasPorId: Map<string, number>;
+  onSelect: (producto: ProductoCatalogo) => void;
+  onInfo: (producto: ProductoCatalogo) => void;
+}) {
+  const grupos = useMemo(
+    () => agruparProductosPorCategoria(productos, carta),
+    [productos, carta],
+  );
+
+  const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (grupos.length === 0) return;
+    setAbiertas((prev) => {
+      if (prev.size > 0) {
+        const validas = new Set(grupos.map((g) => g.id));
+        const filtradas = new Set([...prev].filter((id) => validas.has(id as never)));
+        if (filtradas.size > 0) return filtradas;
+      }
+      return new Set([grupos[0].id]);
+    });
+  }, [grupos]);
+
+  const toggle = (id: string) => {
+    setAbiertas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  if (grupos.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      {grupos.map((grupo) => (
+        <CategoriaAcordeon
+          key={grupo.id}
+          id={grupo.id}
+          label={grupo.label}
+          count={grupo.productos.length}
+          abierta={abiertas.has(grupo.id)}
+          onToggle={() => toggle(grupo.id)}
+        >
+          <GridProductos
+            lista={grupo.productos}
+            menu={menu}
+            seccionPlatos={seccionPlatos}
+            seccion={seccion}
+            ventasPorId={ventasPorId}
+            onSelect={onSelect}
+            onInfo={onInfo}
+          />
+        </CategoriaAcordeon>
+      ))}
+    </div>
+  );
+}
+
 export function CartaMenuSelector({
   seccion,
   seccionPlatos,
@@ -230,6 +363,14 @@ export function CartaMenuSelector({
     menu?.activo && conMenu && !modoBusqueda && !origen,
   );
   const conHistorial = hayHistorialVentas();
+
+  const cartaServicio: CartaServicio | null =
+    origenACartaServicio(origen) ??
+    (seccion === "bebidas" ? "bebidas" : null);
+
+  const usarCategorias = Boolean(
+    !modoBusqueda && !menuActivo && cartaServicio && activos.length > 0,
+  );
 
   const { menuLista, cartaLista, restoLista } = useMemo(() => {
     if (!menuActivo || !menu) {
@@ -368,6 +509,17 @@ export function CartaMenuSelector({
             seccionPlatos={seccionPlatos}
             seccion={seccion}
             modoBusqueda
+            ventasPorId={ventasPorId}
+            onSelect={onSelect}
+            onInfo={setFicha}
+          />
+        ) : usarCategorias && cartaServicio ? (
+          <SelectorPorCategorias
+            productos={activos}
+            carta={cartaServicio}
+            menu={menu}
+            seccionPlatos={seccionPlatos}
+            seccion={seccion}
             ventasPorId={ventasPorId}
             onSelect={onSelect}
             onInfo={setFicha}
