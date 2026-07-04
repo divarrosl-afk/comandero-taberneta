@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { importadosDesdeParsed } from "@/lib/menu-dia/menu-platos-comanda";
@@ -8,6 +8,7 @@ import type { MenuDiaParseado } from "@/lib/menu-dia/parse-menu-texto";
 import type { MenuDiaConfig } from "@/types/menu-dia";
 
 interface MenuDiaImportPanelProps {
+  menuActual: MenuDiaConfig;
   onAplicar: (cambios: Partial<MenuDiaConfig>) => Promise<void>;
 }
 
@@ -36,12 +37,42 @@ function ListaPlatos({
   );
 }
 
-export function MenuDiaImportPanel({ onAplicar }: MenuDiaImportPanelProps) {
+function menuAParsed(menu: MenuDiaConfig): MenuDiaParseado | null {
+  const primeros = menu.primerosImportados ?? [];
+  const segundos = menu.segundosImportados ?? [];
+  if (primeros.length === 0 && segundos.length === 0) return null;
+
+  return {
+    fecha: menu.fecha,
+    precioMenu: menu.precioMenu,
+    observaciones: menu.observaciones,
+    primeros: primeros.map((p) => ({
+      nombre: p.nombre,
+      suplemento: p.suplemento,
+    })),
+    segundos: segundos.map((p) => ({
+      nombre: p.nombre,
+      suplemento: p.suplemento,
+    })),
+  };
+}
+
+export function MenuDiaImportPanel({
+  menuActual,
+  onAplicar,
+}: MenuDiaImportPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [texto, setTexto] = useState("");
-  const [parsed, setParsed] = useState<MenuDiaParseado | null>(null);
+  const [parsedSesion, setParsedSesion] = useState<MenuDiaParseado | null>(
+    null,
+  );
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const parsed = useMemo(
+    () => parsedSesion ?? menuAParsed(menuActual),
+    [parsedSesion, menuActual],
+  );
 
   const aplicarParsed = async (data: MenuDiaParseado) => {
     const { primerosImportados, segundosImportados } =
@@ -57,6 +88,7 @@ export function MenuDiaImportPanel({ onAplicar }: MenuDiaImportPanelProps) {
       observaciones: data.observaciones,
       activo: primerosImportados.length > 0 || segundosImportados.length > 0,
     });
+    setParsedSesion(data);
   };
 
   const analizarTexto = async (contenido: string) => {
@@ -68,7 +100,6 @@ export function MenuDiaImportPanel({ onAplicar }: MenuDiaImportPanelProps) {
     });
     if (!r.ok) throw new Error("Error al analizar");
     const data = (await r.json()) as { parsed: MenuDiaParseado };
-    setParsed(data.parsed);
     return data.parsed;
   };
 
@@ -101,7 +132,6 @@ export function MenuDiaImportPanel({ onAplicar }: MenuDiaImportPanelProps) {
         parsed: MenuDiaParseado;
       };
       setTexto(data.texto);
-      setParsed(data.parsed);
       await aplicarParsed(data.parsed);
     } catch {
       setError("No se pudo leer el PDF. Prueba a pegar el texto.");
@@ -113,8 +143,9 @@ export function MenuDiaImportPanel({ onAplicar }: MenuDiaImportPanelProps) {
   return (
     <SectionCard title="Menú del día — subir PDF">
       <p className="mb-3 text-sm text-muted">
-        Sube el PDF que generas en Taberneta cada mañana. Los platos aparecen
-        tal cual en <strong>nueva comanda → Menú</strong>, listos para pulsar.
+        Sube el PDF de Taberneta. El menú queda guardado en el servidor y sale
+        en <strong>nueva comanda → Menú</strong> en todos los dispositivos hasta
+        que subas el del día siguiente.
       </p>
 
       <input
@@ -136,7 +167,7 @@ export function MenuDiaImportPanel({ onAplicar }: MenuDiaImportPanelProps) {
           onClick={() => inputRef.current?.click()}
           disabled={cargando}
         >
-          {cargando ? "Cargando menú…" : "Subir PDF de hoy"}
+          {cargando ? "Guardando menú…" : "Subir PDF"}
         </Button>
         <Button
           size="sm"
@@ -150,7 +181,7 @@ export function MenuDiaImportPanel({ onAplicar }: MenuDiaImportPanelProps) {
       <textarea
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
-        rows={6}
+        rows={4}
         placeholder="Pega aquí el menú o sube un PDF…"
         className="mb-3 w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
       />
@@ -162,7 +193,7 @@ export function MenuDiaImportPanel({ onAplicar }: MenuDiaImportPanelProps) {
           <div className="grid grid-cols-2 gap-3 text-sm">
             {parsed.fecha && (
               <p>
-                <span className="font-semibold">Fecha:</span> {parsed.fecha}
+                <span className="font-semibold">Fecha menú:</span> {parsed.fecha}
               </p>
             )}
             {parsed.precioMenu !== undefined && (
@@ -180,8 +211,9 @@ export function MenuDiaImportPanel({ onAplicar }: MenuDiaImportPanelProps) {
           <ListaPlatos titulo="Segundos" platos={parsed.segundos} />
 
           <p className="rounded-xl bg-green-50 px-3 py-2 text-sm font-medium text-green-900">
-            Menú activo · {parsed.primeros.length} primeros,{" "}
-            {parsed.segundos.length} segundos en comandas
+            {menuActual.activo ? "Menú activo" : "Menú guardado"} ·{" "}
+            {parsed.primeros.length} primeros, {parsed.segundos.length} segundos
+            en comandas
           </p>
         </div>
       )}

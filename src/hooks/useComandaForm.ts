@@ -17,7 +17,7 @@ import type {
   SeccionPlatos,
 } from "@/types/comanda";
 import { platoFieldsFromProducto } from "@/lib/carta/plato-from-producto";
-import { getMenuDia } from "@/lib/storage/menu-dia";
+import { useMenuDia } from "@/hooks/useMenuDia";
 import type { ProductoCatalogo } from "@/types/catalogo";
 
 const estadoInicial: ComandaFormState = {
@@ -65,6 +65,7 @@ export function useComandaForm(
   const [step, setStep] = useState<ComandaFormStep>("editar");
   const [borradorRecuperado, setBorradorRecuperado] = useState(false);
   const inicializado = useRef(false);
+  const { menu } = useMenuDia();
 
   useEffect(() => {
     if (inicializado.current) return;
@@ -183,7 +184,7 @@ export function useComandaForm(
 
       const platoData = platoFieldsFromProducto(producto, {
         seccion,
-        menu: getMenuDia(),
+        menu,
       });
 
       setForm((prev) => {
@@ -202,7 +203,7 @@ export function useComandaForm(
         };
       });
     },
-    [],
+    [menu],
   );
 
   const cycleSalsa = useCallback(

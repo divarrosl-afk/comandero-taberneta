@@ -3,29 +3,17 @@ import {
   getMenuDia as getMenuDiaLocal,
   guardarMenuDia as guardarMenuDiaLocal,
 } from "@/lib/storage/menu-dia";
+import { menuTienePlatosImportados } from "@/lib/menu-dia/menu-platos-comanda";
 import type { MenuDiaConfig } from "@/types/menu-dia";
 
-function fusionarImportados(
-  remoto: MenuDiaConfig,
-  local: MenuDiaConfig,
-): MenuDiaConfig {
-  const primerosRemotos = remoto.primerosImportados?.length ?? 0;
-  const primerosLocales = local.primerosImportados?.length ?? 0;
-  const segundosRemotos = remoto.segundosImportados?.length ?? 0;
-  const segundosLocales = local.segundosImportados?.length ?? 0;
+function elegirMenu(local: MenuDiaConfig, remoto: MenuDiaConfig): MenuDiaConfig {
+  const remotoTiene = menuTienePlatosImportados(remoto);
+  const localTiene = menuTienePlatosImportados(local);
 
-  return {
-    ...remoto,
-    primerosImportados:
-      primerosRemotos >= primerosLocales
-        ? remoto.primerosImportados
-        : local.primerosImportados,
-    segundosImportados:
-      segundosRemotos >= segundosLocales
-        ? remoto.segundosImportados
-        : local.segundosImportados,
-    activo: remoto.activo || local.activo,
-  };
+  if (remotoTiene) return remoto;
+  if (localTiene) return local;
+  if (remoto.activo) return remoto;
+  return local;
 }
 
 async function mirrorLocal(config: MenuDiaConfig): Promise<MenuDiaConfig> {
@@ -35,25 +23,33 @@ async function mirrorLocal(config: MenuDiaConfig): Promise<MenuDiaConfig> {
 
 export async function getMenuDia(): Promise<MenuDiaConfig> {
   const local = getMenuDiaLocal();
-  const remoto = await getMenuDiaRepository().get();
-  return mirrorLocal(fusionarImportados(remoto, local));
+
+  try {
+    const remoto = await getMenuDiaRepository().get();
+    const elegido = elegirMenu(local, remoto);
+
+    if (!menuTienePlatosImportados(remoto) && menuTienePlatosImportados(local)) {
+      void getMenuDiaRepository()
+        .save(local)
+        .catch(() => undefined);
+    }
+
+    return mirrorLocal(elegido);
+  } catch {
+    return local;
+  }
 }
 
 export async function guardarMenuDia(config: MenuDiaConfig): Promise<void> {
   guardarMenuDiaLocal(config);
-  try {
-    await getMenuDiaRepository().save(config);
-  } catch {
-    const { primerosImportados, segundosImportados, ...resto } = config;
-    await getMenuDiaRepository().save({
-      ...resto,
-      primerosImportados: undefined,
-      segundosImportados: undefined,
-    });
-  }
+  await getMenuDiaRepository().save(config);
+}
+
+export async function quitarMenuDia(): Promise<MenuDiaConfig> {
+  const config = await getMenuDiaRepository().resetDefault();
+  return mirrorLocal(config);
 }
 
 export async function resetMenuDia(): Promise<MenuDiaConfig> {
-  const config = await getMenuDiaRepository().resetDefault();
-  return mirrorLocal(config);
+  return quitarMenuDia();
 }

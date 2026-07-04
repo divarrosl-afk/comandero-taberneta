@@ -14,7 +14,7 @@ import { catalogoRepositoryLocal } from "@/lib/catalogo/catalogo-repository-loca
 import { catalogoRepositorySupabase } from "@/lib/catalogo/catalogo-repository-supabase";
 import type { CatalogoRepository } from "@/lib/catalogo/catalogo-repository";
 import { menuDiaRepositoryLocal } from "@/lib/menu-dia/menu-dia-repository-local";
-import { menuDiaRepositorySupabase } from "@/lib/menu-dia/menu-dia-repository-supabase";
+import { menuDiaRepositoryApi } from "@/lib/menu-dia/menu-dia-repository-api";
 import type { MenuDiaRepository } from "@/lib/menu-dia/menu-dia-repository";
 import { mesasRepositoryLocal } from "@/lib/mesas/mesas-repository-local";
 import { mesasRepositorySupabase } from "@/lib/mesas/mesas-repository-supabase";
@@ -46,7 +46,7 @@ export function initializeDataLayer(): void {
   authRepo = authRepositorySupabase;
   usuariosRepo = usuariosRepositorySupabase;
   catalogoRepo = catalogoRepositorySupabase;
-  menuDiaRepo = menuDiaRepositorySupabase;
+  menuDiaRepo = menuDiaRepositoryApi;
   mesasRepo = mesasRepositorySupabase;
   impresoraRepo = impresoraConfigRepositorySupabase;
   comandasRepo = comandasRepositorySupabase;

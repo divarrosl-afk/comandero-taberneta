@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   getMenuDia,
   guardarMenuDia,
-  resetMenuDia,
+  quitarMenuDia,
 } from "@/lib/menu-dia/menu-dia-service";
 import type { MenuDiaConfig } from "@/types/menu-dia";
 
@@ -41,10 +41,14 @@ export function useMenuDia() {
     [guardar],
   );
 
-  const restaurarDefault = useCallback(async () => {
-    const config = await resetMenuDia();
+  const quitar = useCallback(async () => {
+    const config = await quitarMenuDia();
     setMenu(config);
   }, []);
+
+  const restaurarDefault = useCallback(async () => {
+    await quitar();
+  }, [quitar]);
 
   return {
     menu,
@@ -52,6 +56,7 @@ export function useMenuDia() {
     recargar,
     guardar,
     actualizar,
+    quitar,
     restaurarDefault,
   };
 }

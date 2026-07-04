@@ -209,6 +209,8 @@ CREATE TABLE IF NOT EXISTS menus_dia (
   suplemento_primeros     NUMERIC(10, 2),
   suplemento_segundos     NUMERIC(10, 2),
   observaciones           TEXT,
+  primeros_importados     JSONB,
+  segundos_importados     JSONB,
   activo                  BOOLEAN NOT NULL DEFAULT FALSE,
   created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),

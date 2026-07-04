@@ -18,30 +18,29 @@ export const menuDiaRepositorySupabase: MenuDiaRepository = {
     const env = getSupabaseEnv();
     if (!client || !env) return MENU_DIA_DEFAULT;
 
-    const fecha = hoyIso();
-    const { data, error } = await client
+    const { data: activo } = await client
       .from("menus_dia")
       .select("*")
       .eq("restaurante_id", env.restauranteId)
-      .eq("fecha", fecha)
+      .eq("activo", true)
       .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
-    if (error || !data) {
-      const { data: reciente } = await client
-        .from("menus_dia")
-        .select("*")
-        .eq("restaurante_id", env.restauranteId)
-        .is("deleted_at", null)
-        .order("fecha", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+    if (activo) return rowToMenuDia(activo as DbMenuDia);
 
-      if (reciente) return rowToMenuDia(reciente as DbMenuDia);
-      return { ...MENU_DIA_DEFAULT, fecha };
-    }
+    const { data: reciente } = await client
+      .from("menus_dia")
+      .select("*")
+      .eq("restaurante_id", env.restauranteId)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    return rowToMenuDia(data as DbMenuDia);
+    if (reciente) return rowToMenuDia(reciente as DbMenuDia);
+    return { ...MENU_DIA_DEFAULT, fecha: hoyIso() };
   },
 
   async save(config) {
