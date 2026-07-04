@@ -39,6 +39,26 @@ if (!step || !STEPS[step]) {
 
 const missing = STEPS[step].filter((name) => !process.env[name]?.trim());
 
+if (step === "seed" || step === "seed-via-vercel") {
+  const { isSeedPasswordTooShort, formatSeedPasswordError } = await import(
+    "./password-policy.mjs"
+  );
+  const admin = process.env.SEED_ADMIN_PASSWORD?.trim();
+  const camarero = process.env.SEED_CAMARERO_PASSWORD?.trim();
+  if (admin && isSeedPasswordTooShort(admin)) {
+    console.warn(`⚠ ${formatSeedPasswordError("SEED_ADMIN_PASSWORD")}`);
+    console.warn(
+      "  Si divarro ya existe en Supabase, el seed omitirá el cambio de contraseña.",
+    );
+  }
+  if (camarero && isSeedPasswordTooShort(camarero)) {
+    console.warn(`⚠ ${formatSeedPasswordError("SEED_CAMARERO_PASSWORD")}`);
+    console.warn(
+      "  Si los camareros ya existen, el seed omitirá el cambio de contraseña.",
+    );
+  }
+}
+
 if (step === "vercel-env") {
   const hasAnon =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||

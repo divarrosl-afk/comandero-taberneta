@@ -24,8 +24,8 @@ Guía para configurar **secretos en GitHub Actions** sin guardarlos en el reposi
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → **API** → **Project URL** | Ej. `https://vhlzbfrzmqljngwegbde.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → **API** → **anon** *o* **publishable key** del wizard nuevo | En Vercel va como variable pública; en GitHub va como **Secret** para no filtrarla en forks/logs |
 | `NEXT_PUBLIC_RESTAURANTE_ID` | UUID del restaurante en `schema.sql` | `b1c2d3e4-f5a6-4789-a012-3456789abcde` |
-| `SEED_ADMIN_PASSWORD` | Contraseña que elijas para `divarro` | Usuario admin en producción |
-| `SEED_CAMARERO_PASSWORD` | Contraseña para `david`, `ingrid`, `cocina` | Camareros en producción |
+| `SEED_ADMIN_PASSWORD` | Contraseña que elijas para `divarro` | **Mínimo 6 caracteres** (Supabase Auth). Usuario admin en producción |
+| `SEED_CAMARERO_PASSWORD` | Contraseña para `david`, `ingrid`, `cocina` | **Mínimo 6 caracteres**. Camareros en producción |
 | `SETUP_BOOTSTRAP_TOKEN` | Token aleatorio largo (p. ej. `openssl rand -hex 32`) | Protege `POST /api/setup/seed` — **mismo valor** en GitHub y Vercel |
 
 Sin `SEED_*` y `SETUP_BOOTSTRAP_TOKEN`, la migración crea tablas pero **no hay usuarios** para iniciar sesión.
@@ -72,6 +72,11 @@ https://vhlzbfrzmqljngwegbde.supabase.co
 
 - Clave **anon** (JWT `eyJ...`) del dashboard, **o**
 - Clave **publishable** (`sb_publishable_...`) del wizard nuevo de Supabase
+
+### `SEED_ADMIN_PASSWORD` y `SEED_CAMARERO_PASSWORD`
+
+- **Mínimo 6 caracteres** (requisito de Supabase Auth). Si el secreto es más corto (p. ej. `admin`), el seed **no rotará** contraseñas de usuarios que ya existen, pero el workflow no fallará.
+- Para **crear usuarios nuevos** o **cambiar contraseñas** en producción, usa secretos de al menos 6 caracteres.
 
 ### `NEXT_PUBLIC_RESTAURANTE_ID`
 
