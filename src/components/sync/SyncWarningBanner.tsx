@@ -37,8 +37,10 @@ export function SyncWarningBanner() {
 
     void refresh();
     const interval = setInterval(() => void refresh(), SYNC_PENDING_POLL_MS);
+    window.addEventListener(APP_SYNC_EVENT, refresh);
     return () => {
       clearInterval(interval);
+      window.removeEventListener(APP_SYNC_EVENT, refresh);
       window.removeEventListener("online", refreshOnline);
       window.removeEventListener("offline", refreshOnline);
     };
