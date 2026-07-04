@@ -20,6 +20,7 @@ const CMD_INIT = Buffer.from([ESC, 0x40]);
 const CMD_CP858 = Buffer.from([ESC, 0x74, 19]);
 const CMD_ALIGN_LEFT = Buffer.from([ESC, 0x61, 0x00]);
 const CMD_ALIGN_CENTER = Buffer.from([ESC, 0x61, 0x01]);
+const CMD_ALIGN_RIGHT = Buffer.from([ESC, 0x61, 0x02]);
 const CMD_BOLD_ON = Buffer.from([ESC, 0x45, 0x01]);
 const CMD_BOLD_OFF = Buffer.from([ESC, 0x45, 0x00]);
 const CMD_DOUBLE_ON = Buffer.from([GS, 0x21, 0x11]);
@@ -140,45 +141,45 @@ function hasTicketMarkers(text) {
 }
 
 function parseTicketLine(raw, paperWidth) {
-  const normal = { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth };
+  const normal = { align: "left", bold: false, double: false, doubleHeight: false, width: paperWidth };
   if (raw === MARK_SEP) {
     return { text: "=".repeat(paperWidth), style: { ...normal } };
   }
   if (raw.startsWith(MARK_MESA)) {
     return {
       text: raw.slice(MARK_MESA.length),
-      style: { center: true, bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
+      style: { align: "right", bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
     };
   }
   if (raw.startsWith(MARK_CENTER)) {
     return {
       text: raw.slice(MARK_CENTER.length),
-      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
+      style: { align: "center", bold: true, double: false, doubleHeight: false, width: paperWidth },
     };
   }
   if (raw.startsWith(MARK_SECTION)) {
     return {
       text: raw.slice(MARK_SECTION.length),
-      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
+      style: { align: "center", bold: true, double: false, doubleHeight: false, width: paperWidth },
     };
   }
   if (raw.startsWith(MARK_URGENT)) {
     const text = raw.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
     return {
       text,
-      style: { center: true, bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
+      style: { align: "center", bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
     };
   }
   if (raw.startsWith(MARK_DISH)) {
     return {
       text: raw.slice(MARK_DISH.length),
-      style: { center: false, bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
+      style: { align: "left", bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
     };
   }
   if (raw.startsWith(MARK_DETAIL)) {
     return {
       text: raw.slice(MARK_DETAIL.length),
-      style: { center: false, bold: true, double: false, doubleHeight: true, width: paperWidth },
+      style: { align: "left", bold: true, double: false, doubleHeight: true, width: paperWidth },
     };
   }
   if (raw.startsWith(MARK_INDENT)) {
@@ -187,15 +188,18 @@ function parseTicketLine(raw, paperWidth) {
   return { text: raw, style: { ...normal } };
 }
 
+function alignCommand(align) {
+  if (align === "center") return CMD_ALIGN_CENTER;
+  if (align === "right") return CMD_ALIGN_RIGHT;
+  return CMD_ALIGN_LEFT;
+}
+
 function appendStyledLine(chunks, text, style) {
   const effectiveWidth = style.width;
-  const lines = style.center
-    ? wrapLine(text, effectiveWidth)
-    : wrapLine(text, effectiveWidth);
+  const lines = wrapLine(text, effectiveWidth);
 
   for (const line of lines) {
-    if (style.center) chunks.push(CMD_ALIGN_CENTER);
-    else chunks.push(CMD_ALIGN_LEFT);
+    chunks.push(alignCommand(style.align));
     if (style.bold) chunks.push(CMD_BOLD_ON);
     if (style.double) chunks.push(CMD_DOUBLE_ON);
     else if (style.doubleHeight) chunks.push(CMD_DOUBLE_HEIGHT_ON);

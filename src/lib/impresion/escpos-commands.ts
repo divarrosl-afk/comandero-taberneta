@@ -15,6 +15,9 @@ export const CMD_ALIGN_LEFT = Buffer.from([ESC, 0x61, 0x00]);
 /** ESC a 1 — alineación centro */
 export const CMD_ALIGN_CENTER = Buffer.from([ESC, 0x61, 0x01]);
 
+/** ESC a 2 — alineación derecha */
+export const CMD_ALIGN_RIGHT = Buffer.from([ESC, 0x61, 0x02]);
+
 /** ESC E 1 — negrita on */
 export const CMD_BOLD_ON = Buffer.from([ESC, 0x45, 0x01]);
 

@@ -4,6 +4,7 @@ import {
   CHARS_PER_LINE_80MM,
   CMD_ALIGN_CENTER,
   CMD_ALIGN_LEFT,
+  CMD_ALIGN_RIGHT,
   CMD_BOLD_OFF,
   CMD_BOLD_ON,
   CMD_CODEPAGE_CP858,
@@ -97,19 +98,37 @@ function isLegacyCenteredLine(line: string, index: number): boolean {
   return false;
 }
 
+type TextAlign = "left" | "center" | "right";
+
 type LineStyle = {
-  center: boolean;
+  align: TextAlign;
   bold: boolean;
   double: boolean;
   doubleHeight: boolean;
   width: number;
 };
 
+function normalStyle(width: number): LineStyle {
+  return {
+    align: "left",
+    bold: false,
+    double: false,
+    doubleHeight: false,
+    width,
+  };
+}
+
+function alignCommand(align: TextAlign): Buffer {
+  if (align === "center") return CMD_ALIGN_CENTER;
+  if (align === "right") return CMD_ALIGN_RIGHT;
+  return CMD_ALIGN_LEFT;
+}
+
 function parseTicketLine(raw: string, paperWidth: number): { text: string; style: LineStyle } {
   if (raw === MARK_SEP) {
     return {
       text: "=".repeat(paperWidth),
-      style: { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth },
+      style: normalStyle(paperWidth),
     };
   }
 
@@ -117,7 +136,7 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     return {
       text: raw.slice(MARK_MESA.length),
       style: {
-        center: true,
+        align: "right",
         bold: true,
         double: true,
         doubleHeight: false,
@@ -129,14 +148,26 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
   if (raw.startsWith(MARK_CENTER)) {
     return {
       text: raw.slice(MARK_CENTER.length),
-      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
+      style: {
+        align: "center",
+        bold: true,
+        double: false,
+        doubleHeight: false,
+        width: paperWidth,
+      },
     };
   }
 
   if (raw.startsWith(MARK_SECTION)) {
     return {
       text: raw.slice(MARK_SECTION.length),
-      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
+      style: {
+        align: "center",
+        bold: true,
+        double: false,
+        doubleHeight: false,
+        width: paperWidth,
+      },
     };
   }
 
@@ -145,7 +176,7 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     return {
       text,
       style: {
-        center: true,
+        align: "center",
         bold: true,
         double: true,
         doubleHeight: false,
@@ -158,7 +189,7 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     return {
       text: raw.slice(MARK_DISH.length),
       style: {
-        center: false,
+        align: "left",
         bold: true,
         double: true,
         doubleHeight: false,
@@ -171,7 +202,7 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     return {
       text: raw.slice(MARK_DETAIL.length),
       style: {
-        center: false,
+        align: "left",
         bold: true,
         double: false,
         doubleHeight: true,
@@ -183,25 +214,22 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
   if (raw.startsWith(MARK_INDENT)) {
     return {
       text: raw.slice(MARK_INDENT.length),
-      style: { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth },
+      style: normalStyle(paperWidth),
     };
   }
 
   return {
     text: raw,
-    style: { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth },
+    style: normalStyle(paperWidth),
   };
 }
 
 function appendStyledLine(chunks: Buffer[], text: string, style: LineStyle): void {
   const effectiveWidth = style.width;
-  const lines = style.center
-    ? wrapLine(text, effectiveWidth)
-    : wrapLine(text, effectiveWidth);
+  const lines = wrapLine(text, effectiveWidth);
 
   for (const line of lines) {
-    if (style.center) chunks.push(CMD_ALIGN_CENTER);
-    else chunks.push(CMD_ALIGN_LEFT);
+    chunks.push(alignCommand(style.align));
 
     if (style.bold) chunks.push(CMD_BOLD_ON);
     if (style.double) chunks.push(CMD_DOUBLE_ON);
