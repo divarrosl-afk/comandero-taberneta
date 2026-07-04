@@ -12,7 +12,6 @@ import {
 import { CartaMenuSelector } from "@/components/carta/CartaMenuSelector";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import { productosMenuParaComanda } from "@/lib/menu-dia/menu-platos-comanda";
-import { productoEnMenuHoy } from "@/lib/carta/format-producto";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 import type { SeccionPlatos } from "@/types/comanda";
 
@@ -61,26 +60,9 @@ export function ProductosRapidosGrid({
         const delMenu = productosMenuParaComanda(
           menu,
           seccionPlatos as "primeros" | "segundos",
-          productos,
         );
 
-        if (delMenu.length > 0) {
-          return delMenu;
-        }
-
-        const filtrados = filtrarProductosComanda(productos, { uso, origen })
-          .filter((p) =>
-            productoEnMenuHoy(
-              p,
-              menu,
-              seccionPlatos as "primeros" | "segundos",
-            ),
-          );
-
-        return filtrados.sort(
-          (a, b) =>
-            a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es"),
-        );
+        return delMenu;
       }
 
       const filtrados = filtrarProductosComanda(productos, { uso, origen });
@@ -129,7 +111,7 @@ export function ProductosRapidosGrid({
   if (!enBusqueda && origen && lista.length === 0) {
     const mensaje =
       origen === "menu"
-        ? "No hay platos de menú configurados para hoy en esta sección."
+        ? "Sube el PDF del menú en Configuración → Menú del día."
         : origen === "carta-almuerzo"
           ? "No hay platos de carta almuerzo en esta sección."
           : "No hay platos de carta cenas en esta sección.";

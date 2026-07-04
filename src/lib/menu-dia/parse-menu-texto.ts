@@ -55,6 +55,7 @@ function esLineaIgnorada(linea: string): boolean {
   if (/^Tel[eé]fono/i.test(t)) return true;
   if (PRECIO_MENU_RE.test(t)) return true;
   if (/^--/.test(t)) return true;
+  if (/^\(\+\s*\d+(?:[.,]\d+)?\s*€\s*\)$/i.test(t)) return true;
   return false;
 }
 
@@ -83,9 +84,10 @@ function parsearPlatos(lineas: string[]): PlatoMenuParseado[] {
     if (esLineaIgnorada(linea)) continue;
 
     const trimmed = linea.trim();
-    if (/^\(\+\s*\d+/.test(trimmed) && acumulado) {
-      acumulado = `${acumulado} ${trimmed}`;
-      flush();
+    if (/^\(\+\s*\d+/.test(trimmed)) {
+      if (acumulado) flush();
+      acumulado = trimmed;
+      if (SUPLEMENTO_RE.test(acumulado)) flush();
       continue;
     }
 

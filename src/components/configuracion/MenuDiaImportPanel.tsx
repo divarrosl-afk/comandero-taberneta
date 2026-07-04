@@ -3,58 +3,32 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
-import {
-  idsDesdeMatch,
-  matchMenuConCatalogo,
-  type MenuDiaMatchResult,
-} from "@/lib/menu-dia/match-catalogo";
-import { importadosDesdeMatch } from "@/lib/menu-dia/menu-platos-comanda";
+import { importadosDesdeParsed } from "@/lib/menu-dia/menu-platos-comanda";
 import type { MenuDiaParseado } from "@/lib/menu-dia/parse-menu-texto";
 import type { MenuDiaConfig } from "@/types/menu-dia";
-import type { ProductoCatalogo } from "@/types/catalogo";
 
 interface MenuDiaImportPanelProps {
-  productos: ProductoCatalogo[];
-  onAplicar: (
-    cambios: Partial<MenuDiaConfig>,
-    suplementosProducto: { id: string; suplemento: number }[],
-  ) => Promise<void>;
+  onAplicar: (cambios: Partial<MenuDiaConfig>) => Promise<void>;
 }
 
-function ListaMatch({
+function ListaPlatos({
   titulo,
-  items,
+  platos,
 }: {
   titulo: string;
-  items: MenuDiaMatchResult["primeros"];
+  platos: { nombre: string; suplemento?: number }[];
 }) {
   return (
     <div>
       <p className="mb-2 text-sm font-bold">{titulo}</p>
       <ul className="space-y-1 text-sm">
-        {items.map((item, i) => (
+        {platos.map((plato, i) => (
           <li
             key={i}
-            className={[
-              "rounded-lg px-2 py-1",
-              item.confianza === "sin_match"
-                ? "bg-red-50 text-red-800"
-                : item.confianza === "baja"
-                  ? "bg-amber-50 text-amber-900"
-                  : "bg-green-50 text-green-900",
-            ].join(" ")}
+            className="rounded-lg bg-green-50 px-2 py-1 text-green-900"
           >
-            {item.parseado.nombre}
-            {item.parseado.suplemento
-              ? ` (+${item.parseado.suplemento} €)`
-              : ""}
-            {item.productoNombre ? (
-              <span className="block text-xs opacity-80">
-                → {item.productoNombre}
-              </span>
-            ) : (
-              <span className="block text-xs">Sin coincidencia en carta</span>
-            )}
+            {plato.nombre}
+            {plato.suplemento ? ` (+${plato.suplemento} €)` : ""}
           </li>
         ))}
       </ul>
@@ -62,39 +36,27 @@ function ListaMatch({
   );
 }
 
-export function MenuDiaImportPanel({
-  productos,
-  onAplicar,
-}: MenuDiaImportPanelProps) {
+export function MenuDiaImportPanel({ onAplicar }: MenuDiaImportPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [texto, setTexto] = useState("");
   const [parsed, setParsed] = useState<MenuDiaParseado | null>(null);
-  const [match, setMatch] = useState<MenuDiaMatchResult | null>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const aplicarResultado = async (
-    parsed: MenuDiaParseado,
-    matchResult: MenuDiaMatchResult,
-  ) => {
-    const { primerosIds, segundosIds, suplementosProducto } =
-      idsDesdeMatch(matchResult);
+  const aplicarParsed = async (data: MenuDiaParseado) => {
     const { primerosImportados, segundosImportados } =
-      importadosDesdeMatch(matchResult);
+      importadosDesdeParsed(data.primeros, data.segundos);
 
-    await onAplicar(
-      {
-        fecha: parsed.fecha,
-        precioMenu: parsed.precioMenu,
-        primerosIds,
-        segundosIds,
-        primerosImportados,
-        segundosImportados,
-        observaciones: parsed.observaciones,
-        activo: primerosImportados.length > 0 || segundosImportados.length > 0,
-      },
-      suplementosProducto,
-    );
+    await onAplicar({
+      fecha: data.fecha,
+      precioMenu: data.precioMenu,
+      primerosIds: [],
+      segundosIds: [],
+      primerosImportados,
+      segundosImportados,
+      observaciones: data.observaciones,
+      activo: primerosImportados.length > 0 || segundosImportados.length > 0,
+    });
   };
 
   const analizarTexto = async (contenido: string) => {
@@ -107,21 +69,15 @@ export function MenuDiaImportPanel({
     if (!r.ok) throw new Error("Error al analizar");
     const data = (await r.json()) as { parsed: MenuDiaParseado };
     setParsed(data.parsed);
-    const matchResult = matchMenuConCatalogo(
-      data.parsed.primeros,
-      data.parsed.segundos,
-      productos,
-    );
-    setMatch(matchResult);
-    return { parsed: data.parsed, matchResult };
+    return data.parsed;
   };
 
   const handleAnalizar = async () => {
     if (!texto.trim()) return;
     setCargando(true);
     try {
-      const { parsed, matchResult } = await analizarTexto(texto);
-      await aplicarResultado(parsed, matchResult);
+      const data = await analizarTexto(texto);
+      await aplicarParsed(data);
     } catch {
       setError("No se pudo leer el texto del menú");
     } finally {
@@ -146,13 +102,7 @@ export function MenuDiaImportPanel({
       };
       setTexto(data.texto);
       setParsed(data.parsed);
-      const matchResult = matchMenuConCatalogo(
-        data.parsed.primeros,
-        data.parsed.segundos,
-        productos,
-      );
-      setMatch(matchResult);
-      await aplicarResultado(data.parsed, matchResult);
+      await aplicarParsed(data.parsed);
     } catch {
       setError("No se pudo leer el PDF. Prueba a pegar el texto.");
     } finally {
@@ -160,17 +110,11 @@ export function MenuDiaImportPanel({
     }
   };
 
-  const handleAplicar = async () => {
-    if (!parsed || !match) return;
-    await aplicarResultado(parsed, match);
-  };
-
   return (
     <SectionCard title="Menú del día — subir PDF">
       <p className="mb-3 text-sm text-muted">
-        Sube el PDF que generas en la app cada mañana. Los platos aparecen
-        automáticamente en <strong>nueva comanda → Menú</strong> (primeros y
-        segundos), listos para pulsar.
+        Sube el PDF que generas en Taberneta cada mañana. Los platos aparecen
+        tal cual en <strong>nueva comanda → Menú</strong>, listos para pulsar.
       </p>
 
       <input
@@ -194,7 +138,11 @@ export function MenuDiaImportPanel({
         >
           {cargando ? "Cargando menú…" : "Subir PDF de hoy"}
         </Button>
-        <Button size="sm" onClick={handleAnalizar} disabled={cargando || !texto.trim()}>
+        <Button
+          size="sm"
+          onClick={handleAnalizar}
+          disabled={cargando || !texto.trim()}
+        >
           {cargando ? "Leyendo…" : "Analizar texto"}
         </Button>
       </div>
@@ -209,7 +157,7 @@ export function MenuDiaImportPanel({
 
       {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 
-      {parsed && match && (
+      {parsed && (
         <div className="space-y-4 border-t border-border pt-4">
           <div className="grid grid-cols-2 gap-3 text-sm">
             {parsed.fecha && (
@@ -219,7 +167,8 @@ export function MenuDiaImportPanel({
             )}
             {parsed.precioMenu !== undefined && (
               <p>
-                <span className="font-semibold">Precio:</span> {parsed.precioMenu} €
+                <span className="font-semibold">Precio:</span> {parsed.precioMenu}{" "}
+                €
               </p>
             )}
           </div>
@@ -227,22 +176,13 @@ export function MenuDiaImportPanel({
             <p className="text-sm text-muted">{parsed.observaciones}</p>
           )}
 
-          <ListaMatch titulo="Primeros" items={match.primeros} />
-          <ListaMatch titulo="Segundos" items={match.segundos} />
+          <ListaPlatos titulo="Primeros" platos={parsed.primeros} />
+          <ListaPlatos titulo="Segundos" platos={parsed.segundos} />
 
-          {match.sinMatch.length > 0 && (
-            <p className="text-xs text-amber-800">
-              {match.sinMatch.length} plato(s) sin coincidencia en carta — igual
-              aparecen en comanda con el nombre del PDF.
-            </p>
-          )}
-
-          {parsed && (
-            <p className="rounded-xl bg-green-50 px-3 py-2 text-sm font-medium text-green-900">
-              Menú activo · {parsed.primeros.length} primeros,{" "}
-              {parsed.segundos.length} segundos en comandas
-            </p>
-          )}
+          <p className="rounded-xl bg-green-50 px-3 py-2 text-sm font-medium text-green-900">
+            Menú activo · {parsed.primeros.length} primeros,{" "}
+            {parsed.segundos.length} segundos en comandas
+          </p>
         </div>
       )}
     </SectionCard>

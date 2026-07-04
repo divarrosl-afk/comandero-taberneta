@@ -30,6 +30,33 @@ EL PRECIO INCLUYE: PAN Y POSTRE. BEBIDA NO INCLUIDA
     const entrecot = parsed.segundos.find((p) => p.nombre.includes("Entrecot"));
     expect(entrecot?.suplemento).toBe(12);
   });
+
+  it("separa platos con suplemento en línea propia (formato Taberneta)", () => {
+    const texto = `PRIMEROS
+Ensalada de burrata con tomates secos deshidratados y aguacate
+(+5 €) Timbal de escalivada con queso de cabra y vinagreta de frutos secos y miel
+(+5 €)
+SEGUNDOS
+Entrecot de ternera (250gr) a la brasa con guarnición
+(+10 €) Solomillo de ternera (280gr) a la brasa con guarnición
+(+14 €) Chuletón de ternera (500gr) a la brasa con guarnición
+(+16 €)
+14,00 €`;
+
+    const parsed = parseMenuDiaTexto(texto);
+
+    expect(parsed.primeros).toHaveLength(2);
+    expect(parsed.primeros[0].nombre).toContain("burrata");
+    expect(parsed.primeros[1].nombre).toContain("Timbal");
+    expect(parsed.primeros[1].suplemento).toBe(5);
+
+    expect(parsed.segundos).toHaveLength(3);
+    expect(parsed.segundos[0].nombre).toContain("Entrecot");
+    expect(parsed.segundos[0].suplemento).toBeUndefined();
+    expect(parsed.segundos[1].nombre).toContain("Solomillo");
+    expect(parsed.segundos[1].suplemento).toBe(10);
+    expect(parsed.segundos[2].suplemento).toBe(14);
+  });
 });
 
 describe("match-catalogo", () => {
@@ -87,7 +114,6 @@ describe("menu-platos-comanda", () => {
         ],
       },
       "primeros",
-      [],
     );
 
     expect(lista).toHaveLength(2);

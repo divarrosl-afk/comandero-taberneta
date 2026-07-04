@@ -5,7 +5,7 @@ import {
   precioCartaDe,
   type ProductoCatalogo,
 } from "@/types/catalogo";
-import type { MenuDiaConfig } from "@/types/menu-dia";
+import type { MenuDiaConfig, PlatoMenuDiaImportado } from "@/types/menu-dia";
 
 export function productoEnMenuHoy(
   producto: ProductoCatalogo,
@@ -13,9 +13,27 @@ export function productoEnMenuHoy(
   seccion?: "primeros" | "segundos",
 ): boolean {
   if (!menu?.activo) return false;
-  if (seccion === "primeros") return menu.primerosIds.includes(producto.id);
-  if (seccion === "segundos") return menu.segundosIds.includes(producto.id);
+
+  if (producto.id.startsWith("menu-imp-")) return true;
+
+  const enImportados = (lista?: PlatoMenuDiaImportado[]) =>
+    lista?.some((p) => p.id === producto.id) ?? false;
+
+  if (seccion === "primeros") {
+    return (
+      enImportados(menu.primerosImportados) ||
+      menu.primerosIds.includes(producto.id)
+    );
+  }
+  if (seccion === "segundos") {
+    return (
+      enImportados(menu.segundosImportados) ||
+      menu.segundosIds.includes(producto.id)
+    );
+  }
   return (
+    enImportados(menu.primerosImportados) ||
+    enImportados(menu.segundosImportados) ||
     menu.primerosIds.includes(producto.id) ||
     menu.segundosIds.includes(producto.id)
   );

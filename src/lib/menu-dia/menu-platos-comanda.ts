@@ -3,7 +3,7 @@ import type {
   MenuDiaConfig,
   PlatoMenuDiaImportado,
 } from "@/types/menu-dia";
-import type { MenuDiaMatchResult } from "@/lib/menu-dia/match-catalogo";
+import type { PlatoMenuParseado } from "@/lib/menu-dia/parse-menu-texto";
 
 function slugNombre(nombre: string): string {
   return nombre
@@ -22,24 +22,26 @@ export function platoImportadoId(
   return `menu-imp-${seccion}-${indice}-${slugNombre(nombre)}`;
 }
 
-export function importadosDesdeMatch(result: MenuDiaMatchResult): {
+export function importadosDesdeParsed(
+  primeros: PlatoMenuParseado[],
+  segundos: PlatoMenuParseado[],
+): {
   primerosImportados: PlatoMenuDiaImportado[];
   segundosImportados: PlatoMenuDiaImportado[];
 } {
   const mapLista = (
-    items: MenuDiaMatchResult["primeros"],
+    items: PlatoMenuParseado[],
     seccion: "primeros" | "segundos",
   ): PlatoMenuDiaImportado[] =>
-    items.map((m, i) => ({
-      id: m.productoId ?? platoImportadoId(seccion, i, m.parseado.nombre),
-      nombre: m.parseado.nombre,
-      suplemento: m.parseado.suplemento,
-      productoId: m.productoId,
+    items.map((plato, i) => ({
+      id: platoImportadoId(seccion, i, plato.nombre),
+      nombre: plato.nombre,
+      suplemento: plato.suplemento,
     }));
 
   return {
-    primerosImportados: mapLista(result.primeros, "primeros"),
-    segundosImportados: mapLista(result.segundos, "segundos"),
+    primerosImportados: mapLista(primeros, "primeros"),
+    segundosImportados: mapLista(segundos, "segundos"),
   };
 }
 
@@ -69,7 +71,6 @@ function productoVirtual(
 export function productosMenuParaComanda(
   menu: MenuDiaConfig,
   seccion: "primeros" | "segundos",
-  catalogo: ProductoCatalogo[],
 ): ProductoCatalogo[] {
   const importados =
     seccion === "primeros"
@@ -77,25 +78,10 @@ export function productosMenuParaComanda(
       : menu.segundosImportados;
 
   if (importados?.length) {
-    return importados.map((plato, i) => {
-      if (plato.productoId) {
-        const cat = catalogo.find((p) => p.id === plato.productoId);
-        if (cat) {
-          return {
-            ...cat,
-            nombre: plato.nombre,
-            suplemento: plato.suplemento ?? cat.suplemento,
-          };
-        }
-      }
-      return productoVirtual(plato, seccion, i);
-    });
+    return importados.map((plato, i) => productoVirtual(plato, seccion, i));
   }
 
-  const ids = seccion === "primeros" ? menu.primerosIds : menu.segundosIds;
-  return ids
-    .map((id) => catalogo.find((p) => p.id === id))
-    .filter((p): p is ProductoCatalogo => Boolean(p));
+  return [];
 }
 
 export function menuTienePlatosImportados(menu: MenuDiaConfig | null): boolean {
