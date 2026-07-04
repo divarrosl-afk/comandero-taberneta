@@ -1,5 +1,9 @@
 import { encodeProductoMeta } from "@/lib/carta/carta-servicio-meta";
 import { migrarProducto } from "@/lib/carta/migrate-producto";
+import {
+  attachMenuImportPayload,
+  stripMenuImportPayload,
+} from "@/lib/menu-dia/menu-importados-payload";
 import type { ProductoCatalogo } from "@/types/catalogo";
 import type { MenuDiaConfig, PlatoMenuDiaImportado } from "@/types/menu-dia";
 import type { MesaConfig } from "@/types/mesas";
@@ -204,6 +208,10 @@ export function mesaToRow(
 }
 
 export function rowToMenuDia(row: DbMenuDia): MenuDiaConfig {
+  const { observacionesVisibles, payload } = stripMenuImportPayload(
+    row.observaciones,
+  );
+
   return {
     fecha: row.fecha,
     precioMenu: Number(row.precio_menu),
@@ -212,9 +220,11 @@ export function rowToMenuDia(row: DbMenuDia): MenuDiaConfig {
     postresIncluidosIds: row.postres_incluidos_ids ?? [],
     suplementoPrimeros: row.suplemento_primeros ?? undefined,
     suplementoSegundos: row.suplemento_segundos ?? undefined,
-    observaciones: row.observaciones ?? undefined,
-    primerosImportados: row.primeros_importados ?? undefined,
-    segundosImportados: row.segundos_importados ?? undefined,
+    observaciones: observacionesVisibles || undefined,
+    primerosImportados:
+      row.primeros_importados ?? payload?.primerosImportados ?? undefined,
+    segundosImportados:
+      row.segundos_importados ?? payload?.segundosImportados ?? undefined,
     activo: row.activo,
   };
 }
@@ -222,10 +232,15 @@ export function rowToMenuDia(row: DbMenuDia): MenuDiaConfig {
 export function menuDiaToRow(
   config: MenuDiaConfig,
   restauranteId: string,
+  opts?: { sinColumnasImportadas?: boolean },
 ): Omit<DbMenuDia, "id" | "restaurante_id"> & {
   restaurante_id: string;
 } {
-  return {
+  const observaciones = opts?.sinColumnasImportadas
+    ? attachMenuImportPayload(config.observaciones, config)
+    : (config.observaciones ?? null);
+
+  const base = {
     restaurante_id: restauranteId,
     fecha: config.fecha,
     precio_menu: config.precioMenu,
@@ -234,10 +249,20 @@ export function menuDiaToRow(
     postres_incluidos_ids: config.postresIncluidosIds,
     suplemento_primeros: config.suplementoPrimeros ?? null,
     suplemento_segundos: config.suplementoSegundos ?? null,
-    observaciones: config.observaciones ?? null,
+    observaciones,
+    activo: config.activo,
+  };
+
+  if (opts?.sinColumnasImportadas) {
+    return base as Omit<DbMenuDia, "id" | "restaurante_id"> & {
+      restaurante_id: string;
+    };
+  }
+
+  return {
+    ...base,
     primeros_importados: config.primerosImportados ?? null,
     segundos_importados: config.segundosImportados ?? null,
-    activo: config.activo,
   };
 }
 

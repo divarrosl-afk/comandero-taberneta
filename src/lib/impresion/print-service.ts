@@ -127,8 +127,32 @@ export async function printTicketNetwork(
   meta: PrintTicketRequest,
 ): Promise<PrintResult> {
   const timestamp = new Date().toISOString();
+  const envIp = process.env.PRINTER_IP?.trim() ?? "";
+  const impresoraEfectiva: ImpresoraConfig = {
+    ...impresora,
+    ip: impresora.ip?.trim() || envIp,
+    puerto: impresora.puerto > 0 ? impresora.puerto : Number(process.env.PRINTER_PORT ?? 9100),
+  };
 
-  if (!impresora.ip?.trim()) {
+  const request: PrintTicketRequest = {
+    ...meta,
+    ticket,
+    impresora: impresoraEfectiva,
+  };
+
+  const forwarded = await forwardToPrintServer(request);
+  if (forwarded?.ok) {
+    return { ...forwarded, simulated: false, mode: "network" };
+  }
+
+  if (isVercelRuntime()) {
+    return enqueueCloudPrint(request);
+  }
+
+  if (!impresoraEfectiva.ip?.trim()) {
+    const cloud = await enqueueCloudPrint(request);
+    if (cloud.ok) return cloud;
+
     return {
       ok: false,
       mode: "network",
@@ -141,26 +165,11 @@ export async function printTicketNetwork(
     };
   }
 
-  const request: PrintTicketRequest = {
-    ...meta,
-    ticket,
-    impresora,
-  };
-
-  const forwarded = await forwardToPrintServer(request);
-  if (forwarded?.ok) {
-    return { ...forwarded, simulated: false, mode: "network" };
-  }
-
-  if (isVercelRuntime()) {
-    return enqueueCloudPrint(request);
-  }
-
   const result = await printTicketText(
-    impresora.ip,
-    impresora.puerto,
+    impresoraEfectiva.ip,
+    impresoraEfectiva.puerto,
     ticket,
-    impresora.anchoPapel,
+    impresoraEfectiva.anchoPapel,
     true,
   );
 
@@ -175,7 +184,7 @@ export async function printTicketNetwork(
     destino: meta.destino,
     tipo: meta.tipo,
     message: result.success
-      ? `Impreso en ${impresora.nombre} (${impresora.ip}:${impresora.puerto})`
+      ? `Impreso en ${impresoraEfectiva.nombre} (${impresoraEfectiva.ip}:${impresoraEfectiva.puerto})`
       : (result.error ?? "Error de impresión"),
     simulated: false,
     timestamp,

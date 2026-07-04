@@ -7,7 +7,7 @@ import { formatHora } from "@/lib/historial/items";
 import { resolveNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { EstadoPanelBadge } from "@/components/panel/EstadoPanelBadge";
 import { SemaforoPanelSelector } from "@/components/panel/SemaforoPanelSelector";
-import { imprimirComandaPostres } from "@/modules/impresion-wifi/imprimir-comanda";
+import { reimprimirComandaPostres } from "@/modules/impresion-wifi/imprimir-comanda";
 import type { EstadoPanel } from "@/types/panel";
 import type { ComandaPostres } from "@/types/postres";
 import type { MesaConfig } from "@/types/mesas";
@@ -25,11 +25,14 @@ export function PanelPostresCard({
 }: PanelPostresCardProps) {
   const nombreMesa = resolveNombreMesaComanda(comanda, mesas);
   const [reimpresionMsg, setReimpresionMsg] = useState<string | null>(null);
+  const [reimpresionError, setReimpresionError] = useState(false);
 
   const handleReimprimir = async () => {
     setReimpresionMsg("Enviando a impresora…");
-    const res = await imprimirComandaPostres(comanda);
+    setReimpresionError(false);
+    const res = await reimprimirComandaPostres(comanda);
     setReimpresionMsg(res.summary);
+    setReimpresionError(!res.allOk);
   };
 
   return (
@@ -107,7 +110,12 @@ export function PanelPostresCard({
           Reimprimir ticket
         </Button>
         {reimpresionMsg && (
-          <p className="text-center text-xs font-medium text-muted">
+          <p
+            className={[
+              "text-center text-xs font-medium",
+              reimpresionError ? "text-red-600" : "text-muted",
+            ].join(" ")}
+          >
             {reimpresionMsg}
           </p>
         )}

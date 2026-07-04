@@ -5,6 +5,7 @@ import {
   rowToMenuDia,
   type DbMenuDia,
 } from "@/lib/supabase/mappers";
+import { isMissingImportColumnsError } from "@/lib/menu-dia/menu-importados-payload";
 import type { MenuDiaRepository } from "@/lib/menu-dia/menu-dia-repository";
 import { MENU_DIA_DEFAULT, type MenuDiaConfig } from "@/types/menu-dia";
 
@@ -49,9 +50,19 @@ export const menuDiaRepositorySupabase: MenuDiaRepository = {
     if (!client || !env) return;
 
     const row = menuDiaToRow(config, env.restauranteId);
-    const { error } = await client.from("menus_dia").upsert(row, {
+    let { error } = await client.from("menus_dia").upsert(row, {
       onConflict: "restaurante_id,fecha",
     });
+
+    if (error && isMissingImportColumnsError(error.message)) {
+      const legacyRow = menuDiaToRow(config, env.restauranteId, {
+        sinColumnasImportadas: true,
+      });
+      ({ error } = await client.from("menus_dia").upsert(legacyRow, {
+        onConflict: "restaurante_id,fecha",
+      }));
+    }
+
     if (error) throw new Error(error.message);
   },
 

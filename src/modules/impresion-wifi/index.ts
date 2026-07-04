@@ -12,6 +12,8 @@ export { printTicket, printStatusLabel } from "@/modules/impresion-wifi/print-ti
 export {
   imprimirComandaCocina,
   imprimirComandaPostres,
+  reimprimirComandaCocina,
+  reimprimirComandaPostres,
   reimprimirEntrada,
   reimprimirTicket,
   destinoDesdeHistorial,

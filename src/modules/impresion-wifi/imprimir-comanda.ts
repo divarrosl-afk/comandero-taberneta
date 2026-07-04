@@ -20,13 +20,22 @@ function buildSummary(results: Awaited<ReturnType<typeof printTicket>>[]): strin
     if (simulated) {
       return `${PRINT_MESSAGES.enviada} · ${PRINT_MESSAGES.ticketSimulado}`;
     }
-    const printed = results.every((r) => r.status === "printed" || !r.status);
+    const queued = results.some((r) => r.status === "queued");
+    if (queued) {
+      return `${PRINT_MESSAGES.enviada} · ${PRINT_MESSAGES.enCola}`;
+    }
+    const printed = results.every(
+      (r) => r.status === "printed" || r.status === "queued" || !r.status,
+    );
     return printed
       ? `${PRINT_MESSAGES.enviada} · ${PRINT_MESSAGES.impreso} (2 copias)`
       : PRINT_MESSAGES.enviada;
   }
-  const failed = results.filter((r) => !r.ok).length;
-  return `${PRINT_MESSAGES.error} (${failed}/${results.length} copias)`;
+  const failed = results.find((r) => !r.ok);
+  const failedCount = results.filter((r) => !r.ok).length;
+  const detail = failed?.message?.trim();
+  const base = `${PRINT_MESSAGES.error} (${failedCount}/${results.length} copias)`;
+  return detail && detail !== PRINT_MESSAGES.error ? `${base} — ${detail}` : base;
 }
 
 export async function imprimirComandaCocina(
@@ -75,14 +84,42 @@ export async function imprimirComandaPostres(
   };
 }
 
+/** Reimprime 1 copia desde panel o historial. */
+export async function reimprimirComandaCocina(
+  comanda: ComandaCocina,
+): Promise<PrintBatchResult> {
+  const ticketOptions = ticketOptionsForComanda(comanda);
+  const ticket = comandaToTicketImpresion(comanda, ticketOptions);
+  return reimprimirTicket(ticket, "cocina", {
+    comandaId: comanda.id,
+    mesa: comanda.mesa,
+    camarero: comanda.camarero,
+  });
+}
+
+export async function reimprimirComandaPostres(
+  comanda: ComandaPostres,
+): Promise<PrintBatchResult> {
+  const ticketOptions = ticketOptionsForComanda(comanda);
+  return reimprimirTicket(
+    comandaPostresToTexto(comanda, ticketOptions),
+    "postres",
+    {
+      comandaId: comanda.id,
+      mesa: comanda.mesa,
+      camarero: comanda.camarero,
+    },
+  );
+}
+
 /** Reimprime 2 copias del ticket completo (cocina + barra). */
 export async function reimprimirEntrada(
   entrada: HistorialEntrada,
 ): Promise<PrintBatchResult> {
   if (entrada.tipo === "cocina") {
-    return imprimirComandaCocina(entrada.comanda);
+    return reimprimirComandaCocina(entrada.comanda);
   }
-  return imprimirComandaPostres(entrada.comanda);
+  return reimprimirComandaPostres(entrada.comanda);
 }
 
 export async function reimprimirTicket(
@@ -101,8 +138,10 @@ export async function reimprimirTicket(
     summary: result.ok
       ? result.simulated
         ? `${PRINT_MESSAGES.ticketSimulado} · ${destino}`
-        : `Reimpreso · ${destino}`
-      : PRINT_MESSAGES.error,
+        : result.status === "queued"
+          ? `${PRINT_MESSAGES.enCola} · ${destino}`
+          : `Reimpreso · ${destino}`
+      : result.message?.trim() || PRINT_MESSAGES.error,
   };
 }
 

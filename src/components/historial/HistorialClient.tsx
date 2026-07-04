@@ -6,6 +6,7 @@ import { Suspense, useState } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/Button";
 import { HistorialCard } from "@/components/historial/HistorialCard";
+import { ZonaCollapsibleSection } from "@/components/ui/ZonaCollapsibleSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHistorial } from "@/hooks/useHistorial";
 import { useMesas } from "@/hooks/useMesas";
@@ -15,7 +16,6 @@ import {
   getNombreMesa,
   resolveNombreMesaComanda,
 } from "@/lib/mesas/resolve-mesa";
-import { labelZona } from "@/types/mesas";
 import type { HistorialTipo } from "@/types/panel";
 
 type FiltroTipo = "todos" | HistorialTipo;
@@ -106,14 +106,13 @@ function HistorialContent() {
           No hay comandas en el historial.
         </p>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {porZona.map((grupo) => (
-            <section key={grupo.zona ?? "mesa"}>
-              {grupo.zona && (
-                <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">
-                  {labelZona(grupo.zona)}
-                </h2>
-              )}
+            <ZonaCollapsibleSection
+              key={grupo.zona ?? "mesa"}
+              zona={grupo.zona}
+              count={grupo.entradas.length}
+            >
               <div className="space-y-3">
                 {grupo.entradas.map((entrada) => (
                   <HistorialCard
@@ -126,7 +125,7 @@ function HistorialContent() {
                   />
                 ))}
               </div>
-            </section>
+            </ZonaCollapsibleSection>
           ))}
         </div>
       )}

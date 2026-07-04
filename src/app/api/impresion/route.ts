@@ -5,10 +5,27 @@ import { verifyAuthenticatedRequest } from "@/lib/supabase/api-auth";
 import { printTicketNetwork } from "@/lib/impresion/print-service";
 import type { PrintTicketRequest, PrintResult } from "@/modules/impresion-wifi/types";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi/types";
-import { IMPRESORA_DEFAULT } from "@/types/impresora";
+import { IMPRESORA_DEFAULT, type ImpresoraConfig } from "@/types/impresora";
 
 const VALID_DESTINOS = new Set(["cocina", "barra", "postres"]);
 const VALID_TIPOS = new Set(["cocina", "barra", "postres", "reimpresion"]);
+
+function mergeImpresoraConfig(fromClient?: ImpresoraConfig): ImpresoraConfig {
+  const base = fromClient ?? { ...IMPRESORA_DEFAULT };
+  const envIp = process.env.PRINTER_IP?.trim() ?? "";
+  const envPuerto = Number(process.env.PRINTER_PORT ?? 9100);
+
+  return {
+    ...IMPRESORA_DEFAULT,
+    ...base,
+    ip: base.ip?.trim() || envIp,
+    puerto: base.puerto > 0 ? base.puerto : envPuerto,
+    modo:
+      base.modo === "network" || (!base.modo && envIp)
+        ? "network"
+        : (base.modo ?? IMPRESORA_DEFAULT.modo),
+  };
+}
 
 function requiresPrintAuth(): boolean {
   const backend = process.env.NEXT_PUBLIC_DATA_BACKEND?.trim().toLowerCase();
@@ -63,15 +80,7 @@ export async function POST(req: Request) {
       body.tipo = body.destino;
     }
 
-    const impresora = body.impresora ?? {
-      ...IMPRESORA_DEFAULT,
-      ip: process.env.PRINTER_IP?.trim() ?? "",
-      puerto: Number(process.env.PRINTER_PORT ?? 9100),
-      modo:
-        process.env.PRINT_MODE === "network" || !process.env.PRINT_MODE
-          ? "network"
-          : "mock",
-    };
+    const impresora = mergeImpresoraConfig(body.impresora);
 
     body.impresora = impresora;
 

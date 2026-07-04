@@ -4,6 +4,7 @@ import {
   rowToMenuDia,
   type DbMenuDia,
 } from "@/lib/supabase/mappers";
+import { isMissingImportColumnsError } from "@/lib/menu-dia/menu-importados-payload";
 import { MENU_DIA_DEFAULT, type MenuDiaConfig } from "@/types/menu-dia";
 
 const RESTAURANTE_ID =
@@ -96,9 +97,18 @@ export async function guardarMenuConToken(
     if (offError) throw new Error(offError.message);
   }
 
-  const { error } = await client.from("menus_dia").upsert(row, {
+  let { error } = await client.from("menus_dia").upsert(row, {
     onConflict: "restaurante_id,fecha",
   });
+
+  if (error && isMissingImportColumnsError(error.message)) {
+    const legacyRow = menuDiaToRow(config, RESTAURANTE_ID, {
+      sinColumnasImportadas: true,
+    });
+    ({ error } = await client.from("menus_dia").upsert(legacyRow, {
+      onConflict: "restaurante_id,fecha",
+    }));
+  }
 
   if (error) throw new Error(error.message);
   return menuVigenteConToken(token);
