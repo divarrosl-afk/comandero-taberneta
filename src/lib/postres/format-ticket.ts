@@ -1,5 +1,9 @@
-import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
-import { sectionHeader, TICKET_WIDTH_80MM } from "@/lib/comanda/ticket-kitchen";
+import { getCodigoMesaComanda } from "@/lib/mesas/resolve-mesa";
+import {
+  MARK_DISH,
+  sectionHeader,
+  TICKET_WIDTH_80MM,
+} from "@/lib/comanda/ticket-kitchen";
 import { getEstadoXCafeLabel } from "@/data/postres-catalogo";
 import { normalizeComandaPostres } from "@/lib/postres/normalize-comanda";
 import type { ComandaPostres, PostreItem } from "@/types/postres";
@@ -33,10 +37,9 @@ export function comandaPostresToTexto(
 ): string {
   const normalizada = normalizeComandaPostres(comanda);
   const width = options?.ancho ?? TICKET_WIDTH_80MM;
-  const nombreMesa = options?.nombreMesa ?? getNombreMesaComanda(normalizada);
+  const codigoMesa = options?.nombreMesa ?? getCodigoMesaComanda(normalizada);
   const lineas: string[] = [
-    "=".repeat(width),
-    `MESA ${nombreMesa}`,
+    `${MARK_DISH}${codigoMesa.toUpperCase()}`,
     "",
   ];
 

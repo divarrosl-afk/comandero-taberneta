@@ -122,6 +122,25 @@ export function getNombreMesaComanda(comanda: MesaComandaRef): string {
   return porId;
 }
 
+/** Código corto de mesa para ticket (ej. R5, C1) — sin prefijo MESA ni nombre de zona. */
+export function getCodigoMesaComanda(comanda: MesaComandaRef): string {
+  if (comanda.mesaCodigo?.trim()) {
+    return comanda.mesaCodigo.trim().toUpperCase();
+  }
+
+  const mesa = findMesaConfig(comanda.mesa);
+  if (mesa?.codigo) return mesa.codigo;
+
+  const codigo = getMesaCodigo(comanda.mesa);
+  if (codigo) return codigo;
+
+  if (!isUuid(comanda.mesa)) {
+    return comanda.mesa.trim().toUpperCase();
+  }
+
+  return getNombreMesaComanda(comanda);
+}
+
 export function comandaPerteneceAMesa(
   comanda: MesaComandaRef,
   mesaId: string,

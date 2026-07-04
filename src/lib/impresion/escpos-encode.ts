@@ -4,6 +4,7 @@ import {
   CHARS_PER_LINE_80MM,
   CMD_ALIGN_CENTER,
   CMD_ALIGN_LEFT,
+  CMD_ALIGN_RIGHT,
   CMD_BOLD_OFF,
   CMD_BOLD_ON,
   CMD_CODEPAGE_CP858,
@@ -21,6 +22,7 @@ import {
   MARK_DETAIL,
   MARK_DISH,
   MARK_INDENT,
+  MARK_MESA,
   MARK_SECTION,
   MARK_SEP,
   MARK_URGENT,
@@ -96,42 +98,88 @@ function isLegacyCenteredLine(line: string, index: number): boolean {
   return false;
 }
 
+type TextAlign = "left" | "center" | "right";
+
 type LineStyle = {
-  center: boolean;
+  align: TextAlign;
   bold: boolean;
   double: boolean;
   doubleHeight: boolean;
   width: number;
 };
 
+function normalStyle(width: number): LineStyle {
+  return {
+    align: "left",
+    bold: false,
+    double: false,
+    doubleHeight: false,
+    width,
+  };
+}
+
+function alignCommand(align: TextAlign): Buffer {
+  if (align === "center") return CMD_ALIGN_CENTER;
+  if (align === "right") return CMD_ALIGN_RIGHT;
+  return CMD_ALIGN_LEFT;
+}
+
 function parseTicketLine(raw: string, paperWidth: number): { text: string; style: LineStyle } {
-  if (raw === MARK_SEP) {
+  const marker = markerPrefix(raw);
+  const body = marker ? markerBody(raw) : raw;
+
+  if (marker === MARK_SEP) {
     return {
       text: "=".repeat(paperWidth),
-      style: { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth },
+      style: normalStyle(paperWidth),
     };
   }
 
-  if (raw.startsWith(MARK_CENTER)) {
+  if (marker === MARK_MESA || marker === MARK_DISH) {
     return {
-      text: raw.slice(MARK_CENTER.length),
-      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
+      text: body,
+      style: {
+        align: "left",
+        bold: true,
+        double: true,
+        doubleHeight: false,
+        width: Math.floor(paperWidth / 2),
+      },
     };
   }
 
-  if (raw.startsWith(MARK_SECTION)) {
+  if (marker === MARK_CENTER) {
     return {
-      text: raw.slice(MARK_SECTION.length),
-      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
+      text: body,
+      style: {
+        align: "center",
+        bold: true,
+        double: false,
+        doubleHeight: false,
+        width: paperWidth,
+      },
     };
   }
 
-  if (raw.startsWith(MARK_URGENT)) {
-    const text = raw.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
+  if (marker === MARK_SECTION) {
+    return {
+      text: body,
+      style: {
+        align: "center",
+        bold: true,
+        double: false,
+        doubleHeight: false,
+        width: paperWidth,
+      },
+    };
+  }
+
+  if (marker === MARK_URGENT) {
+    const text = body || ">>> URGENTE <<<";
     return {
       text,
       style: {
-        center: true,
+        align: "center",
         bold: true,
         double: true,
         doubleHeight: false,
@@ -140,24 +188,11 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     };
   }
 
-  if (raw.startsWith(MARK_DISH)) {
+  if (marker === MARK_DETAIL) {
     return {
-      text: raw.slice(MARK_DISH.length),
+      text: body,
       style: {
-        center: false,
-        bold: true,
-        double: true,
-        doubleHeight: false,
-        width: Math.floor(paperWidth / 2),
-      },
-    };
-  }
-
-  if (raw.startsWith(MARK_DETAIL)) {
-    return {
-      text: raw.slice(MARK_DETAIL.length),
-      style: {
-        center: false,
+        align: "left",
         bold: true,
         double: false,
         doubleHeight: true,
@@ -166,28 +201,25 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     };
   }
 
-  if (raw.startsWith(MARK_INDENT)) {
+  if (marker === MARK_INDENT) {
     return {
-      text: raw.slice(MARK_INDENT.length),
-      style: { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth },
+      text: body,
+      style: normalStyle(paperWidth),
     };
   }
 
   return {
     text: raw,
-    style: { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth },
+    style: normalStyle(paperWidth),
   };
 }
 
 function appendStyledLine(chunks: Buffer[], text: string, style: LineStyle): void {
   const effectiveWidth = style.width;
-  const lines = style.center
-    ? wrapLine(text, effectiveWidth).map((l) => centerLine(l, effectiveWidth))
-    : wrapLine(text, effectiveWidth);
+  const lines = wrapLine(text, effectiveWidth);
 
   for (const line of lines) {
-    if (style.center) chunks.push(CMD_ALIGN_CENTER);
-    else chunks.push(CMD_ALIGN_LEFT);
+    chunks.push(alignCommand(style.align));
 
     if (style.bold) chunks.push(CMD_BOLD_ON);
     if (style.double) chunks.push(CMD_DOUBLE_ON);
@@ -220,13 +252,18 @@ function ticketEpilogue(chunks: Buffer[]): void {
   chunks.push(cutPaper());
 }
 
+function markerPrefix(raw: string): string | null {
+  const match = raw.match(/^@([A-Za-z])@/);
+  return match ? `@${match[1]!.toUpperCase()}@` : null;
+}
+
+function markerBody(raw: string): string {
+  const prefix = markerPrefix(raw);
+  return prefix ? raw.slice(prefix.length) : raw;
+}
+
 function hasTicketMarkers(text: string): boolean {
-  return (
-    text.includes("@C@") ||
-    text.includes("@D@") ||
-    text.includes("@M@") ||
-    text.includes("@S@")
-  );
+  return /@([A-Za-z])@/.test(text);
 }
 
 /** Construye buffer ESC/POS a partir de líneas de texto plano. */

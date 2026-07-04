@@ -1,5 +1,5 @@
 import type { HistorialEntrada } from "@/lib/historial/items";
-import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
+import { getCodigoMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { comandaPostresToTexto } from "@/lib/postres/format-ticket";
 import { comandaToTicketImpresion } from "@/modules/impresion-wifi/format-tickets";
 import { printTicket } from "@/modules/impresion-wifi/print-ticket";
@@ -11,7 +11,7 @@ import type { ComandaPostres } from "@/types/postres";
 const COPIAS_TICKET_COMPLETO = 2;
 
 function ticketOptionsForComanda(comanda: { mesa: string; mesaCodigo?: string }) {
-  return { nombreMesa: getNombreMesaComanda(comanda) };
+  return { nombreMesa: getCodigoMesaComanda(comanda) };
 }
 
 function buildSummary(results: Awaited<ReturnType<typeof printTicket>>[]): string {

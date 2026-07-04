@@ -2,7 +2,8 @@
 
 import { comandaToTexto } from "@/lib/comanda/format-ticket";
 import { TICKET_WIDTH_80MM } from "@/lib/comanda/ticket-kitchen";
-import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
+import { getCodigoMesaComanda } from "@/lib/mesas/resolve-mesa";
+import { TicketMesaHeader } from "@/components/ticket/TicketMesaHeader";
 import type { ComandaCocina } from "@/types/comanda";
 
 const TICKET_PREVIEW_CH = `${TICKET_WIDTH_80MM}ch`;
@@ -28,15 +29,24 @@ function TicketLine({ line }: { line: string }) {
   );
 }
 
+function ticketBodyLines(texto: string, codigoMesa: string): string[] {
+  const lineas = texto.split("\n");
+  let start = 0;
+  if (lineas[0]?.trim().toUpperCase() === codigoMesa.trim().toUpperCase()) {
+    start = 1;
+    if (lineas[start] === "") start += 1;
+  }
+  return lineas.slice(start);
+}
+
 interface ComandaTicketPreviewProps {
   comanda: ComandaCocina;
 }
 
 export function ComandaTicketPreview({ comanda }: ComandaTicketPreviewProps) {
-  const texto = comandaToTexto(comanda, {
-    nombreMesa: getNombreMesaComanda(comanda),
-  });
-  const lineas = texto.split("\n");
+  const codigoMesa = getCodigoMesaComanda(comanda);
+  const texto = comandaToTexto(comanda, { nombreMesa: codigoMesa });
+  const lineas = ticketBodyLines(texto, codigoMesa);
 
   return (
     <div className="mx-auto w-full max-w-none rounded-2xl border-2 border-stone-700 shadow-lg">
@@ -53,6 +63,7 @@ export function ComandaTicketPreview({ comanda }: ComandaTicketPreviewProps) {
           minWidth: "min(100%, 288px)",
         }}
       >
+        <TicketMesaHeader codigo={codigoMesa} />
         {lineas.map((line, i) => (
           <TicketLine key={`${i}-${line.slice(0, 12)}`} line={line} />
         ))}

@@ -20,6 +20,7 @@ const CMD_INIT = Buffer.from([ESC, 0x40]);
 const CMD_CP858 = Buffer.from([ESC, 0x74, 19]);
 const CMD_ALIGN_LEFT = Buffer.from([ESC, 0x61, 0x00]);
 const CMD_ALIGN_CENTER = Buffer.from([ESC, 0x61, 0x01]);
+const CMD_ALIGN_RIGHT = Buffer.from([ESC, 0x61, 0x02]);
 const CMD_BOLD_ON = Buffer.from([ESC, 0x45, 0x01]);
 const CMD_BOLD_OFF = Buffer.from([ESC, 0x45, 0x00]);
 const CMD_DOUBLE_ON = Buffer.from([GS, 0x21, 0x11]);
@@ -27,6 +28,7 @@ const CMD_DOUBLE_HEIGHT_ON = Buffer.from([GS, 0x21, 0x01]);
 const CMD_DOUBLE_OFF = Buffer.from([GS, 0x21, 0x00]);
 const CMD_LF = Buffer.from([0x0a]);
 
+const MARK_MESA = "@H@";
 const MARK_CENTER = "@C@";
 const MARK_SEP = "@S@";
 const MARK_SECTION = "@T@";
@@ -134,61 +136,77 @@ function isLegacyCenteredLine(line, index) {
   return false;
 }
 
+function markerPrefix(raw) {
+  const match = raw.match(/^@([A-Za-z])@/);
+  return match ? `@${match[1].toUpperCase()}@` : null;
+}
+
+function markerBody(raw) {
+  const prefix = markerPrefix(raw);
+  return prefix ? raw.slice(prefix.length) : raw;
+}
+
 function hasTicketMarkers(text) {
-  return text.includes("@C@") || text.includes("@D@") || text.includes("@M@") || text.includes("@S@");
+  return /@([A-Za-z])@/.test(text);
 }
 
 function parseTicketLine(raw, paperWidth) {
-  const normal = { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth };
-  if (raw === MARK_SEP) {
+  const normal = { align: "left", bold: false, double: false, doubleHeight: false, width: paperWidth };
+  const marker = markerPrefix(raw);
+  const body = marker ? markerBody(raw) : raw;
+
+  if (marker === MARK_SEP) {
     return { text: "=".repeat(paperWidth), style: { ...normal } };
   }
-  if (raw.startsWith(MARK_CENTER)) {
+  if (marker === MARK_MESA || marker === MARK_DISH) {
     return {
-      text: raw.slice(MARK_CENTER.length),
-      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
+      text: body,
+      style: { align: "left", bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
     };
   }
-  if (raw.startsWith(MARK_SECTION)) {
+  if (marker === MARK_CENTER) {
     return {
-      text: raw.slice(MARK_SECTION.length),
-      style: { center: true, bold: true, double: false, doubleHeight: false, width: paperWidth },
+      text: body,
+      style: { align: "center", bold: true, double: false, doubleHeight: false, width: paperWidth },
     };
   }
-  if (raw.startsWith(MARK_URGENT)) {
-    const text = raw.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
+  if (marker === MARK_SECTION) {
+    return {
+      text: body,
+      style: { align: "center", bold: true, double: false, doubleHeight: false, width: paperWidth },
+    };
+  }
+  if (marker === MARK_URGENT) {
+    const text = body || ">>> URGENTE <<<";
     return {
       text,
-      style: { center: true, bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
+      style: { align: "center", bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
     };
   }
-  if (raw.startsWith(MARK_DISH)) {
+  if (marker === MARK_DETAIL) {
     return {
-      text: raw.slice(MARK_DISH.length),
-      style: { center: false, bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
+      text: body,
+      style: { align: "left", bold: true, double: false, doubleHeight: true, width: paperWidth },
     };
   }
-  if (raw.startsWith(MARK_DETAIL)) {
-    return {
-      text: raw.slice(MARK_DETAIL.length),
-      style: { center: false, bold: true, double: false, doubleHeight: true, width: paperWidth },
-    };
-  }
-  if (raw.startsWith(MARK_INDENT)) {
-    return { text: raw.slice(MARK_INDENT.length), style: { ...normal } };
+  if (marker === MARK_INDENT) {
+    return { text: body, style: { ...normal } };
   }
   return { text: raw, style: { ...normal } };
 }
 
+function alignCommand(align) {
+  if (align === "center") return CMD_ALIGN_CENTER;
+  if (align === "right") return CMD_ALIGN_RIGHT;
+  return CMD_ALIGN_LEFT;
+}
+
 function appendStyledLine(chunks, text, style) {
   const effectiveWidth = style.width;
-  const lines = style.center
-    ? wrapLine(text, effectiveWidth).map((l) => centerLine(l, effectiveWidth))
-    : wrapLine(text, effectiveWidth);
+  const lines = wrapLine(text, effectiveWidth);
 
   for (const line of lines) {
-    if (style.center) chunks.push(CMD_ALIGN_CENTER);
-    else chunks.push(CMD_ALIGN_LEFT);
+    chunks.push(alignCommand(style.align));
     if (style.bold) chunks.push(CMD_BOLD_ON);
     if (style.double) chunks.push(CMD_DOUBLE_ON);
     else if (style.doubleHeight) chunks.push(CMD_DOUBLE_HEIGHT_ON);
