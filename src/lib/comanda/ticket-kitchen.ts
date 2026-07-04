@@ -37,13 +37,13 @@ export function stripTicketMarkers(text: string, width = TICKET_WIDTH_80MM): str
     .split("\n")
     .map((line) => {
       if (line === MARK_SEP) return "=".repeat(width);
-      if (line.startsWith(MARK_MESA)) return line.slice(MARK_MESA.length);
-      if (line.startsWith(MARK_CENTER)) return line.slice(MARK_CENTER.length);
-      if (line.startsWith(MARK_SECTION)) return line.slice(MARK_SECTION.length);
-      if (line.startsWith(MARK_URGENT)) return line.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
-      if (line.startsWith(MARK_DISH)) return line.slice(MARK_DISH.length);
-      if (line.startsWith(MARK_DETAIL)) return line.slice(MARK_DETAIL.length);
-      if (line.startsWith(MARK_INDENT)) return line.slice(MARK_INDENT.length);
+      const marker = line.match(/^@([A-Za-z])@/)?.[0]?.toUpperCase();
+      if (marker === MARK_MESA || marker === MARK_DISH) return line.slice(marker.length);
+      if (marker === MARK_CENTER) return line.slice(marker.length);
+      if (marker === MARK_SECTION) return line.slice(marker.length);
+      if (marker === MARK_URGENT) return line.slice(marker.length) || ">>> URGENTE <<<";
+      if (marker === MARK_DETAIL) return line.slice(marker.length);
+      if (marker === MARK_INDENT) return line.slice(marker.length);
       return line;
     })
     .join("\n");
@@ -380,7 +380,7 @@ export function formatTicketCabecera(
   const mesa = resolveMesaDisplay(comanda.mesa, codigoMesa);
   const lineas: string[] = [];
 
-  lineas.push(`${MARK_MESA}${mesa.titulo}`);
+  lineas.push(`${MARK_DISH}${mesa.titulo}`);
   if (mesa.subtitulo) {
     lineas.push(`${MARK_CENTER}${mesa.subtitulo}`);
   }

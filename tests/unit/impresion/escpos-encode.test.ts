@@ -65,6 +65,23 @@ describe("escpos-encode", () => {
     const gsIdx = buf.indexOf(0x1d);
     expect(buf[gsIdx + 2]).toBe(0x11);
     expect(buf.toString("latin1")).toContain("GAZPACHO");
+    expect(buf.toString("latin1")).not.toContain("@D@");
+  });
+
+  it("mesa usa mismo marcador que platos y no imprime @H@ literal", () => {
+    const buf = buildEscPosBuffer("@D@R5\n", "80mm");
+    const text = buf.toString("latin1");
+    expect(text).toContain("R5");
+    expect(text).not.toMatch(/@[A-Za-z]@/);
+    const gsIdx = buf.indexOf(0x1d);
+    expect(buf[gsIdx + 2]).toBe(0x11);
+  });
+
+  it("acepta marcador de mesa legacy @h@ sin imprimirlo", () => {
+    const buf = buildEscPosBuffer("@h@C1\n", "80mm");
+    const text = buf.toString("latin1");
+    expect(text).toContain("C1");
+    expect(text).not.toMatch(/@[A-Za-z]@/);
   });
 
   it("aplica doble alto en especificaciones marcadas", () => {

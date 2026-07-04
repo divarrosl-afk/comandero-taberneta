@@ -85,8 +85,9 @@ describe("format-ticket", () => {
 
   it("comandaPostresToTexto incluye postres", () => {
     const texto = comandaPostresToTexto(comandaPostresFixture());
-    expect(texto).toContain("@H@C1");
+    expect(texto).toContain("@D@C1");
     expect(texto).not.toContain("MESA C1");
+    expect(texto).not.toContain("@H@");
     expect(texto).toContain("FLAN");
   });
 });

@@ -136,54 +136,61 @@ function isLegacyCenteredLine(line, index) {
   return false;
 }
 
+function markerPrefix(raw) {
+  const match = raw.match(/^@([A-Za-z])@/);
+  return match ? `@${match[1].toUpperCase()}@` : null;
+}
+
+function markerBody(raw) {
+  const prefix = markerPrefix(raw);
+  return prefix ? raw.slice(prefix.length) : raw;
+}
+
 function hasTicketMarkers(text) {
-  return text.includes("@H@") || text.includes("@C@") || text.includes("@D@") || text.includes("@M@") || text.includes("@S@");
+  return /@([A-Za-z])@/.test(text);
 }
 
 function parseTicketLine(raw, paperWidth) {
   const normal = { align: "left", bold: false, double: false, doubleHeight: false, width: paperWidth };
-  if (raw === MARK_SEP) {
+  const marker = markerPrefix(raw);
+  const body = marker ? markerBody(raw) : raw;
+
+  if (marker === MARK_SEP) {
     return { text: "=".repeat(paperWidth), style: { ...normal } };
   }
-  if (raw.startsWith(MARK_MESA)) {
+  if (marker === MARK_MESA || marker === MARK_DISH) {
     return {
-      text: raw.slice(MARK_MESA.length),
-      style: { align: "right", bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
+      text: body,
+      style: { align: "left", bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
     };
   }
-  if (raw.startsWith(MARK_CENTER)) {
+  if (marker === MARK_CENTER) {
     return {
-      text: raw.slice(MARK_CENTER.length),
+      text: body,
       style: { align: "center", bold: true, double: false, doubleHeight: false, width: paperWidth },
     };
   }
-  if (raw.startsWith(MARK_SECTION)) {
+  if (marker === MARK_SECTION) {
     return {
-      text: raw.slice(MARK_SECTION.length),
+      text: body,
       style: { align: "center", bold: true, double: false, doubleHeight: false, width: paperWidth },
     };
   }
-  if (raw.startsWith(MARK_URGENT)) {
-    const text = raw.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
+  if (marker === MARK_URGENT) {
+    const text = body || ">>> URGENTE <<<";
     return {
       text,
       style: { align: "center", bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
     };
   }
-  if (raw.startsWith(MARK_DISH)) {
+  if (marker === MARK_DETAIL) {
     return {
-      text: raw.slice(MARK_DISH.length),
-      style: { align: "left", bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
-    };
-  }
-  if (raw.startsWith(MARK_DETAIL)) {
-    return {
-      text: raw.slice(MARK_DETAIL.length),
+      text: body,
       style: { align: "left", bold: true, double: false, doubleHeight: true, width: paperWidth },
     };
   }
-  if (raw.startsWith(MARK_INDENT)) {
-    return { text: raw.slice(MARK_INDENT.length), style: { ...normal } };
+  if (marker === MARK_INDENT) {
+    return { text: body, style: { ...normal } };
   }
   return { text: raw, style: { ...normal } };
 }

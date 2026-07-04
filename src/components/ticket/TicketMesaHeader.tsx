@@ -2,14 +2,14 @@ interface TicketMesaHeaderProps {
   codigo: string;
 }
 
-/** ~2× la altura visual de una cabecera ENTRANTES en el preview del ticket. */
+/** Mismo peso visual que una línea de plato en la vista previa del ticket. */
 export function TicketMesaHeader({ codigo }: TicketMesaHeaderProps) {
   return (
-    <p
-      className="py-1 pr-1 text-right text-[4rem] font-black leading-none tracking-tight"
+    <span
+      className="block py-0.5 text-left text-[15px] font-semibold leading-[1.45]"
       aria-label={`Mesa ${codigo}`}
     >
       {codigo}
-    </p>
+    </span>
   );
 }

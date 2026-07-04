@@ -125,18 +125,21 @@ function alignCommand(align: TextAlign): Buffer {
 }
 
 function parseTicketLine(raw: string, paperWidth: number): { text: string; style: LineStyle } {
-  if (raw === MARK_SEP) {
+  const marker = markerPrefix(raw);
+  const body = marker ? markerBody(raw) : raw;
+
+  if (marker === MARK_SEP) {
     return {
       text: "=".repeat(paperWidth),
       style: normalStyle(paperWidth),
     };
   }
 
-  if (raw.startsWith(MARK_MESA)) {
+  if (marker === MARK_MESA || marker === MARK_DISH) {
     return {
-      text: raw.slice(MARK_MESA.length),
+      text: body,
       style: {
-        align: "right",
+        align: "left",
         bold: true,
         double: true,
         doubleHeight: false,
@@ -145,9 +148,9 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     };
   }
 
-  if (raw.startsWith(MARK_CENTER)) {
+  if (marker === MARK_CENTER) {
     return {
-      text: raw.slice(MARK_CENTER.length),
+      text: body,
       style: {
         align: "center",
         bold: true,
@@ -158,9 +161,9 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     };
   }
 
-  if (raw.startsWith(MARK_SECTION)) {
+  if (marker === MARK_SECTION) {
     return {
-      text: raw.slice(MARK_SECTION.length),
+      text: body,
       style: {
         align: "center",
         bold: true,
@@ -171,8 +174,8 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     };
   }
 
-  if (raw.startsWith(MARK_URGENT)) {
-    const text = raw.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
+  if (marker === MARK_URGENT) {
+    const text = body || ">>> URGENTE <<<";
     return {
       text,
       style: {
@@ -185,22 +188,9 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     };
   }
 
-  if (raw.startsWith(MARK_DISH)) {
+  if (marker === MARK_DETAIL) {
     return {
-      text: raw.slice(MARK_DISH.length),
-      style: {
-        align: "left",
-        bold: true,
-        double: true,
-        doubleHeight: false,
-        width: Math.floor(paperWidth / 2),
-      },
-    };
-  }
-
-  if (raw.startsWith(MARK_DETAIL)) {
-    return {
-      text: raw.slice(MARK_DETAIL.length),
+      text: body,
       style: {
         align: "left",
         bold: true,
@@ -211,9 +201,9 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     };
   }
 
-  if (raw.startsWith(MARK_INDENT)) {
+  if (marker === MARK_INDENT) {
     return {
-      text: raw.slice(MARK_INDENT.length),
+      text: body,
       style: normalStyle(paperWidth),
     };
   }
@@ -262,14 +252,18 @@ function ticketEpilogue(chunks: Buffer[]): void {
   chunks.push(cutPaper());
 }
 
+function markerPrefix(raw: string): string | null {
+  const match = raw.match(/^@([A-Za-z])@/);
+  return match ? `@${match[1]!.toUpperCase()}@` : null;
+}
+
+function markerBody(raw: string): string {
+  const prefix = markerPrefix(raw);
+  return prefix ? raw.slice(prefix.length) : raw;
+}
+
 function hasTicketMarkers(text: string): boolean {
-  return (
-    text.includes("@H@") ||
-    text.includes("@C@") ||
-    text.includes("@D@") ||
-    text.includes("@M@") ||
-    text.includes("@S@")
-  );
+  return /@([A-Za-z])@/.test(text);
 }
 
 /** Construye buffer ESC/POS a partir de líneas de texto plano. */

@@ -1,6 +1,6 @@
 import { getCodigoMesaComanda } from "@/lib/mesas/resolve-mesa";
 import {
-  MARK_MESA,
+  MARK_DISH,
   sectionHeader,
   TICKET_WIDTH_80MM,
 } from "@/lib/comanda/ticket-kitchen";
@@ -39,7 +39,7 @@ export function comandaPostresToTexto(
   const width = options?.ancho ?? TICKET_WIDTH_80MM;
   const codigoMesa = options?.nombreMesa ?? getCodigoMesaComanda(normalizada);
   const lineas: string[] = [
-    `${MARK_MESA}${codigoMesa.toUpperCase()}`,
+    `${MARK_DISH}${codigoMesa.toUpperCase()}`,
     "",
   ];
 
