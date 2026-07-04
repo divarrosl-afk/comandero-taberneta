@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { DataLayerProvider } from "@/components/providers/DataLayerProvider";
 import { SyncWorkerProvider } from "@/components/providers/SyncWorkerProvider";
+import { AppSyncProvider } from "@/components/providers/AppSyncProvider";
 import { SupabaseConfigGuard } from "@/components/providers/SupabaseConfigGuard";
 import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
@@ -50,9 +51,11 @@ export default function RootLayout({
         <SupabaseConfigGuard>
           <DataLayerProvider>
             <SyncWorkerProvider>
-              <AuthProvider>
-                <AuthShell>{children}</AuthShell>
-              </AuthProvider>
+              <AppSyncProvider>
+                <AuthProvider>
+                  <AuthShell>{children}</AuthShell>
+                </AuthProvider>
+              </AppSyncProvider>
             </SyncWorkerProvider>
           </DataLayerProvider>
         </SupabaseConfigGuard>

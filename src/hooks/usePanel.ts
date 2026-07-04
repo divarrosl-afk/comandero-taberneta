@@ -1,14 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAppSync } from "@/hooks/useAppSync";
 import {
   actualizarEstadoComanda,
 } from "@/lib/comandas/comandas-service";
 import {
   actualizarEstadoPostres,
 } from "@/lib/postres/postres-service";
-import { useSupabaseOperativaRealtime } from "@/hooks/useSupabaseOperativaRealtime";
-import { OPERATIVA_POLL_MS } from "@/lib/sync/constants";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import type { ComandaCocina } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
@@ -34,11 +33,9 @@ export function usePanel() {
 
   useEffect(() => {
     void recargar();
-    const interval = setInterval(() => void recargar(), OPERATIVA_POLL_MS);
-    return () => clearInterval(interval);
   }, [recargar]);
 
-  useSupabaseOperativaRealtime(() => {
+  useAppSync(() => {
     void recargar();
   });
 

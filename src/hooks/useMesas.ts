@@ -1,14 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAppSync } from "@/hooks/useAppSync";
 import { getMesasRepository } from "@/lib/mesas/mesas-service";
 import { guardarMesasConfig } from "@/lib/storage/mesas";
 import { getEstadoMesa, getEstadoPanelMesa } from "@/lib/mesas/estado-mesa";
-import { OPERATIVA_POLL_MS } from "@/lib/sync/constants";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { usesRemoteData } from "@/lib/data/backend";
-import { useSupabaseOperativaRealtime } from "@/hooks/useSupabaseOperativaRealtime";
 import type { MesaConfig, MesaOperativa, ZonaMesa } from "@/types/mesas";
+
+async function ensureMesasRemotas(): Promise<void> {
+  if (!usesRemoteData()) return;
+  try {
+    await fetch("/api/mesas/ensure", { cache: "no-store" });
+  } catch {
+    /* reintento en siguiente sincronización */
+  }
+}
 
 export function useMesas() {
   const [mesas, setMesas] = useState<MesaConfig[]>([]);
@@ -19,12 +27,8 @@ export function useMesas() {
     try {
       let config = await getMesasRepository().getConfig();
       if (config.length === 0 && usesRemoteData()) {
-        try {
-          await fetch("/api/mesas/ensure", { cache: "no-store" });
-          config = await getMesasRepository().getConfig();
-        } catch {
-          /* reintento en siguiente recarga */
-        }
+        await ensureMesasRemotas();
+        config = await getMesasRepository().getConfig();
       }
       if (usesRemoteData()) {
         guardarMesasConfig(config);
@@ -38,6 +42,10 @@ export function useMesas() {
   useEffect(() => {
     void recargar();
   }, [recargar]);
+
+  useAppSync(() => {
+    void recargar();
+  });
 
   const activas = mesas.filter((m) => m.activa);
 
@@ -93,26 +101,13 @@ export function useMesasOperativas() {
     void recargar();
   }, [recargar]);
 
-  const refrescarOperativa = useCallback(async () => {
-    if (usesRemoteData()) {
-      try {
-        await fetchOperativaData();
-      } catch (e) {
-        console.error("[mesas] Error al refrescar operativa:", e);
-      }
-    }
+  const refrescarOperativa = useCallback(() => {
     setRevision((v) => v + 1);
   }, []);
 
-  useSupabaseOperativaRealtime(() => {
-    void refrescarOperativa();
+  useAppSync(() => {
+    refrescarOperativa();
   });
-
-  useEffect(() => {
-    if (!usesRemoteData()) return;
-    const interval = setInterval(() => void refrescarOperativa(), OPERATIVA_POLL_MS);
-    return () => clearInterval(interval);
-  }, [refrescarOperativa]);
 
   const operativas: MesaOperativa[] = useMemo(() => {
     void revision;

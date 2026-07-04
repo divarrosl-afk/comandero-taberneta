@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAppSync } from "@/hooks/useAppSync";
 import {
   getMenuDia,
   guardarMenuDia,
@@ -24,6 +25,10 @@ export function useMenuDia() {
   useEffect(() => {
     void recargar();
   }, [recargar]);
+
+  useAppSync(() => {
+    void recargar();
+  });
 
   const guardar = useCallback(
     async (config: MenuDiaConfig) => {

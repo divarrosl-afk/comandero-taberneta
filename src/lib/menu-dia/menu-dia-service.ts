@@ -1,4 +1,5 @@
 import { getMenuDiaRepository } from "@/lib/data/data-layer";
+import { usesRemoteData } from "@/lib/data/backend";
 import {
   getMenuDia as getMenuDiaLocal,
   guardarMenuDia as guardarMenuDiaLocal,
@@ -6,7 +7,11 @@ import {
 import { menuTienePlatosImportados } from "@/lib/menu-dia/menu-platos-comanda";
 import type { MenuDiaConfig } from "@/types/menu-dia";
 
-function elegirMenu(local: MenuDiaConfig, remoto: MenuDiaConfig): MenuDiaConfig {
+/** Solo en modo local/offline: elige la copia con datos más útiles. */
+export function elegirMenuLocal(
+  local: MenuDiaConfig,
+  remoto: MenuDiaConfig,
+): MenuDiaConfig {
   const remotoTiene = menuTienePlatosImportados(remoto);
   const localTiene = menuTienePlatosImportados(local);
 
@@ -26,15 +31,12 @@ export async function getMenuDia(): Promise<MenuDiaConfig> {
 
   try {
     const remoto = await getMenuDiaRepository().get();
-    const elegido = elegirMenu(local, remoto);
 
-    if (!menuTienePlatosImportados(remoto) && menuTienePlatosImportados(local)) {
-      void getMenuDiaRepository()
-        .save(local)
-        .catch(() => undefined);
+    if (usesRemoteData()) {
+      return mirrorLocal(remoto);
     }
 
-    return mirrorLocal(elegido);
+    return mirrorLocal(elegirMenuLocal(local, remoto));
   } catch {
     return local;
   }

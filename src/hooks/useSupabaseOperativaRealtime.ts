@@ -49,6 +49,26 @@ export function useSupabaseOperativaRealtime(onChange: () => void): void {
         },
         stableHandler,
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "menus_dia",
+          filter: `restaurante_id=eq.${restauranteId}`,
+        },
+        stableHandler,
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "mesas",
+          filter: `restaurante_id=eq.${restauranteId}`,
+        },
+        stableHandler,
+      )
       .subscribe();
 
     return () => {

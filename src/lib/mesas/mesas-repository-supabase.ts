@@ -1,10 +1,16 @@
 import { crearMesasDefault } from "@/data/mesas-default";
 import { createId } from "@/lib/id/create-id";
+import { getMesasConfig } from "@/lib/storage/mesas";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { mesaToRow, rowToMesa, type DbMesa } from "@/lib/supabase/mappers";
 import type { MesasRepository } from "@/lib/mesas/mesas-repository";
 import type { MesaConfig } from "@/types/mesas";
+
+function fallbackMesasConfig(): MesaConfig[] {
+  const cached = getMesasConfig();
+  return cached.length > 0 ? cached : crearMesasDefault();
+}
 
 export const mesasRepositorySupabase: MesasRepository = {
   async getConfig() {
@@ -21,7 +27,11 @@ export const mesasRepositorySupabase: MesasRepository = {
       .order("orden")
       .order("codigo");
 
-    if (error || !data) return [];
+    if (error) {
+      console.error("[mesas] Error al leer Supabase:", error.message);
+      return fallbackMesasConfig();
+    }
+    if (!data) return fallbackMesasConfig();
     return (data as DbMesa[]).map(rowToMesa);
   },
 
