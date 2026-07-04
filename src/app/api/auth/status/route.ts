@@ -54,6 +54,7 @@ export async function GET() {
   return NextResponse.json({
     seedRequired: userCount === 0,
     userCount,
+    restauranteId: env.restauranteId,
     ...(seeded ? { seeded: true } : {}),
     ...(seedError ? { seedError } : {}),
   });

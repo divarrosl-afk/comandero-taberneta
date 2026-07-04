@@ -54,13 +54,29 @@ export async function verifyAuthenticatedRequest(
 
   const { data: perfil, error: perfilError } = await userClient
     .from("perfiles")
-    .select("username, rol, activo")
+    .select("username, rol, activo, restaurante_id")
     .eq("auth_user_id", userData.user.id)
     .eq("restaurante_id", RESTAURANTE_ID)
     .is("deleted_at", null)
     .maybeSingle();
 
   if (perfilError || !perfil) {
+    const { data: otroPerfil } = await userClient
+      .from("perfiles")
+      .select("restaurante_id")
+      .eq("auth_user_id", userData.user.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (otroPerfil?.restaurante_id && otroPerfil.restaurante_id !== RESTAURANTE_ID) {
+      return {
+        ok: false,
+        status: 403,
+        error:
+          "Perfil en otro restaurante — revisa que NEXT_PUBLIC_RESTAURANTE_ID en Vercel coincida con perfiles.restaurante_id en Supabase",
+      };
+    }
+
     return { ok: false, status: 403, error: "Perfil no encontrado" };
   }
 
