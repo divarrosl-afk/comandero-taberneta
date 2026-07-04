@@ -1,4 +1,5 @@
 import { getComandasRepository, getPostresRepository } from "@/lib/data/data-layer";
+import { getSupabaseAccessToken } from "@/lib/supabase/client";
 import { normalizeEstadoPanel } from "@/types/panel";
 import type { EstadoPanel } from "@/types/panel";
 import {
@@ -48,6 +49,9 @@ async function discardEntry(
  * o cuando otro dispositivo tiene un estado distinto (Supabase gana).
  */
 export async function reconcileOutbox(): Promise<number> {
+  const token = await getSupabaseAccessToken();
+  if (!token) return 0;
+
   try {
     await getComandasRepository().getAll();
   } catch {

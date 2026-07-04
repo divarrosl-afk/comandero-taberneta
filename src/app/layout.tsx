@@ -51,11 +51,11 @@ export default function RootLayout({
         <SupabaseConfigGuard>
           <DataLayerProvider>
             <SyncWorkerProvider>
-              <AppSyncProvider>
-                <AuthProvider>
+              <AuthProvider>
+                <AppSyncProvider>
                   <AuthShell>{children}</AuthShell>
-                </AuthProvider>
-              </AppSyncProvider>
+                </AppSyncProvider>
+              </AuthProvider>
             </SyncWorkerProvider>
           </DataLayerProvider>
         </SupabaseConfigGuard>

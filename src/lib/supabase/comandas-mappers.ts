@@ -1,6 +1,7 @@
 import type { ComandaCocina, TipoServicio } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
 import { normalizeEstadoPanel } from "@/types/panel";
+import { isValidUuid } from "@/lib/id/uuid";
 import type { ComandaPostres, EstadoCafeX, EstadoPostreX } from "@/types/postres";
 import { normalizeComandaPostres } from "@/lib/postres/normalize-comanda";
 
@@ -91,7 +92,7 @@ export function comandaToRow(
     id: comanda.id,
     restaurante_id: restauranteId,
     mesa_codigo: mesaCodigo,
-    mesa_id: meta?.mesaId ?? null,
+    mesa_id: meta?.mesaId && isValidUuid(meta.mesaId) ? meta.mesaId : null,
     camarero_username: meta?.camareroUsername ?? null,
     camarero_nombre: comanda.camarero,
     tipo_servicio: comanda.tipoServicio,
@@ -139,7 +140,7 @@ export function comandaPostresToRow(
     id: comanda.id,
     restaurante_id: restauranteId,
     mesa_codigo: mesaCodigo,
-    mesa_id: meta?.mesaId ?? null,
+    mesa_id: meta?.mesaId && isValidUuid(meta.mesaId) ? meta.mesaId : null,
     camarero_username: meta?.camareroUsername ?? null,
     camarero_nombre: comanda.camarero,
     postres: comanda.postres,

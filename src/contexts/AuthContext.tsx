@@ -22,6 +22,12 @@ import {
 } from "@/lib/auth/permisos";
 import { getAuthRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
+import { dispatchAppSync } from "@/lib/sync/app-sync";
+import {
+  fetchOperativaData,
+  resetOperativaInflight,
+} from "@/lib/sync/operativa-fetch";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import type { LoginError, LoginResult } from "@/lib/auth/auth-repository";
 import type { Sesion } from "@/types/auth";
 
@@ -44,6 +50,17 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+async function refrescarOperativaTrasAuth(): Promise<void> {
+  if (!usesRemoteData()) return;
+  resetOperativaInflight();
+  try {
+    await fetchOperativaData();
+  } catch (e) {
+    console.error("[auth] Error al cargar operativa:", e);
+  }
+  dispatchAppSync();
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [sesion, setSesion] = useState<Sesion | null>(null);
   const [listo, setListo] = useState(false);
@@ -54,9 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void (async () => {
       const restaurada = await getAuthRepository().restoreSession();
-      if (activo) {
-        setSesion(restaurada);
-        setListo(true);
+      if (!activo) return;
+      setSesion(restaurada);
+      setListo(true);
+      if (restaurada) {
+        await refrescarOperativaTrasAuth();
       }
     })();
 
@@ -65,17 +84,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!usesRemoteData()) return;
+
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    const {
+      data: { subscription },
+    } = client.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        void refrescarOperativaTrasAuth();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const iniciarSesion = useCallback(async (username: string, password: string) => {
     const result = await getAuthRepository().login(username, password);
     if (!result.sesion) return result;
 
     setSesion(result.sesion);
+    await refrescarOperativaTrasAuth();
     return result;
   }, []);
 
   const cerrarSesion = useCallback(async () => {
     await getAuthRepository().logout();
     setSesion(null);
+    resetOperativaInflight();
   }, []);
 
   const value = useMemo<AuthContextValue>(

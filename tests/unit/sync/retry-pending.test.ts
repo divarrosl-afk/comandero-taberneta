@@ -10,6 +10,10 @@ vi.mock("@/lib/data/data-layer", () => ({
   getPostresRepository: vi.fn(),
 }));
 
+vi.mock("@/lib/supabase/client", () => ({
+  getSupabaseAccessToken: vi.fn().mockResolvedValue("test-token"),
+}));
+
 vi.mock("@/lib/sync/operativa-read", () => ({
   loadOperativaMerged: vi.fn().mockResolvedValue({ cocina: [], postres: [] }),
 }));

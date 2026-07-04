@@ -1,5 +1,6 @@
 import { getComandasRepository, getPostresRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
+import { getSupabaseAccessToken } from "@/lib/supabase/client";
 import { mergeOperativa, mergeOptimisticCache } from "@/lib/sync/merge-operativa";
 import {
   getOutboxPendingCocinaSync,
@@ -29,6 +30,11 @@ export interface OperativaData {
 }
 
 async function fetchRemoto(): Promise<OperativaData | null> {
+  if (usesRemoteData()) {
+    const token = await getSupabaseAccessToken();
+    if (!token) return null;
+  }
+
   try {
     const [cocina, postres] = await Promise.all([
       getComandasRepository().getAll(),
@@ -157,6 +163,8 @@ export async function loadOperativaMerged(): Promise<OperativaData> {
 
   if (remoto) {
     await saveOperativaSnapshot(remoto.cocina, remoto.postres);
+  } else if (!usesRemoteData()) {
+    await saveOperativaSnapshot(cocina, postres);
   }
 
   return { cocina, postres };

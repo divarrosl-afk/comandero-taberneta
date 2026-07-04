@@ -22,6 +22,10 @@ vi.mock("@/lib/sync/operativa-snapshot", () => ({
   loadOperativaSnapshot: vi.fn().mockResolvedValue(null),
 }));
 
+vi.mock("@/lib/supabase/client", () => ({
+  getSupabaseAccessToken: vi.fn().mockResolvedValue("test-token"),
+}));
+
 vi.mock("@/lib/data/data-layer", () => ({
   getComandasRepository: () => ({
     getAll: vi.fn().mockResolvedValue([

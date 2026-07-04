@@ -1,22 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, type ReactNode } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { usesRemoteData } from "@/lib/data/backend";
 import { APP_SYNC_POLL_MS } from "@/lib/sync/constants";
 import { dispatchAppSync } from "@/lib/sync/app-sync";
-import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
+import {
+  fetchOperativaData,
+  resetOperativaInflight,
+} from "@/lib/sync/operativa-fetch";
 import { hydrateOutboxMirror } from "@/lib/sync/outbox";
 import { reconcileOutbox } from "@/lib/sync/reconcile-outbox";
 import { flushOutbox } from "@/lib/sync/sync-worker";
 import { useSupabaseOperativaRealtime } from "@/hooks/useSupabaseOperativaRealtime";
 
 /**
- * Sincroniza operativa, mesas y menú entre dispositivos cada ~10s
- * y ante cambios Realtime en Supabase.
+ * Sincroniza operativa entre dispositivos cada ~10s cuando hay sesión Supabase.
  */
 export function AppSyncProvider({ children }: { children: ReactNode }) {
+  const { sesion, listo } = useAuth();
+
   const sincronizar = useCallback(async () => {
-    if (!usesRemoteData()) return;
+    if (!usesRemoteData() || !sesion) return;
 
     try {
       await hydrateOutboxMirror();
@@ -28,12 +33,14 @@ export function AppSyncProvider({ children }: { children: ReactNode }) {
     }
 
     dispatchAppSync();
-  }, []);
+  }, [sesion]);
 
   useEffect(() => {
-    if (!usesRemoteData()) return;
+    if (!usesRemoteData() || !listo || !sesion) return;
 
+    resetOperativaInflight();
     void sincronizar();
+
     const interval = setInterval(() => void sincronizar(), APP_SYNC_POLL_MS);
 
     const onVisible = () => {
@@ -47,10 +54,10 @@ export function AppSyncProvider({ children }: { children: ReactNode }) {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [sincronizar]);
+  }, [listo, sesion, sincronizar]);
 
   useSupabaseOperativaRealtime(() => {
-    void sincronizar();
+    if (sesion) void sincronizar();
   });
 
   return children;

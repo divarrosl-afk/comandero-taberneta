@@ -1,6 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { comandaCocinaFixture } from "../setup/fixtures";
 
+vi.mock("@/lib/supabase/client", () => ({
+  getSupabaseAccessToken: vi.fn().mockResolvedValue("test-token"),
+}));
+
 vi.mock("@/lib/data/data-layer", () => ({
   getComandasRepository: vi.fn(),
   getPostresRepository: vi.fn(),

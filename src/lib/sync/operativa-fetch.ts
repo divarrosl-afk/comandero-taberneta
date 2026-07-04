@@ -8,13 +8,30 @@ export interface OperativaData {
 }
 
 let inflight: Promise<OperativaData> | null = null;
+let inflightGeneration = 0;
+
+/** Invalida peticiones en curso (p. ej. al iniciar sesión). */
+export function resetOperativaInflight(): void {
+  inflightGeneration += 1;
+  inflight = null;
+}
 
 /** Evita peticiones duplicadas concurrentes (polling + Realtime). */
 export async function fetchOperativaData(): Promise<OperativaData> {
+  const generation = inflightGeneration;
   if (!inflight) {
-    inflight = loadOperativaMerged().finally(() => {
-      inflight = null;
-    });
+    inflight = loadOperativaMerged()
+      .then((data) => {
+        if (generation !== inflightGeneration) {
+          return loadOperativaMerged();
+        }
+        return data;
+      })
+      .finally(() => {
+        if (generation === inflightGeneration) {
+          inflight = null;
+        }
+      });
   }
   return inflight;
 }

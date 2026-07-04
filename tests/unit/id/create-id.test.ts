@@ -14,15 +14,26 @@ describe("createId", () => {
     expect(mockUuid).toHaveBeenCalledOnce();
   });
 
-  it("usa fallback si randomUUID no existe", async () => {
-    vi.stubGlobal("crypto", undefined);
+  it("usa fallback UUID si randomUUID no existe", async () => {
+    vi.stubGlobal("crypto", {
+      getRandomValues: (arr: Uint8Array) => {
+        for (let i = 0; i < arr.length; i++) arr[i] = i;
+        return arr;
+      },
+    });
     const { createId } = await import("@/lib/id/create-id");
+    const { isValidUuid } = await import("@/lib/id/uuid");
     const id = createId();
-    expect(id).toMatch(/^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$/);
+    expect(isValidUuid(id)).toBe(true);
   });
 
   it("genera IDs únicos", async () => {
-    vi.stubGlobal("crypto", undefined);
+    vi.stubGlobal("crypto", {
+      getRandomValues: (arr: Uint8Array) => {
+        for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256);
+        return arr;
+      },
+    });
     const { createId } = await import("@/lib/id/create-id");
     const ids = new Set(Array.from({ length: 100 }, () => createId()));
     expect(ids.size).toBe(100);

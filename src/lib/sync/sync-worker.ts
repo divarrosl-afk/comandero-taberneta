@@ -1,6 +1,7 @@
 import { buildComandaPersistMeta } from "@/lib/comandas/comanda-persist-meta";
 import { getComandasRepository, getPostresRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
+import { getSupabaseAccessToken } from "@/lib/supabase/client";
 import { isDuplicateKeyError } from "@/lib/supabase/errors";
 import {
   incrementOutboxRetry,
@@ -116,6 +117,9 @@ export async function flushOutbox(): Promise<FlushResult> {
   let fail = 0;
 
   try {
+    const token = await getSupabaseAccessToken();
+    if (!token) return { ok: 0, fail: 0 };
+
     await reconcileOutbox();
     const entries = await listOutboxEntries();
     for (const entry of entries) {

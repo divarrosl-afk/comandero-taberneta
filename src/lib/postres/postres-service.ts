@@ -1,5 +1,6 @@
 import { buildComandaPersistMeta } from "@/lib/comandas/comanda-persist-meta";
 import { createId } from "@/lib/id/create-id";
+import { ensureUuid } from "@/lib/id/uuid";
 import { esMismaFecha } from "@/lib/cierre/fecha";
 import type { PersistResult } from "@/lib/comandas/comandas-service";
 import { getPostresRepository } from "@/lib/data/data-layer";
@@ -49,23 +50,26 @@ export async function guardarPostres(
   opts?: { camareroUsername?: string | null },
 ): Promise<PersistResult<ComandaPostres>> {
   const repo = getPostresRepository();
+  const comandaRemota = usesRemoteData()
+    ? { ...comanda, id: ensureUuid(comanda.id) }
+    : comanda;
 
   if (!usesRemoteData()) {
-    const guardada = await repo.crear(comanda);
+    const guardada = await repo.crear(comandaRemota);
     return { data: guardada, synced: true };
   }
 
-  upsertPostresCache(comanda);
+  upsertPostresCache(comandaRemota);
 
   try {
     const meta = await buildComandaPersistMeta(
-      comanda.mesa,
+      comandaRemota.mesa,
       opts?.camareroUsername,
     );
-    const guardada = await repo.crear(comanda, meta);
+    const guardada = await repo.crear(comandaRemota, meta);
     await removeOutboxForEntity(
       ["postres_create", "postres_estado"],
-      comanda.id,
+      comandaRemota.id,
     );
     upsertPostresCache(guardada);
     void flushOutbox();
@@ -73,10 +77,11 @@ export async function guardarPostres(
     return { data: guardada, synced: true };
   } catch (e) {
     const error = e instanceof Error ? e.message : "Error de sincronización";
-    await enqueuePostresCreate(comanda);
+    console.error("[postres] Error al guardar en Supabase:", error);
+    await enqueuePostresCreate(comandaRemota);
     void flushOutbox();
     dispatchAppSync();
-    return { data: comanda, synced: false, error };
+    return { data: comandaRemota, synced: false, error };
   }
 }
 
