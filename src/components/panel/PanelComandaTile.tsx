@@ -16,6 +16,7 @@ interface PanelComandaTileProps {
   mesas: MesaConfig[];
   postresMesa?: ComandaPostres;
   onClick: () => void;
+  compacto?: boolean;
 }
 
 export function PanelComandaTile({
@@ -23,6 +24,7 @@ export function PanelComandaTile({
   mesas,
   postresMesa,
   onClick,
+  compacto = false,
 }: PanelComandaTileProps) {
   const nombreMesa = resolveNombreMesaComanda(comanda, mesas);
   const lineas = lineasMarchaCocina(comanda, comanda.estadoPanel, 3);
@@ -33,7 +35,8 @@ export function PanelComandaTile({
       type="button"
       onClick={onClick}
       className={[
-        "flex min-h-[9.5rem] flex-col rounded-2xl border-2 p-3 text-left shadow-sm transition active:scale-[0.98]",
+        "flex flex-col rounded-2xl border-2 p-3 text-left shadow-sm transition active:scale-[0.98]",
+        compacto ? "min-h-[8.5rem]" : "min-h-[9.5rem]",
         estilo,
       ].join(" ")}
     >

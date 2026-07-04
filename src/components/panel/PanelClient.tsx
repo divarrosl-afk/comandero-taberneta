@@ -10,11 +10,11 @@ import { PanelComandaTile } from "@/components/panel/PanelComandaTile";
 import { PanelDetalleSheet } from "@/components/panel/PanelDetalleSheet";
 import { PanelPostresCard } from "@/components/panel/PanelPostresCard";
 import { PanelPostresTile } from "@/components/panel/PanelPostresTile";
+import { PanelCocinaTicketRails } from "@/components/panel/PanelCocinaTicketRails";
 import { comandaPerteneceAMesa } from "@/lib/mesas/resolve-mesa";
-import { agruparComandasPorZona } from "@/lib/panel/agrupar-por-zona";
+import { ordenarComandasPorLlegada, minutosEspera } from "@/lib/panel/orden-tickets-cocina";
 import { useMesas } from "@/hooks/useMesas";
 import { usePanel } from "@/hooks/usePanel";
-import { labelZona } from "@/types/mesas";
 import type { ComandaCocina } from "@/types/comanda";
 import type { ComandaPostres } from "@/types/postres";
 
@@ -46,7 +46,6 @@ function PanelContent() {
   const cocinaVisibles = mesaFiltro
     ? listaCocina.filter((c) => comandaPerteneceAMesa(c, mesaFiltro))
     : listaCocina;
-  const cocinaPorZona = agruparComandasPorZona(cocinaVisibles, mesas);
   const mesaAbiertaRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -134,37 +133,40 @@ function PanelContent() {
         </nav>
 
         {tab === "cocina" && (
-          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4">
+          <>
             {cocinaVisibles.length === 0 ? (
               <p className="rounded-2xl border-2 border-dashed border-border bg-card p-8 text-center text-muted">
                 {mesaFiltro
                   ? "No hay comanda de cocina activa en esta mesa"
                   : "No hay comandas de cocina activas"}
               </p>
-            ) : (
-              cocinaPorZona.map(({ zona, comandas }) => (
-                <section key={zona}>
-                  <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">
-                    {labelZona(zona)}
-                    <span className="ml-2 font-semibold text-foreground">
-                      ({comandas.length})
-                    </span>
-                  </h2>
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-                    {comandas.map((comanda) => (
+            ) : mesaFiltro ? (
+              <div className="min-h-0 flex-1 overflow-y-auto pb-4">
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {ordenarComandasPorLlegada(cocinaVisibles).map((comanda) => (
+                    <div
+                      key={comanda.id}
+                      className="w-[9.5rem] shrink-0 sm:w-[10.5rem]"
+                    >
                       <PanelComandaTile
-                        key={comanda.id}
                         comanda={comanda}
                         mesas={mesas}
                         postresMesa={postresDeMesa(comanda)}
                         onClick={() => setDetalleCocina(comanda)}
                       />
-                    ))}
-                  </div>
-                </section>
-              ))
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <PanelCocinaTicketRails
+                comandas={cocinaVisibles}
+                mesas={mesas}
+                postresDeMesa={postresDeMesa}
+                onAbrir={setDetalleCocina}
+              />
             )}
-          </div>
+          </>
         )}
 
         {tab === "postres" && (
@@ -174,14 +176,24 @@ function PanelContent() {
                 No hay comandas de postres activas
               </p>
             ) : (
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-                {listaPostres.map((comanda) => (
-                  <PanelPostresTile
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {ordenarComandasPorLlegada(listaPostres).map((comanda, index) => (
+                  <div
                     key={comanda.id}
-                    comanda={comanda}
-                    mesas={mesas}
-                    onClick={() => setDetallePostres(comanda)}
-                  />
+                    className="w-[9.5rem] shrink-0 sm:w-[10.5rem]"
+                  >
+                    <p className="mb-1 text-[10px] font-bold text-muted">
+                      #{index + 1} ·{" "}
+                      {minutosEspera(comanda.creadaEn) < 1
+                        ? "<1 min"
+                        : `${minutosEspera(comanda.creadaEn)} min`}
+                    </p>
+                    <PanelPostresTile
+                      comanda={comanda}
+                      mesas={mesas}
+                      onClick={() => setDetallePostres(comanda)}
+                    />
+                  </div>
                 ))}
               </div>
             )}
