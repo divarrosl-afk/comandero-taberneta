@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useAuth } from "@/contexts/AuthContext";
+import { getActiveBackendLabel } from "@/lib/data/data-layer";
+import { isSupabaseEnvConfigured } from "@/lib/supabase/env";
+
+const APP_VERSION = "1.0.0";
 
 const accionesBase = [
   {
@@ -93,6 +97,7 @@ const accionesBase = [
 export function HomeClient() {
   const {
     sesion,
+    usaSupabase,
     puedeConfigCarta,
     puedeConfigMenuDia,
     puedeConfigImpresora,
@@ -111,6 +116,35 @@ export function HomeClient() {
     if (accion.permiso === "impresora") return puedeConfigImpresora;
     return true;
   });
+
+  const backendLabel = getActiveBackendLabel();
+  const supabaseConfigurado = isSupabaseEnvConfigured();
+
+  const estadoItems: { color: "green" | "amber" | "red"; text: string }[] = [
+    {
+      color: "green",
+      text: "Carta y menú del día configurables",
+    },
+    {
+      color: "green",
+      text: "Panel cocina, mesas e historial operativos",
+    },
+    {
+      color: usaSupabase && supabaseConfigurado ? "green" : "amber",
+      text:
+        usaSupabase && supabaseConfigurado
+          ? "Supabase conectado · sync automática ~10s entre dispositivos"
+          : usaSupabase
+            ? `Supabase pendiente de configurar (${backendLabel})`
+            : "Modo local (datos solo en este dispositivo)",
+    },
+    {
+      color: "green",
+      text: usaSupabase
+        ? "Usuarios y roles en Supabase"
+        : "Usuarios y roles locales",
+    },
+  ];
 
   return (
     <RequireAuth>
@@ -167,23 +201,26 @@ export function HomeClient() {
             Estado del proyecto
           </h2>
           <ul className="mt-3 space-y-2 text-sm">
-            <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-green-500" />
-              Carta y menú del día configurables
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-green-500" />
-              Usuarios y roles locales
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-amber-500" />
-              Supabase preparado (sin conectar)
-            </li>
+            {estadoItems.map((item) => (
+              <li key={item.text} className="flex items-center gap-2">
+                <span
+                  className={[
+                    "h-2 w-2 shrink-0 rounded-full",
+                    item.color === "green"
+                      ? "bg-green-500"
+                      : item.color === "amber"
+                        ? "bg-amber-500"
+                        : "bg-red-500",
+                  ].join(" ")}
+                />
+                {item.text}
+              </li>
+            ))}
           </ul>
         </section>
 
         <footer className="mt-auto pt-8 text-center text-xs text-muted">
-          <p>comandero-taberneta v0.1.0</p>
+          <p>comandero-taberneta v{APP_VERSION}</p>
           <p className="mt-1">Guarda esta web en la pantalla de inicio del móvil</p>
         </footer>
       </main>
