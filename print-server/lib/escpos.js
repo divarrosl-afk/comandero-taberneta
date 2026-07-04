@@ -27,6 +27,7 @@ const CMD_DOUBLE_HEIGHT_ON = Buffer.from([GS, 0x21, 0x01]);
 const CMD_DOUBLE_OFF = Buffer.from([GS, 0x21, 0x00]);
 const CMD_LF = Buffer.from([0x0a]);
 
+const MARK_MESA = "@H@";
 const MARK_CENTER = "@C@";
 const MARK_SEP = "@S@";
 const MARK_SECTION = "@T@";
@@ -135,13 +136,19 @@ function isLegacyCenteredLine(line, index) {
 }
 
 function hasTicketMarkers(text) {
-  return text.includes("@C@") || text.includes("@D@") || text.includes("@M@") || text.includes("@S@");
+  return text.includes("@H@") || text.includes("@C@") || text.includes("@D@") || text.includes("@M@") || text.includes("@S@");
 }
 
 function parseTicketLine(raw, paperWidth) {
   const normal = { center: false, bold: false, double: false, doubleHeight: false, width: paperWidth };
   if (raw === MARK_SEP) {
     return { text: "=".repeat(paperWidth), style: { ...normal } };
+  }
+  if (raw.startsWith(MARK_MESA)) {
+    return {
+      text: raw.slice(MARK_MESA.length),
+      style: { center: true, bold: true, double: true, doubleHeight: false, width: Math.floor(paperWidth / 2) },
+    };
   }
   if (raw.startsWith(MARK_CENTER)) {
     return {
@@ -183,7 +190,7 @@ function parseTicketLine(raw, paperWidth) {
 function appendStyledLine(chunks, text, style) {
   const effectiveWidth = style.width;
   const lines = style.center
-    ? wrapLine(text, effectiveWidth).map((l) => centerLine(l, effectiveWidth))
+    ? wrapLine(text, effectiveWidth)
     : wrapLine(text, effectiveWidth);
 
   for (const line of lines) {

@@ -1,11 +1,12 @@
 import type { ComandaCocina, PlatoComanda, TipoPlato } from "@/types/comanda";
-import { getNombreMesaComanda, isUuid } from "@/lib/mesas/resolve-mesa";
+import { getCodigoMesaComanda, isUuid } from "@/lib/mesas/resolve-mesa";
 
 export { isUuid } from "@/lib/mesas/resolve-mesa";
 
 export const TICKET_WIDTH_80MM = 48;
 
 /** Marcadores internos — el encoder ESC/POS los interpreta; el preview los elimina. */
+export const MARK_MESA = "@H@";
 export const MARK_CENTER = "@C@";
 export const MARK_SEP = "@S@";
 export const MARK_SECTION = "@T@";
@@ -36,6 +37,7 @@ export function stripTicketMarkers(text: string, width = TICKET_WIDTH_80MM): str
     .split("\n")
     .map((line) => {
       if (line === MARK_SEP) return "=".repeat(width);
+      if (line.startsWith(MARK_MESA)) return line.slice(MARK_MESA.length);
       if (line.startsWith(MARK_CENTER)) return line.slice(MARK_CENTER.length);
       if (line.startsWith(MARK_SECTION)) return line.slice(MARK_SECTION.length);
       if (line.startsWith(MARK_URGENT)) return line.slice(MARK_URGENT.length) || ">>> URGENTE <<<";
@@ -337,22 +339,24 @@ function lineasObservaciones(observaciones: string[]): string[] {
 
 export function resolveMesaDisplay(
   mesaId: string,
-  nombreMesa?: string,
+  codigoMesa?: string,
 ): { titulo: string; subtitulo?: string } {
-  const nombre = (nombreMesa ?? mesaId).trim();
-  const idEsUuid = isUuid(mesaId);
-  const nombreEsUuid = isUuid(nombre);
+  const codigo = (codigoMesa ?? mesaId).trim();
+  if (!codigo) return { titulo: "—" };
 
-  if (!idEsUuid && !nombreEsUuid) {
-    return { titulo: `MESA ${nombre}` };
+  if (isUuid(codigo) && isUuid(mesaId)) {
+    return { titulo: mesaId.slice(0, 8).toUpperCase() };
   }
-  if (nombre !== mesaId && !nombreEsUuid) {
-    return { titulo: `MESA ${nombre}` };
+
+  if (!isUuid(codigo)) {
+    return { titulo: toTicketUpper(codigo) };
   }
-  if (!nombreEsUuid && nombre) {
-    return { titulo: `MESA ${nombre}` };
+
+  if (!isUuid(mesaId)) {
+    return { titulo: toTicketUpper(mesaId) };
   }
-  return { titulo: "MESA", subtitulo: mesaId.slice(0, 8) };
+
+  return { titulo: mesaId.slice(0, 8).toUpperCase() };
 }
 
 function formatHora(iso: string): string {
@@ -372,11 +376,11 @@ export function formatTicketCabecera(
   options: TicketFormatOptions = {},
 ): string[] {
   const width = options.ancho ?? TICKET_WIDTH_80MM;
-  const nombreMesa = options.nombreMesa ?? getNombreMesaComanda(comanda);
-  const mesa = resolveMesaDisplay(comanda.mesa, nombreMesa);
+  const codigoMesa = options.nombreMesa ?? getCodigoMesaComanda(comanda);
+  const mesa = resolveMesaDisplay(comanda.mesa, codigoMesa);
   const lineas: string[] = [];
 
-  lineas.push(`${MARK_CENTER}${mesa.titulo}`);
+  lineas.push(`${MARK_MESA}${mesa.titulo}`);
   if (mesa.subtitulo) {
     lineas.push(`${MARK_CENTER}${mesa.subtitulo}`);
   }

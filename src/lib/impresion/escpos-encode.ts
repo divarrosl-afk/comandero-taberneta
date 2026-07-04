@@ -21,6 +21,7 @@ import {
   MARK_DETAIL,
   MARK_DISH,
   MARK_INDENT,
+  MARK_MESA,
   MARK_SECTION,
   MARK_SEP,
   MARK_URGENT,
@@ -112,6 +113,19 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
     };
   }
 
+  if (raw.startsWith(MARK_MESA)) {
+    return {
+      text: raw.slice(MARK_MESA.length),
+      style: {
+        center: true,
+        bold: true,
+        double: true,
+        doubleHeight: false,
+        width: Math.floor(paperWidth / 2),
+      },
+    };
+  }
+
   if (raw.startsWith(MARK_CENTER)) {
     return {
       text: raw.slice(MARK_CENTER.length),
@@ -182,7 +196,7 @@ function parseTicketLine(raw: string, paperWidth: number): { text: string; style
 function appendStyledLine(chunks: Buffer[], text: string, style: LineStyle): void {
   const effectiveWidth = style.width;
   const lines = style.center
-    ? wrapLine(text, effectiveWidth).map((l) => centerLine(l, effectiveWidth))
+    ? wrapLine(text, effectiveWidth)
     : wrapLine(text, effectiveWidth);
 
   for (const line of lines) {
@@ -222,6 +236,7 @@ function ticketEpilogue(chunks: Buffer[]): void {
 
 function hasTicketMarkers(text: string): boolean {
   return (
+    text.includes("@H@") ||
     text.includes("@C@") ||
     text.includes("@D@") ||
     text.includes("@M@") ||

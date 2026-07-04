@@ -75,16 +75,18 @@ function comandaEjemplo(): ComandaCocina {
 }
 
 describe("format-ticket", () => {
-  it("comandaToTexto incluye mesa sin camarero en ticket", () => {
+  it("comandaToTexto incluye código de mesa sin camarero en ticket", () => {
     const texto = comandaToTexto(comandaCocinaFixture(), { nombreMesa: "C1" });
-    expect(texto).toContain("MESA C1");
+    expect(texto).toContain("C1");
+    expect(texto).not.toContain("MESA C1");
     expect(texto).not.toContain("CAMARERO");
     expect(texto).toContain("ENSALADA");
   });
 
   it("comandaPostresToTexto incluye postres", () => {
     const texto = comandaPostresToTexto(comandaPostresFixture());
-    expect(texto).toContain("MESA C1");
+    expect(texto).toContain("@H@C1");
+    expect(texto).not.toContain("MESA C1");
     expect(texto).toContain("FLAN");
   });
 });
@@ -101,15 +103,15 @@ describe("ticket-kitchen", () => {
     expect(line).toMatch(/^=+ ENTRANTES =+/);
   });
 
-  it("resolveMesaDisplay usa número de mesa cuando existe", () => {
-    expect(resolveMesaDisplay("mesa-uuid-12", "12")).toEqual({ titulo: "MESA 12" });
+  it("resolveMesaDisplay usa código corto de mesa", () => {
+    expect(resolveMesaDisplay("mesa-uuid-12", "12")).toEqual({ titulo: "12" });
+    expect(resolveMesaDisplay("mesa-uuid-12", "R5")).toEqual({ titulo: "R5" });
   });
 
-  it("resolveMesaDisplay muestra UUID corto si no hay nombre", () => {
+  it("resolveMesaDisplay muestra UUID corto si no hay código", () => {
     const uuid = "b73432dc-a1b2-4c3d-8e9f-123456789abc";
     expect(resolveMesaDisplay(uuid)).toEqual({
-      titulo: "MESA",
-      subtitulo: "b73432dc",
+      titulo: "B73432DC",
     });
   });
 
@@ -118,7 +120,8 @@ describe("ticket-kitchen", () => {
       nombreMesa: "12",
       comensales: 4,
     });
-    expect(texto).toContain("MESA 12");
+    expect(texto).toContain("12");
+    expect(texto).not.toContain("MESA 12");
     expect(texto).toContain("4 COMENSALES");
     expect(texto).toContain("3 PAN TOMATE");
     expect(texto).toContain("(M) GAZPACHO");
