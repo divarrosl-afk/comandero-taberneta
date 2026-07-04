@@ -125,7 +125,7 @@ export function PanelCocinaTicketRails({
 
       <RielTickets
         titulo="Segundos"
-        subtitulo="Marcha 2º — orden de llegada"
+        subtitulo="Tiene primeros y marcha 2º — orden de llegada"
         comandas={segundos}
         mesas={mesas}
         postresDeMesa={postresDeMesa}

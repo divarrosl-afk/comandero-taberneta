@@ -4,16 +4,16 @@ import { indiceEstadoPanel, type EstadoPanel } from "@/types/panel";
 export type RielCocina = "primeros" | "segundos" | "postres";
 
 /**
- * Primeros: hasta antes de marcha segundos.
- * Segundos: solo marcha segundos (cocinando 2º).
+ * Primeros: hasta marcha 1 (cocinando/saliendo 1º).
+ * Segundos: tiene primeros y marcha segundos (ya comieron 1º, van a 2º).
  * Postres: tiene segundos (estado segundos) y fases posteriores.
  */
 export function rielCocinaComanda(estado: EstadoPanel): RielCocina {
   const idx = indiceEstadoPanel(estado);
-  const marchaSegundos = indiceEstadoPanel("marcha_segundos");
+  const tienePrimeros = indiceEstadoPanel("tiene_primeros");
   const segundos = indiceEstadoPanel("segundos");
 
-  if (idx < marchaSegundos) return "primeros";
+  if (idx < tienePrimeros) return "primeros";
   if (idx < segundos) return "segundos";
   return "postres";
 }
