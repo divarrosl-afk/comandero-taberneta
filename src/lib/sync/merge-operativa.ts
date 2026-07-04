@@ -10,3 +10,14 @@ export function mergeOperativa<T extends { id: string; creadaEn: string }>(
       new Date(b.creadaEn).getTime() - new Date(a.creadaEn).getTime(),
   );
 }
+
+/** Comandas en caché local aún no visibles en remoto/outbox (p. ej. recién guardadas). */
+export function mergeOptimisticCache<T extends { id: string; creadaEn: string }>(
+  merged: T[],
+  cache: T[],
+): T[] {
+  const known = new Set(merged.map((item) => item.id));
+  const soloCache = cache.filter((item) => !known.has(item.id));
+  if (soloCache.length === 0) return merged;
+  return mergeOperativa(merged, soloCache);
+}

@@ -1,6 +1,6 @@
 import { getComandasRepository, getPostresRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
-import { mergeOperativa } from "@/lib/sync/merge-operativa";
+import { mergeOperativa, mergeOptimisticCache } from "@/lib/sync/merge-operativa";
 import {
   getOutboxPendingCocinaSync,
   getOutboxPendingPostresSync,
@@ -124,8 +124,14 @@ export async function loadOperativaMerged(): Promise<OperativaData> {
     basePostres = snap?.postres ?? getPostresCache();
   }
 
-  const cocinaMerged = mergeOperativa(baseCocina, pendingCocina);
-  const postresMerged = mergeOperativa(basePostres, pendingPostres);
+  const cocinaMerged = mergeOptimisticCache(
+    mergeOperativa(baseCocina, pendingCocina),
+    getComandasCache(),
+  );
+  const postresMerged = mergeOptimisticCache(
+    mergeOperativa(basePostres, pendingPostres),
+    getPostresCache(),
+  );
 
   let cocina = cocinaMerged;
   let postres = postresMerged;

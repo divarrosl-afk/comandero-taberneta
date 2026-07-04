@@ -42,9 +42,12 @@ describe("loadOperativaMerged remoto", () => {
   });
 
   it("usa Supabase como fuente de verdad cuando hay remoto", async () => {
+    setComandasCache([
+      { ...comandaCocinaFixture(), id: "local-nueva", estadoPanel: "sentados" },
+    ]);
     const { cocina } = await loadOperativaMerged();
-    expect(cocina).toHaveLength(1);
-    expect(cocina[0].id).toBe("remoto-1");
-    expect(getComandasCache()[0].id).toBe("remoto-1");
+    expect(cocina).toHaveLength(2);
+    expect(cocina.find((c) => c.id === "remoto-1")).toBeTruthy();
+    expect(cocina.find((c) => c.id === "local-nueva")).toBeTruthy();
   });
 });

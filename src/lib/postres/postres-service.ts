@@ -18,12 +18,20 @@ import {
   loadOperativaMerged,
   patchPostresInCache,
 } from "@/lib/sync/operativa-read";
+import { dispatchAppSync } from "@/lib/sync/app-sync";
 import { flushOutbox } from "@/lib/sync/sync-worker";
 import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
 
 export function generarIdPostres(): string {
   return createId();
+}
+
+function upsertPostresCache(comanda: ComandaPostres): void {
+  setPostresCache([
+    comanda,
+    ...getPostresCache().filter((c) => c.id !== comanda.id),
+  ]);
 }
 
 export function getPostresSync(): ComandaPostres[] {
@@ -47,8 +55,7 @@ export async function guardarPostres(
     return { data: guardada, synced: true };
   }
 
-  const cached = getPostresCache();
-  setPostresCache([comanda, ...cached.filter((c) => c.id !== comanda.id)]);
+  upsertPostresCache(comanda);
 
   try {
     const meta = await buildComandaPersistMeta(
@@ -60,13 +67,15 @@ export async function guardarPostres(
       ["postres_create", "postres_estado"],
       comanda.id,
     );
-    await loadOperativaMerged();
+    upsertPostresCache(guardada);
     void flushOutbox();
+    dispatchAppSync();
     return { data: guardada, synced: true };
   } catch (e) {
     const error = e instanceof Error ? e.message : "Error de sincronización";
     await enqueuePostresCreate(comanda);
     void flushOutbox();
+    dispatchAppSync();
     return { data: comanda, synced: false, error };
   }
 }
@@ -89,8 +98,9 @@ export async function actualizarEstadoPostres(
     );
     if (actualizada) {
       await removeOutboxForEntity(["postres_estado"], id);
-      await loadOperativaMerged();
+      upsertPostresCache(actualizada);
       void flushOutbox();
+      dispatchAppSync();
       return actualizada;
     }
   } catch {
@@ -99,6 +109,7 @@ export async function actualizarEstadoPostres(
 
   await enqueuePostresEstado(id, estado);
   void flushOutbox();
+  dispatchAppSync();
   return patchPostresInCache(id, { estadoPanel: estado });
 }
 
@@ -112,9 +123,11 @@ export async function eliminarPostres(id: string): Promise<boolean> {
   try {
     await getPostresRepository().eliminar(id);
     if (usesRemoteData()) await loadOperativaMerged();
+    dispatchAppSync();
     return true;
   } catch {
     if (usesRemoteData()) await loadOperativaMerged();
+    dispatchAppSync();
     return eraPendiente;
   }
 }
@@ -145,5 +158,6 @@ export async function eliminarPostresDelDia(fecha: string): Promise<number> {
   }
 
   await loadOperativaMerged();
+  dispatchAppSync();
   return Math.max(ids.length, remoto);
 }
