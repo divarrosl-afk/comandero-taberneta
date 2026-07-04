@@ -1,8 +1,8 @@
 import { comandasRepositoryLocal } from "@/lib/comandas/comandas-repository-local";
-import { comandasRepositorySupabase } from "@/lib/comandas/comandas-repository-supabase";
+import { comandasRepositoryApi } from "@/lib/comandas/comandas-repository-api";
 import type { ComandasRepository } from "@/lib/comandas/comandas-repository";
 import { postresRepositoryLocal } from "@/lib/postres/postres-repository-local";
-import { postresRepositorySupabase } from "@/lib/postres/postres-repository-supabase";
+import { postresRepositoryApi } from "@/lib/postres/postres-repository-api";
 import type { PostresRepository } from "@/lib/postres/postres-repository";
 import { authRepositoryLocal } from "@/lib/auth/auth-repository-local";
 import { authRepositorySupabase } from "@/lib/auth/auth-repository-supabase";
@@ -49,8 +49,8 @@ export function initializeDataLayer(): void {
   menuDiaRepo = menuDiaRepositoryApi;
   mesasRepo = mesasRepositorySupabase;
   impresoraRepo = impresoraConfigRepositorySupabase;
-  comandasRepo = comandasRepositorySupabase;
-  postresRepo = postresRepositorySupabase;
+  comandasRepo = comandasRepositoryApi;
+  postresRepo = postresRepositoryApi;
 }
 
 export function getAuthRepository(): AuthRepository {
