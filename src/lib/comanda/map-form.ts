@@ -53,7 +53,7 @@ function inferirTipoServicio(form: ComandaFormState): TipoServicio {
   if (tipos.length === 0) return "mixto";
 
   const tieneMenu = tipos.some(
-    (t) => t === "menu" || t === "menu_suplemento",
+    (t) => t === "menu" || t === "menu_medio" || t === "menu_suplemento",
   );
   const tieneCarta = tipos.some((t) => t.startsWith("carta"));
 

@@ -52,6 +52,7 @@ export const TIPOS_PLATO: {
   labelCorto: string;
 }[] = [
   { id: "menu", label: "MENÚ", labelCorto: "MENÚ" },
+  { id: "menu_medio", label: "1/2 MENÚ", labelCorto: "1/2 MENÚ" },
   { id: "menu_suplemento", label: "MENÚ + SUPLEMENTO", labelCorto: "MENÚ+SUP" },
   { id: "carta", label: "CARTA", labelCorto: "CARTA" },
   { id: "carta_primero", label: "CARTA → SALE COMO PRIMERO", labelCorto: "CARTA→1º" },

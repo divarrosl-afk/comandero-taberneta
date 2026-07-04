@@ -7,6 +7,8 @@ export function tipoSeleccionToPlatoFields(seleccion: TipoPlatoSeleccion): {
   switch (seleccion) {
     case "menu":
       return { tipo: "menu" };
+    case "menu_medio":
+      return { tipo: "menu_medio" };
     case "menu_suplemento":
       return { tipo: "menu_suplemento" };
     case "carta":
@@ -22,6 +24,7 @@ export function etiquetaTipoPlato(tipo?: TipoPlato, saleComo?: "primero" | "segu
   const partes: string[] = [];
 
   if (tipo === "menu") partes.push("MENÚ");
+  if (tipo === "menu_medio") partes.push("1/2 MENÚ");
   if (tipo === "menu_suplemento") {
     partes.push("MENÚ");
     if (suplemento) partes.push(`+ SUPLEMENTO +${suplemento}€`);

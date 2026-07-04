@@ -2,10 +2,11 @@ import type { EstadoPanel } from "@/types/panel";
 
 export type TipoServicio = "menu" | "carta" | "mixto";
 
-export type TipoPlato = "menu" | "menu_suplemento" | "carta";
+export type TipoPlato = "menu" | "menu_medio" | "menu_suplemento" | "carta";
 
 export type TipoPlatoSeleccion =
   | "menu"
+  | "menu_medio"
   | "menu_suplemento"
   | "carta"
   | "carta_primero"

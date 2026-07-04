@@ -134,6 +134,7 @@ function salsasBullets(salsas: PlatoComanda["salsas"]): string[] {
 
 function prefijoTipo(tipo?: TipoPlato): string {
   if (tipo === "menu" || tipo === "menu_suplemento") return "(M) ";
+  if (tipo === "menu_medio") return "(1/2M) ";
   if (tipo === "carta") return "(C) ";
   return "";
 }
