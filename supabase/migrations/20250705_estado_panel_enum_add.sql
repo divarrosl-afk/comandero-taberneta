@@ -1,4 +1,4 @@
--- Semáforo de marcha: amplía ct_estado_panel y migra valores legacy
+-- Paso 1: ampliar ct_estado_panel (debe ir en transacción separada del UPDATE)
 
 DO $$ BEGIN
   ALTER TYPE ct_estado_panel ADD VALUE IF NOT EXISTS 'sentados';
@@ -39,13 +39,3 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   ALTER TYPE ct_estado_panel ADD VALUE IF NOT EXISTS 'mesa_libre';
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-UPDATE comandas_cocina SET estado_panel = 'sentados' WHERE estado_panel = 'pendiente';
-UPDATE comandas_cocina SET estado_panel = 'bebidas' WHERE estado_panel = 'en_preparacion';
-UPDATE comandas_cocina SET estado_panel = 'tiene_primeros' WHERE estado_panel = 'listo';
-UPDATE comandas_cocina SET estado_panel = 'marcha_segundos' WHERE estado_panel = 'servido';
-
-UPDATE comandas_postres SET estado_panel = 'sentados' WHERE estado_panel = 'pendiente';
-UPDATE comandas_postres SET estado_panel = 'bebidas' WHERE estado_panel = 'en_preparacion';
-UPDATE comandas_postres SET estado_panel = 'tiene_primeros' WHERE estado_panel = 'listo';
-UPDATE comandas_postres SET estado_panel = 'marcha_segundos' WHERE estado_panel = 'servido';
