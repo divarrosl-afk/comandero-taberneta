@@ -29,10 +29,11 @@ function comanda(
 }
 
 describe("orden-tickets-cocina", () => {
-  it("clasifica riel primeros y segundos", () => {
+  it("clasifica riel primeros, segundos y postres", () => {
     expect(rielCocinaComanda("tiene_primeros")).toBe("primeros");
     expect(rielCocinaComanda("marcha_segundos")).toBe("segundos");
-    expect(rielCocinaComanda("segundos")).toBe("segundos");
+    expect(rielCocinaComanda("segundos")).toBe("postres");
+    expect(rielCocinaComanda("marcha_postres")).toBe("postres");
   });
 
   it("ordena por llegada (más antiguo primero)", () => {
@@ -43,15 +44,17 @@ describe("orden-tickets-cocina", () => {
     expect(ordenadas.map((c) => c.id)).toEqual(["a", "b"]);
   });
 
-  it("agrupa en dos rieles ordenados", () => {
-    const { primeros, segundos } = agruparComandasEnRieles([
+  it("agrupa en tres rieles ordenados", () => {
+    const { primeros, segundos, postres } = agruparComandasEnRieles([
       comanda("p2", "2026-07-04T12:00:00Z", "marcha_1"),
       comanda("p1", "2026-07-04T11:00:00Z", "bebidas"),
-      comanda("s2", "2026-07-04T13:00:00Z", "segundos"),
       comanda("s1", "2026-07-04T11:30:00Z", "marcha_segundos"),
+      comanda("po1", "2026-07-04T12:30:00Z", "segundos"),
+      comanda("po2", "2026-07-04T13:00:00Z", "marcha_postres"),
     ]);
 
     expect(primeros.map((c) => c.id)).toEqual(["p1", "p2"]);
-    expect(segundos.map((c) => c.id)).toEqual(["s1", "s2"]);
+    expect(segundos.map((c) => c.id)).toEqual(["s1"]);
+    expect(postres.map((c) => c.id)).toEqual(["po1", "po2"]);
   });
 });

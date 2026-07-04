@@ -105,7 +105,7 @@ export function PanelCocinaTicketRails({
   postresDeMesa,
   onAbrir,
 }: PanelCocinaTicketRailsProps) {
-  const { primeros, segundos } = agruparComandasEnRieles(comandas);
+  const { primeros, segundos, postres } = agruparComandasEnRieles(comandas);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-4">
@@ -125,12 +125,22 @@ export function PanelCocinaTicketRails({
 
       <RielTickets
         titulo="Segundos"
-        subtitulo="Marcha 2º y salida de cocina — orden de llegada"
+        subtitulo="Marcha 2º — orden de llegada"
         comandas={segundos}
         mesas={mesas}
         postresDeMesa={postresDeMesa}
         onAbrir={onAbrir}
         acento="border-rose-300"
+      />
+
+      <RielTickets
+        titulo="Postres"
+        subtitulo="Tiene segundos, postres y cafés — orden de llegada"
+        comandas={postres}
+        mesas={mesas}
+        postresDeMesa={postresDeMesa}
+        onAbrir={onAbrir}
+        acento="border-violet-300"
       />
     </div>
   );
