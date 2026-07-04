@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/Button";
 import { HistorialCard } from "@/components/historial/HistorialCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHistorial } from "@/hooks/useHistorial";
-import { comandaPerteneceAMesa, getNombreMesa } from "@/lib/mesas/resolve-mesa";
+import { useMesas } from "@/hooks/useMesas";
+import { agruparHistorialPorZona } from "@/lib/historial/agrupar-por-zona";
+import {
+  comandaPerteneceAMesa,
+  getNombreMesa,
+  resolveNombreMesaComanda,
+} from "@/lib/mesas/resolve-mesa";
+import { labelZona } from "@/types/mesas";
 import type { HistorialTipo } from "@/types/panel";
 
 type FiltroTipo = "todos" | HistorialTipo;
@@ -17,6 +24,7 @@ function HistorialContent() {
   const searchParams = useSearchParams();
   const mesaFiltro = searchParams.get("mesa");
   const { puedeBorrarHistorial } = useAuth();
+  const { mesas } = useMesas();
   const { entradas, recargar, eliminar, reimprimir, reimpresionMsg, reimpresionError } =
     useHistorial();
   const [filtro, setFiltro] = useState<FiltroTipo>("todos");
@@ -24,6 +32,13 @@ function HistorialContent() {
   const filtradas = entradas
     .filter((e) => (filtro === "todos" ? true : e.tipo === filtro))
     .filter((e) => (mesaFiltro ? comandaPerteneceAMesa(e.comanda, mesaFiltro) : true));
+
+  const porZona = mesaFiltro
+    ? [{ zona: null, entradas: filtradas }]
+    : agruparHistorialPorZona(filtradas, mesas).map((g) => ({
+        zona: g.zona,
+        entradas: g.entradas,
+      }));
 
   return (
     <main className="mx-auto min-h-dvh max-w-lg px-4 py-4">
@@ -40,7 +55,7 @@ function HistorialContent() {
             <p className="text-sm text-muted">
               {mesaFiltro
                 ? `Mesa ${getNombreMesa(mesaFiltro)} · ${filtradas.length} tickets`
-                : `${entradas.length} comandas guardadas`}
+                : `${entradas.length} comandas · por zona`}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={recargar}>
@@ -91,15 +106,27 @@ function HistorialContent() {
           No hay comandas en el historial.
         </p>
       ) : (
-        <div className="space-y-3">
-          {filtradas.map((entrada) => (
-            <HistorialCard
-              key={`${entrada.tipo}-${entrada.comanda.id}`}
-              entrada={entrada}
-              onReimprimir={() => reimprimir(entrada)}
-              onEliminar={() => eliminar(entrada)}
-              puedeEliminar={puedeBorrarHistorial}
-            />
+        <div className="space-y-6">
+          {porZona.map((grupo) => (
+            <section key={grupo.zona ?? "mesa"}>
+              {grupo.zona && (
+                <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">
+                  {labelZona(grupo.zona)}
+                </h2>
+              )}
+              <div className="space-y-3">
+                {grupo.entradas.map((entrada) => (
+                  <HistorialCard
+                    key={`${entrada.tipo}-${entrada.comanda.id}`}
+                    entrada={entrada}
+                    nombreMesa={resolveNombreMesaComanda(entrada.comanda, mesas)}
+                    onReimprimir={() => reimprimir(entrada)}
+                    onEliminar={() => eliminar(entrada)}
+                    puedeEliminar={puedeBorrarHistorial}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}

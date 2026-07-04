@@ -82,6 +82,23 @@ export const usuariosRepositorySupabase: UsuariosRepository = {
     return body.usuario ?? null;
   },
 
+  async eliminar(username) {
+    const key = username.trim().toLowerCase();
+    const res = await fetch(
+      `/api/admin/usuarios/${encodeURIComponent(key)}`,
+      {
+        method: "DELETE",
+        headers: await authHeaders(),
+      },
+    );
+
+    const body = (await res.json()) as { ok?: boolean; error?: string };
+    if (!res.ok) {
+      throw new Error(body.error ?? "Error al eliminar usuario");
+    }
+    return body.ok ?? true;
+  },
+
   async registrarAcceso() {
     const client = getSupabaseClient();
     if (!client) return;

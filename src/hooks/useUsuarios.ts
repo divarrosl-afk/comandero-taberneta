@@ -59,12 +59,22 @@ export function useUsuarios() {
     [usuarios],
   );
 
+  const eliminar = useCallback(
+    async (username: string) => {
+      const ok = await getUsuariosRepository().eliminar(username);
+      await recargar();
+      return ok;
+    },
+    [recargar],
+  );
+
   return {
     usuarios,
     cargando,
     recargar,
     crear,
     actualizar,
+    eliminar,
     puedeDesactivar,
   };
 }

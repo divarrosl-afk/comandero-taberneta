@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { UsuarioEditor } from "@/components/usuarios/UsuarioEditor";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useUsuarios } from "@/hooks/useUsuarios";
 import { useAuth } from "@/contexts/AuthContext";
 import type { UsuarioInput } from "@/types/auth";
@@ -21,10 +22,11 @@ function formatUltimoAcceso(iso: string | null): string {
 
 export function UsuariosConfigClient() {
   const { sesion, usaSupabase } = useAuth();
-  const { usuarios, crear, actualizar, puedeDesactivar } = useUsuarios();
+  const { usuarios, crear, actualizar, eliminar, puedeDesactivar } = useUsuarios();
   const [editando, setEditando] = useState<string | null>(null);
   const [nuevo, setNuevo] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
+  const [confirmEliminar, setConfirmEliminar] = useState<string | null>(null);
 
   const lista = [...usuarios].sort((a, b) =>
     a.username.localeCompare(b.username, "es"),
@@ -55,6 +57,16 @@ export function UsuariosConfigClient() {
       setMensaje(`Usuario ${username} actualizado`);
     } catch (e) {
       setMensaje(e instanceof Error ? e.message : "Error al actualizar usuario");
+    }
+  };
+
+  const handleEliminar = async (username: string) => {
+    try {
+      await eliminar(username);
+      setConfirmEliminar(null);
+      setMensaje(`Usuario ${username} eliminado`);
+    } catch (e) {
+      setMensaje(e instanceof Error ? e.message : "Error al eliminar usuario");
     }
   };
 
@@ -172,21 +184,43 @@ export function UsuariosConfigClient() {
                     </p>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditando(u.username);
-                    setNuevo(false);
-                  }}
-                  className="shrink-0 rounded-lg border border-border px-3 py-2 text-sm font-semibold"
-                >
-                  Editar
-                </button>
+                <div className="flex shrink-0 flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditando(u.username);
+                      setNuevo(false);
+                    }}
+                    className="rounded-lg border border-border px-3 py-2 text-sm font-semibold"
+                  >
+                    Editar
+                  </button>
+                  {u.username !== sesion?.username && puedeDesactivar(u.username) && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmEliminar(u.username)}
+                      className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700"
+                    >
+                      Eliminar
+                    </button>
+                  )}
+                </div>
               </div>
             </article>
           ),
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmEliminar !== null}
+        title="¿Eliminar usuario?"
+        message={`Se eliminará @${confirmEliminar} y no podrá iniciar sesión.`}
+        confirmLabel="Eliminar"
+        onConfirm={() => {
+          if (confirmEliminar) void handleEliminar(confirmEliminar);
+        }}
+        onCancel={() => setConfirmEliminar(null)}
+      />
     </main>
   );
 }

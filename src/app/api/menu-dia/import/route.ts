@@ -1,11 +1,36 @@
 import { NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
+import { importadosDesdeParsed } from "@/lib/menu-dia/menu-platos-comanda";
+import { guardarMenuConToken } from "@/lib/menu-dia/menu-dia-server";
 import {
   parseMenuDiaTexto,
   reformatMenuPdfTexto,
 } from "@/lib/menu-dia/parse-menu-texto";
+import { verifyAdminRequest } from "@/lib/supabase/api-auth";
+import type { MenuDiaConfig } from "@/types/menu-dia";
 
 export const runtime = "nodejs";
+
+function configDesdeParsed(
+  parsed: ReturnType<typeof parseMenuDiaTexto>,
+): MenuDiaConfig {
+  const { primerosImportados, segundosImportados } = importadosDesdeParsed(
+    parsed.primeros,
+    parsed.segundos,
+  );
+
+  return {
+    fecha: parsed.fecha ?? new Date().toISOString().slice(0, 10),
+    precioMenu: parsed.precioMenu ?? 14,
+    primerosIds: [],
+    segundosIds: [],
+    postresIncluidosIds: [],
+    primerosImportados,
+    segundosImportados,
+    observaciones: parsed.observaciones,
+    activo: primerosImportados.length > 0 || segundosImportados.length > 0,
+  };
+}
 
 export async function POST(request: Request) {
   try {
@@ -40,7 +65,32 @@ export async function POST(request: Request) {
       : reformatMenuPdfTexto(texto);
     const parsed = parseMenuDiaTexto(textoFormateado);
 
-    return NextResponse.json({ texto: textoFormateado, parsed });
+    const auth = await verifyAdminRequest(request);
+    let menu: MenuDiaConfig | undefined;
+    let guardadoEnServidor = false;
+    let errorGuardado: string | undefined;
+
+    if (auth.ok) {
+      try {
+        const config = configDesdeParsed(parsed);
+        menu = await guardarMenuConToken(
+          request.headers.get("authorization")!.slice(7),
+          config,
+        );
+        guardadoEnServidor = true;
+      } catch (error) {
+        errorGuardado =
+          error instanceof Error ? error.message : "Error al guardar en servidor";
+      }
+    }
+
+    return NextResponse.json({
+      texto: textoFormateado,
+      parsed,
+      menu,
+      guardadoEnServidor,
+      errorGuardado,
+    });
   } catch (error) {
     console.error("[menu-dia/import]", error);
     return NextResponse.json(

@@ -14,6 +14,7 @@ import {
 
 interface HistorialCardProps {
   entrada: HistorialEntrada;
+  nombreMesa?: string;
   onReimprimir: () => void;
   onEliminar: () => void;
   puedeEliminar?: boolean;
@@ -21,6 +22,7 @@ interface HistorialCardProps {
 
 export function HistorialCard({
   entrada,
+  nombreMesa,
   onReimprimir,
   onEliminar,
   puedeEliminar = false,
@@ -29,6 +31,7 @@ export function HistorialCard({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { comanda } = entrada;
   const ticket = entradaToTicket(entrada);
+  const mesaLabel = nombreMesa ?? getNombreMesaComanda(comanda);
 
   return (
     <>
@@ -39,7 +42,7 @@ export function HistorialCard({
           className="flex w-full items-center gap-3 p-4 text-left"
         >
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-            {getNombreMesaComanda(comanda)}
+            {mesaLabel}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">

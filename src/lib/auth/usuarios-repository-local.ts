@@ -2,6 +2,7 @@ import {
   actualizarUsuario,
   contarAdminsActivos,
   crearUsuario,
+  eliminarUsuario,
   getUsuario,
   getUsuarios,
   registrarUltimoAcceso,
@@ -16,6 +17,7 @@ export const usuariosRepositoryLocal: UsuariosRepository = {
   crear: async (input) => crearUsuario(input),
   actualizar: async (username, cambios) =>
     actualizarUsuario(username, cambios),
+  eliminar: async (username) => eliminarUsuario(username),
   registrarAcceso: async (username) => registrarUltimoAcceso(username),
   restaurarIniciales: async () => resetUsuarios(),
   contarAdminsActivos: async (excluir) => contarAdminsActivos(excluir),

@@ -102,6 +102,14 @@ export function registrarUltimoAcceso(username: string): void {
   actualizarUsuario(username, { ultimoAcceso: new Date().toISOString() });
 }
 
+export function eliminarUsuario(username: string): boolean {
+  const key = username.trim().toLowerCase();
+  const usuarios = getUsuarios().filter((u) => u.username !== key);
+  if (usuarios.length === getUsuarios().length) return false;
+  guardarUsuarios(usuarios);
+  return true;
+}
+
 export function resetUsuarios(): Usuario[] {
   const defaults = usuariosIniciales.map(normalizar);
   guardarUsuarios(defaults);

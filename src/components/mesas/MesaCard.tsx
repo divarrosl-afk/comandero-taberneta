@@ -12,11 +12,11 @@ import { getComandasDeMesa } from "@/lib/mesas/estado-mesa";
 
 interface MesaCardProps {
   mesa: MesaOperativa;
-  onCobrando: () => void;
+  onToggleCobrando: () => void;
   onLiberar: () => void;
 }
 
-export function MesaCard({ mesa, onCobrando, onLiberar }: MesaCardProps) {
+export function MesaCard({ mesa, onToggleCobrando, onLiberar }: MesaCardProps) {
   const [expandido, setExpandido] = useState(false);
   const { total } = getComandasDeMesa(mesa.id);
 
@@ -68,8 +68,13 @@ export function MesaCard({ mesa, onCobrando, onLiberar }: MesaCardProps) {
             Ver comanda{total > 0 ? ` (${total})` : ""}
           </Link>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" fullWidth onClick={onCobrando}>
-              Cobrando
+            <Button
+              variant={mesa.estado === "cobrando" ? "primary" : "outline"}
+              size="sm"
+              fullWidth
+              onClick={onToggleCobrando}
+            >
+              {mesa.estado === "cobrando" ? "✓ Cobrando" : "Cobrando"}
             </Button>
             <Button variant="ghost" size="sm" fullWidth onClick={onLiberar}>
               Liberar

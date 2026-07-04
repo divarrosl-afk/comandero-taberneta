@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { getEstadoXCafeLabel } from "@/data/postres-catalogo";
 import { formatHora } from "@/lib/historial/items";
 import { resolveNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { EstadoPanelBadge } from "@/components/panel/EstadoPanelBadge";
 import { SemaforoPanelSelector } from "@/components/panel/SemaforoPanelSelector";
+import { imprimirComandaPostres } from "@/modules/impresion-wifi/imprimir-comanda";
 import type { EstadoPanel } from "@/types/panel";
 import type { ComandaPostres } from "@/types/postres";
 import type { MesaConfig } from "@/types/mesas";
@@ -21,6 +24,13 @@ export function PanelPostresCard({
   onCambiarEstado,
 }: PanelPostresCardProps) {
   const nombreMesa = resolveNombreMesaComanda(comanda, mesas);
+  const [reimpresionMsg, setReimpresionMsg] = useState<string | null>(null);
+
+  const handleReimprimir = async () => {
+    setReimpresionMsg("Enviando a impresora…");
+    const res = await imprimirComandaPostres(comanda);
+    setReimpresionMsg(res.summary);
+  };
 
   return (
     <article className="rounded-2xl border-2 border-border bg-card p-4 shadow-sm">
@@ -91,6 +101,17 @@ export function PanelPostresCard({
         value={comanda.estadoPanel}
         onChange={onCambiarEstado}
       />
+
+      <div className="mt-4 space-y-2">
+        <Button variant="outline" fullWidth onClick={handleReimprimir}>
+          Reimprimir ticket
+        </Button>
+        {reimpresionMsg && (
+          <p className="text-center text-xs font-medium text-muted">
+            {reimpresionMsg}
+          </p>
+        )}
+      </div>
     </article>
   );
 }

@@ -65,9 +65,17 @@ export function BorrarDiaPanel({
       </Button>
 
       {resultado && (
-        <p className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-800">
-          Eliminados: {resultado.cocinaEliminadas} cocina,{" "}
-          {resultado.postresEliminados} postres.
+        <p
+          className={[
+            "rounded-xl border px-3 py-2 text-sm font-medium",
+            resultado.cocinaEliminadas + resultado.postresEliminados > 0
+              ? "border-green-200 bg-green-50 text-green-800"
+              : "border-amber-200 bg-amber-50 text-amber-900",
+          ].join(" ")}
+        >
+          {resultado.cocinaEliminadas + resultado.postresEliminados > 0
+            ? `Eliminados: ${resultado.cocinaEliminadas} cocina, ${resultado.postresEliminados} postres.`
+            : "No se eliminó ningún ticket. Actualiza la página e inténtalo de nuevo."}
         </p>
       )}
 

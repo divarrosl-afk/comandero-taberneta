@@ -9,6 +9,7 @@ export interface UsuariosRepository {
     username: string,
     cambios: Partial<Usuario>,
   ): Promise<Usuario | null>;
+  eliminar(username: string): Promise<boolean>;
   registrarAcceso(username: string): Promise<void>;
   restaurarIniciales(): Promise<Usuario[]>;
   contarAdminsActivos(excluir?: string): Promise<number>;

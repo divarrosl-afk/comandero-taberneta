@@ -1,14 +1,18 @@
 "use client";
 
+import { useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { etiquetaTipoPlato } from "@/lib/comanda/tipo-plato";
 import { resolveNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { formatHora } from "@/lib/historial/items";
 import { EstadoPanelBadge } from "@/components/panel/EstadoPanelBadge";
 import { SemaforoPanelSelector } from "@/components/panel/SemaforoPanelSelector";
 import { PostresMarcaBanner } from "@/components/panel/PostresMarcaBanner";
+import { imprimirComandaCocina } from "@/modules/impresion-wifi/imprimir-comanda";
 import type { ComandaCocina, PlatoComanda } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
 import type { ComandaPostres } from "@/types/postres";
+import type { MesaConfig } from "@/types/mesas";
 
 function lineaPlato(plato: PlatoComanda): string {
   const cantidad = plato.cantidad > 1 ? ` x${plato.cantidad}` : "";
@@ -48,8 +52,6 @@ function BloqueSeccion({
   );
 }
 
-import type { MesaConfig } from "@/types/mesas";
-
 interface PanelComandaCardProps {
   comanda: ComandaCocina;
   mesas?: MesaConfig[];
@@ -64,6 +66,13 @@ export function PanelComandaCard({
   onCambiarEstado,
 }: PanelComandaCardProps) {
   const nombreMesa = resolveNombreMesaComanda(comanda, mesas);
+  const [reimpresionMsg, setReimpresionMsg] = useState<string | null>(null);
+
+  const handleReimprimir = async () => {
+    setReimpresionMsg("Enviando a impresora…");
+    const res = await imprimirComandaCocina(comanda);
+    setReimpresionMsg(res.summary);
+  };
 
   return (
     <article className="rounded-2xl border-2 border-border bg-card p-4 shadow-sm">
@@ -109,6 +118,17 @@ export function PanelComandaCard({
         value={comanda.estadoPanel}
         onChange={onCambiarEstado}
       />
+
+      <div className="mt-4 space-y-2">
+        <Button variant="outline" fullWidth onClick={handleReimprimir}>
+          Reimprimir ticket
+        </Button>
+        {reimpresionMsg && (
+          <p className="text-center text-xs font-medium text-muted">
+            {reimpresionMsg}
+          </p>
+        )}
+      </div>
     </article>
   );
 }

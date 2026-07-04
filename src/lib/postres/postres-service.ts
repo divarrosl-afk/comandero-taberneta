@@ -1,5 +1,6 @@
 import { buildComandaPersistMeta } from "@/lib/comandas/comanda-persist-meta";
 import { createId } from "@/lib/id/create-id";
+import { esMismaFecha } from "@/lib/cierre/fecha";
 import type { PersistResult } from "@/lib/comandas/comandas-service";
 import { getPostresRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
@@ -119,7 +120,30 @@ export async function eliminarPostres(id: string): Promise<boolean> {
 }
 
 export async function eliminarPostresDelDia(fecha: string): Promise<number> {
-  const n = await getPostresRepository().eliminarDelDia(fecha);
-  if (usesRemoteData()) await loadOperativaMerged();
-  return n;
+  if (!usesRemoteData()) {
+    return getPostresRepository().eliminarDelDia(fecha);
+  }
+
+  const enDia = getPostresSync().filter((c) =>
+    esMismaFecha(c.creadaEn, fecha),
+  );
+  const ids = enDia.map((c) => c.id);
+
+  for (const id of ids) {
+    await removeOutboxForEntity(["postres_create", "postres_estado"], id);
+  }
+
+  setPostresCache(
+    getPostresSync().filter((c) => !esMismaFecha(c.creadaEn, fecha)),
+  );
+
+  let remoto = 0;
+  try {
+    remoto = await getPostresRepository().eliminarDelDia(fecha);
+  } catch {
+    remoto = 0;
+  }
+
+  await loadOperativaMerged();
+  return Math.max(ids.length, remoto);
 }

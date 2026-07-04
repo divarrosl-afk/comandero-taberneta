@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { actualizarUsuarioAdmin } from "@/lib/supabase/admin-users";
+import {
+  actualizarUsuarioAdmin,
+  eliminarUsuarioAdmin,
+} from "@/lib/supabase/admin-users";
 import { verifyAdminRequest } from "@/lib/supabase/api-auth";
 import {
   MIN_PASSWORD_LENGTH,
@@ -60,6 +63,28 @@ export async function PATCH(
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Error al actualizar usuario" },
+      { status: 400 },
+    );
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ username: string }> },
+) {
+  const auth = await verifyAdminRequest(_request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const { username } = await context.params;
+
+  try {
+    await eliminarUsuarioAdmin(username);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Error al eliminar usuario" },
       { status: 400 },
     );
   }

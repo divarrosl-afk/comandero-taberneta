@@ -10,7 +10,7 @@ import { menuTienePlatosImportados } from "@/lib/menu-dia/menu-platos-comanda";
 import type { MenuDiaConfig } from "@/types/menu-dia";
 
 export function MenuDiaConfigClient() {
-  const { menu, guardar, quitar, cargando } = useMenuDia();
+  const { menu, guardar, quitar, cargando, recargar } = useMenuDia();
   const [confirmQuitar, setConfirmQuitar] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
@@ -52,7 +52,11 @@ export function MenuDiaConfigClient() {
         </p>
       </header>
 
-      <MenuDiaImportPanel menuActual={menu} onAplicar={aplicarImport} />
+      <MenuDiaImportPanel
+        menuActual={menu}
+        onAplicar={aplicarImport}
+        onServidorActualizado={recargar}
+      />
 
       <section className="mt-6 space-y-4 rounded-2xl border border-border bg-card p-4">
         <div className="grid grid-cols-2 gap-3">

@@ -1,5 +1,6 @@
 import { buildComandaPersistMeta } from "@/lib/comandas/comanda-persist-meta";
 import { createId } from "@/lib/id/create-id";
+import { esMismaFecha } from "@/lib/cierre/fecha";
 import { getComandasRepository } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
 import { getComandasLocales } from "@/lib/storage/comandas-local";
@@ -121,7 +122,30 @@ export async function eliminarComanda(id: string): Promise<boolean> {
 }
 
 export async function eliminarComandasDelDia(fecha: string): Promise<number> {
-  const n = await getComandasRepository().eliminarDelDia(fecha);
-  if (usesRemoteData()) await loadOperativaMerged();
-  return n;
+  if (!usesRemoteData()) {
+    return getComandasRepository().eliminarDelDia(fecha);
+  }
+
+  const enDia = getComandasSync().filter((c) =>
+    esMismaFecha(c.creadaEn, fecha),
+  );
+  const ids = enDia.map((c) => c.id);
+
+  for (const id of ids) {
+    await removeOutboxForEntity(["cocina_create", "cocina_estado"], id);
+  }
+
+  setComandasCache(
+    getComandasSync().filter((c) => !esMismaFecha(c.creadaEn, fecha)),
+  );
+
+  let remoto = 0;
+  try {
+    remoto = await getComandasRepository().eliminarDelDia(fecha);
+  } catch {
+    remoto = 0;
+  }
+
+  await loadOperativaMerged();
+  return Math.max(ids.length, remoto);
 }

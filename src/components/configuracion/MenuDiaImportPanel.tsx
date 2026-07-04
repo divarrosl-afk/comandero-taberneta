@@ -4,12 +4,15 @@ import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { importadosDesdeParsed } from "@/lib/menu-dia/menu-platos-comanda";
+import { guardarMenuDia as guardarMenuDiaLocal } from "@/lib/storage/menu-dia";
+import { getSupabaseAccessToken } from "@/lib/supabase/client";
 import type { MenuDiaParseado } from "@/lib/menu-dia/parse-menu-texto";
 import type { MenuDiaConfig } from "@/types/menu-dia";
 
 interface MenuDiaImportPanelProps {
   menuActual: MenuDiaConfig;
   onAplicar: (cambios: Partial<MenuDiaConfig>) => Promise<void>;
+  onServidorActualizado?: () => Promise<void>;
 }
 
 function ListaPlatos({
@@ -57,9 +60,15 @@ function menuAParsed(menu: MenuDiaConfig): MenuDiaParseado | null {
   };
 }
 
+async function authHeader(): Promise<HeadersInit> {
+  const token = await getSupabaseAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export function MenuDiaImportPanel({
   menuActual,
   onAplicar,
+  onServidorActualizado,
 }: MenuDiaImportPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [texto, setTexto] = useState("");
@@ -68,13 +77,14 @@ export function MenuDiaImportPanel({
   );
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [okMsg, setOkMsg] = useState<string | null>(null);
 
   const parsed = useMemo(
     () => parsedSesion ?? menuAParsed(menuActual),
     [parsedSesion, menuActual],
   );
 
-  const aplicarParsed = async (data: MenuDiaParseado) => {
+  const aplicarLocal = async (data: MenuDiaParseado) => {
     const { primerosImportados, segundosImportados } =
       importadosDesdeParsed(data.primeros, data.segundos);
 
@@ -91,24 +101,56 @@ export function MenuDiaImportPanel({
     setParsedSesion(data);
   };
 
-  const analizarTexto = async (contenido: string) => {
+  const procesarRespuesta = async (
+    data: {
+      parsed: MenuDiaParseado;
+      menu?: MenuDiaConfig;
+      guardadoEnServidor?: boolean;
+      errorGuardado?: string;
+    },
+  ) => {
+    setParsedSesion(data.parsed);
+
+    if (data.guardadoEnServidor && data.menu) {
+      guardarMenuDiaLocal(data.menu);
+      await onServidorActualizado?.();
+      setParsedSesion(data.parsed);
+      setOkMsg("Menú guardado en servidor · visible en todos los dispositivos");
+      setError(null);
+      return;
+    }
+
+    await aplicarLocal(data.parsed);
+
+    if (data.errorGuardado) {
+      setError(
+        `Menú leído pero no se guardó en servidor: ${data.errorGuardado}. Inicia sesión como admin o pulsa Analizar texto de nuevo.`,
+      );
+      setOkMsg(null);
+      return;
+    }
+
+    setOkMsg("Menú guardado en este dispositivo");
     setError(null);
-    const r = await fetch("/api/menu-dia/import", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texto: contenido }),
-    });
-    if (!r.ok) throw new Error("Error al analizar");
-    const data = (await r.json()) as { parsed: MenuDiaParseado };
-    return data.parsed;
   };
 
   const handleAnalizar = async () => {
     if (!texto.trim()) return;
     setCargando(true);
+    setError(null);
+    setOkMsg(null);
     try {
-      const data = await analizarTexto(texto);
-      await aplicarParsed(data);
+      const r = await fetch("/api/menu-dia/import", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await authHeader()),
+        },
+        body: JSON.stringify({ texto }),
+      });
+      if (!r.ok) throw new Error("Error al analizar");
+      const data = await r.json();
+      await procesarRespuesta(data);
     } catch {
       setError("No se pudo leer el texto del menú");
     } finally {
@@ -119,22 +161,28 @@ export function MenuDiaImportPanel({
   const handlePdf = async (file: File) => {
     setCargando(true);
     setError(null);
+    setOkMsg(null);
     try {
       const form = new FormData();
       form.append("file", file);
       const r = await fetch("/api/menu-dia/import", {
         method: "POST",
+        headers: await authHeader(),
         body: form,
       });
-      if (!r.ok) throw new Error("PDF");
-      const data = (await r.json()) as {
-        texto: string;
-        parsed: MenuDiaParseado;
-      };
-      setTexto(data.texto);
-      await aplicarParsed(data.parsed);
-    } catch {
-      setError("No se pudo leer el PDF. Prueba a pegar el texto.");
+      const data = await r.json();
+      if (!r.ok) {
+        setError(data.error ?? "No se pudo leer el PDF");
+        return;
+      }
+      if (data.texto) setTexto(data.texto);
+      await procesarRespuesta(data);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "No se pudo leer el PDF. Prueba a pegar el texto.",
+      );
     } finally {
       setCargando(false);
     }
@@ -143,9 +191,9 @@ export function MenuDiaImportPanel({
   return (
     <SectionCard title="Menú del día — subir PDF">
       <p className="mb-3 text-sm text-muted">
-        Sube el PDF de Taberneta. El menú queda guardado en el servidor y sale
-        en <strong>nueva comanda → Menú</strong> en todos los dispositivos hasta
-        que subas el del día siguiente.
+        Sube el PDF de Taberneta (como admin). El menú queda en el servidor y
+        sale en <strong>nueva comanda → Menú</strong> en móvil y PC hasta que
+        subas el del día siguiente.
       </p>
 
       <input
@@ -187,6 +235,9 @@ export function MenuDiaImportPanel({
       />
 
       {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+      {okMsg && !error && (
+        <p className="mb-3 text-sm font-medium text-green-800">{okMsg}</p>
+      )}
 
       {parsed && (
         <div className="space-y-4 border-t border-border pt-4">

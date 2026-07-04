@@ -128,6 +128,15 @@ export function marcarMesaCobrando(mesaId: string): void {
   setEstadoPersistido(mesaId, "cobrando", true);
 }
 
+export function toggleMesaCobrando(mesaId: string): void {
+  const persistido = getEstadoPersistido(mesaId);
+  if (persistido?.manual && persistido.estado === "cobrando") {
+    limpiarEstadoMesa(mesaId);
+    return;
+  }
+  marcarMesaCobrando(mesaId);
+}
+
 export function liberarMesa(mesaId: string): void {
   setEstadoPersistido(mesaId, "libre", true);
 }

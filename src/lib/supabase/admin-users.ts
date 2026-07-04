@@ -153,4 +153,44 @@ export async function actualizarUsuarioAdmin(
   return perfilToUsuario(actualizado as DbPerfil);
 }
 
+export async function eliminarUsuarioAdmin(username: string): Promise<void> {
+  const admin = getSupabaseAdminClient();
+  if (!admin || !RESTAURANTE_ID) {
+    throw new Error("Supabase admin no configurado");
+  }
+
+  const key = username.trim().toLowerCase();
+  const { data: perfil, error: fetchError } = await admin
+    .from("perfiles")
+    .select("*")
+    .eq("restaurante_id", RESTAURANTE_ID)
+    .eq("username", key)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (fetchError || !perfil) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  const dbPerfil = perfil as DbPerfil;
+
+  if (dbPerfil.rol === "ADMIN" && dbPerfil.activo) {
+    const admins = await contarAdminsActivos(key);
+    if (admins === 0) {
+      throw new Error("No puedes eliminar al único administrador activo");
+    }
+  }
+
+  const { error } = await admin
+    .from("perfiles")
+    .update({ activo: false, deleted_at: new Date().toISOString() })
+    .eq("id", dbPerfil.id);
+
+  if (error) throw new Error(error.message);
+
+  if (dbPerfil.auth_user_id) {
+    await admin.auth.admin.deleteUser(dbPerfil.auth_user_id);
+  }
+}
+
 export { authEmailToUsername, usernameToAuthEmail };

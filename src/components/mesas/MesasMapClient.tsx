@@ -7,7 +7,7 @@ import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useMesasOperativas } from "@/hooks/useMesas";
 import {
   liberarMesa,
-  marcarMesaCobrando,
+  toggleMesaCobrando,
 } from "@/lib/mesas/estado-mesa";
 import { labelZona, ZONAS_MESA } from "@/types/mesas";
 
@@ -66,8 +66,8 @@ export function MesasMapClient() {
                     <MesaCard
                       key={mesa.id}
                       mesa={mesa}
-                      onCobrando={() => {
-                        marcarMesaCobrando(mesa.id);
+                      onToggleCobrando={() => {
+                        toggleMesaCobrando(mesa.id);
                         refrescar();
                       }}
                       onLiberar={() => {
