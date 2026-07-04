@@ -8,6 +8,7 @@ vi.mock("@/lib/comandas/comanda-persist-meta", () => ({
 vi.mock("@/lib/data/data-layer", () => ({
   getComandasRepository: vi.fn(),
   getPostresRepository: vi.fn(),
+  isRemoteOperativaReady: vi.fn().mockReturnValue(true),
 }));
 
 vi.mock("@/lib/supabase/client", () => ({

@@ -34,6 +34,11 @@ let impresoraRepo: ImpresoraConfigRepository = impresoraConfigRepositoryLocal;
 let comandasRepo: ComandasRepository = comandasRepositoryLocal;
 let postresRepo: PostresRepository = postresRepositoryLocal;
 let initialized = false;
+let remoteOperativaActive = false;
+
+function ensureInitialized(): void {
+  initializeDataLayer();
+}
 
 export function initializeDataLayer(): void {
   if (initialized) return;
@@ -51,6 +56,13 @@ export function initializeDataLayer(): void {
   impresoraRepo = impresoraConfigRepositorySupabase;
   comandasRepo = comandasRepositoryApi;
   postresRepo = postresRepositoryApi;
+  remoteOperativaActive = true;
+}
+
+/** True cuando cocina/postres usan API servidor (no localStorage). */
+export function isRemoteOperativaReady(): boolean {
+  ensureInitialized();
+  return !usesRemoteData() || remoteOperativaActive;
 }
 
 export function getAuthRepository(): AuthRepository {
@@ -78,10 +90,12 @@ export function getImpresoraConfigRepository(): ImpresoraConfigRepository {
 }
 
 export function getComandasRepository(): ComandasRepository {
+  ensureInitialized();
   return comandasRepo;
 }
 
 export function getPostresRepository(): PostresRepository {
+  ensureInitialized();
   return postresRepo;
 }
 
@@ -95,6 +109,7 @@ export function getActiveBackendLabel(): string {
 /** Solo tests — reinicia el selector de repositorios */
 export function resetDataLayerForTests(): void {
   initialized = false;
+  remoteOperativaActive = false;
   authRepo = authRepositoryLocal;
   usuariosRepo = usuariosRepositoryLocal;
   catalogoRepo = catalogoRepositoryLocal;

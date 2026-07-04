@@ -14,23 +14,45 @@ import type { ComandaCocina } from "@/types/comanda";
 interface ComandaEnviadaViewProps {
   comanda: ComandaCocina;
   onNueva: () => void;
+  synced: boolean;
   syncAviso?: string | null;
+  onReintentarSync?: () => Promise<boolean>;
 }
 
 export function ComandaEnviadaView({
   comanda,
   onNueva,
+  synced,
   syncAviso,
+  onReintentarSync,
 }: ComandaEnviadaViewProps) {
   const [printSummary, setPrintSummary] = useState<string | null>(null);
   const [printLoading, setPrintLoading] = useState(true);
   const [printError, setPrintError] = useState(false);
+  const [syncedNow, setSyncedNow] = useState(synced);
+  const [reintentando, setReintentando] = useState(false);
+
+  useEffect(() => {
+    setSyncedNow(synced);
+  }, [synced]);
+
+  const puedeImprimir = !usesRemoteData() || syncedNow;
 
   useEffect(() => {
     let cancelled = false;
 
+    if (!puedeImprimir) {
+      setPrintLoading(false);
+      setPrintSummary(
+        "La comanda no está en el servidor — cocina y otros dispositivos no la verán hasta sincronizar.",
+      );
+      setPrintError(true);
+      return;
+    }
+
     (async () => {
       setPrintLoading(true);
+      setPrintError(false);
       try {
         const batch = await imprimirComandaCocina(comanda);
         if (!cancelled) {
@@ -54,13 +76,28 @@ export function ComandaEnviadaView({
     return () => {
       cancelled = true;
     };
-  }, [comanda]);
+  }, [comanda, puedeImprimir]);
+
+  const handleReintentar = async () => {
+    if (!onReintentarSync) return;
+    setReintentando(true);
+    try {
+      const ok = await onReintentarSync();
+      setSyncedNow(ok);
+    } finally {
+      setReintentando(false);
+    }
+  };
 
   return (
     <>
       <header className="mb-6 text-center">
-        <p className="text-sm font-bold uppercase tracking-widest text-green-600">
-          {PRINT_MESSAGES.enviada}
+        <p
+          className={`text-sm font-bold uppercase tracking-widest ${
+            syncedNow ? "text-green-600" : "text-amber-600"
+          }`}
+        >
+          {syncedNow ? PRINT_MESSAGES.enviada : "Pendiente de sincronizar"}
         </p>
         <h1 className="mt-2 text-3xl font-bold text-primary">
           MESA {getNombreMesaComanda(comanda)}
@@ -68,11 +105,30 @@ export function ComandaEnviadaView({
         <p className="mt-1 text-muted">
           {syncAviso
             ? syncAviso
-            : usesRemoteData()
-              ? "Sincronizada con el restaurante"
-              : "Guardada en este dispositivo · modo local"}
+            : syncedNow
+              ? usesRemoteData()
+                ? "Sincronizada con el restaurante"
+                : "Guardada en este dispositivo · modo local"
+              : "Solo visible en este móvil hasta confirmar en el servidor"}
         </p>
       </header>
+
+      {usesRemoteData() && !syncedNow && onReintentarSync && (
+        <div className="mb-4 rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
+          <p className="text-sm text-amber-900">
+            En un TPV conectado, la comanda debe guardarse en el servidor antes
+            de imprimir y antes de que cocina la vea en el panel.
+          </p>
+          <Button
+            fullWidth
+            className="mt-3"
+            onClick={() => void handleReintentar()}
+            disabled={reintentando}
+          >
+            {reintentando ? "Sincronizando…" : "Reintentar sincronización"}
+          </Button>
+        </div>
+      )}
 
       <PrintStatusBanner
         summary={printSummary}

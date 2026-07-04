@@ -26,6 +26,18 @@ export async function countActionableOutbox(): Promise<number> {
   return entries.filter(isOutboxEntryActionable).length;
 }
 
+function isCreateKind(kind: OutboxEntry["kind"]): boolean {
+  return kind === "cocina_create" || kind === "postres_create";
+}
+
+function hasPendingCreate(
+  entries: OutboxEntry[],
+  entityId: string,
+  kind: "cocina_create" | "postres_create",
+): boolean {
+  return entries.some((e) => e.kind === kind && e.entityId === entityId);
+}
+
 async function discardEntry(
   entry: OutboxEntry,
   removed: { count: number },
@@ -63,16 +75,20 @@ export async function reconcileOutbox(): Promise<number> {
 
   for (const entry of entries) {
     if (!isOutboxEntryActionable(entry) && entry.retries >= MAX_RETRIES) {
+      if (isCreateKind(entry.kind)) {
+        continue;
+      }
       await discardEntry(entry, removed);
       continue;
     }
 
     if (entry.kind === "cocina_estado") {
       const { estado } = entry.payload as { estado: EstadoPanel };
+      if (hasPendingCreate(entries, entry.entityId, "cocina_create")) {
+        continue;
+      }
       const remota = await getComandasRepository().getById(entry.entityId);
       if (!remota) {
-        await removeOutboxForEntity(["cocina_estado"], entry.entityId);
-        removed.count++;
         continue;
       }
       if (normalizeEstadoPanel(remota.estadoPanel) === normalizeEstadoPanel(estado)) {
@@ -84,10 +100,11 @@ export async function reconcileOutbox(): Promise<number> {
 
     if (entry.kind === "postres_estado") {
       const { estado } = entry.payload as { estado: EstadoPanel };
+      if (hasPendingCreate(entries, entry.entityId, "postres_create")) {
+        continue;
+      }
       const remota = await getPostresRepository().getById(entry.entityId);
       if (!remota) {
-        await removeOutboxForEntity(["postres_estado"], entry.entityId);
-        removed.count++;
         continue;
       }
       if (normalizeEstadoPanel(remota.estadoPanel) === normalizeEstadoPanel(estado)) {
@@ -105,10 +122,6 @@ export async function reconcileOutbox(): Promise<number> {
           entry.entityId,
         );
         removed.count++;
-        continue;
-      }
-      if (!isOutboxEntryActionable(entry)) {
-        await discardEntry(entry, removed);
       }
       continue;
     }
@@ -121,10 +134,6 @@ export async function reconcileOutbox(): Promise<number> {
           entry.entityId,
         );
         removed.count++;
-        continue;
-      }
-      if (!isOutboxEntryActionable(entry)) {
-        await discardEntry(entry, removed);
       }
     }
   }

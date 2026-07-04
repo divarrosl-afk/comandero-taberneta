@@ -162,7 +162,7 @@ export async function loadOperativaMerged(): Promise<OperativaData> {
   setPostresCache(postres);
 
   if (remoto) {
-    await saveOperativaSnapshot(remoto.cocina, remoto.postres);
+    await saveOperativaSnapshot(cocina, postres);
   } else if (!usesRemoteData()) {
     await saveOperativaSnapshot(cocina, postres);
   }

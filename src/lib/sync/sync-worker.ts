@@ -1,5 +1,9 @@
 import { buildComandaPersistMeta } from "@/lib/comandas/comanda-persist-meta";
-import { getComandasRepository, getPostresRepository } from "@/lib/data/data-layer";
+import {
+  getComandasRepository,
+  getPostresRepository,
+  isRemoteOperativaReady,
+} from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
 import { getSupabaseAccessToken } from "@/lib/supabase/client";
 import { isDuplicateKeyError } from "@/lib/supabase/errors";
@@ -33,6 +37,10 @@ function shouldSkip(entry: OutboxEntry): boolean {
 }
 
 async function executeEntry(entry: OutboxEntry): Promise<void> {
+  if (!isRemoteOperativaReady()) {
+    throw new Error("Repositorio remoto no listo");
+  }
+
   switch (entry.kind) {
     case "cocina_create": {
       const comanda = entry.payload as ComandaCocina;
@@ -107,6 +115,9 @@ async function executeEntry(entry: OutboxEntry): Promise<void> {
 /** Procesa la cola outbox (idempotente por entity id). */
 export async function flushOutbox(): Promise<FlushResult> {
   if (!usesRemoteData() || typeof window === "undefined") {
+    return { ok: 0, fail: 0 };
+  }
+  if (!isRemoteOperativaReady()) {
     return { ok: 0, fail: 0 };
   }
   if (flushing) return { ok: 0, fail: 0 };

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { DataBackend } from "@/lib/data/backend";
 import { resetSupabaseClient } from "@/lib/supabase/client";
 import type { SupabaseEnvConfig } from "@/lib/supabase/env";
+import { initializeDataLayer } from "@/lib/data/data-layer";
 import { setClientRuntimeConfig } from "@/lib/supabase/runtime-config";
 
 interface PublicConfigResponse {
@@ -86,6 +87,7 @@ export function SupabaseConfigGuard({ children }: { children: ReactNode }) {
         backend: data.backend,
         supabase: data.supabase,
       });
+      initializeDataLayer();
       resetSupabaseClient();
 
       if (data.ok) {

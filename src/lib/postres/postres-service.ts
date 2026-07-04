@@ -3,7 +3,7 @@ import { createId } from "@/lib/id/create-id";
 import { ensureUuid } from "@/lib/id/uuid";
 import { esMismaFecha } from "@/lib/cierre/fecha";
 import type { PersistResult } from "@/lib/comandas/comandas-service";
-import { getPostresRepository } from "@/lib/data/data-layer";
+import { getPostresRepository, isRemoteOperativaReady } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
 import { getPostresLocales } from "@/lib/storage/postres-local";
 import {
@@ -60,6 +60,15 @@ export async function guardarPostres(
   }
 
   upsertPostresCache(comandaRemota);
+
+  if (!isRemoteOperativaReady()) {
+    const error = "Servidor no listo — la comanda queda en cola de sincronización";
+    console.error("[postres]", error);
+    await enqueuePostresCreate(comandaRemota);
+    void flushOutbox();
+    dispatchAppSync();
+    return { data: comandaRemota, synced: false, error };
+  }
 
   try {
     const meta = await buildComandaPersistMeta(

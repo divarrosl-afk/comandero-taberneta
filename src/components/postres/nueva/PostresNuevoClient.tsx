@@ -12,6 +12,8 @@ import { notificarComandaEnviada, marcarMesaOcupada } from "@/lib/mesas/estado-m
 import { formToComandaPostres } from "@/lib/postres/map-form";
 import { limpiarBorradorPostres } from "@/lib/storage/borrador-postres";
 import { guardarPostres } from "@/lib/postres/postres-service";
+import type { PersistResult } from "@/lib/comandas/comandas-service";
+import type { ComandaPostres } from "@/types/postres";
 
 function PostresNuevoForm() {
   const searchParams = useSearchParams();
@@ -29,6 +31,7 @@ function PostresNuevoForm() {
   } = formActions;
 
   const [syncAviso, setSyncAviso] = useState<string | null>(null);
+  const [envio, setEnvio] = useState<PersistResult<ComandaPostres> | null>(null);
 
   const comanda = useMemo(() => formToComandaPostres(form), [form]);
 
@@ -41,6 +44,7 @@ function PostresNuevoForm() {
     const resultado = await guardarPostres(comanda, {
       camareroUsername: sesion?.username ?? form.camareroId,
     });
+    setEnvio(resultado);
     if (!resultado.synced) {
       setSyncAviso(
         "No se ha podido sincronizar, guardado localmente en este dispositivo.",
@@ -91,11 +95,27 @@ function PostresNuevoForm() {
         />
       )}
 
-      {step === "enviada" && comanda && (
+      {step === "enviada" && comanda && envio && (
         <PostresEnviadaView
-          comanda={comanda}
+          comanda={envio.data}
+          synced={envio.synced}
           onNueva={reset}
           syncAviso={syncAviso}
+          onReintentarSync={async () => {
+            const r = await guardarPostres(comanda, {
+              camareroUsername: sesion?.username ?? form.camareroId,
+            });
+            setEnvio(r);
+            if (r.synced) {
+              setSyncAviso(null);
+            } else {
+              setSyncAviso(
+                r.error ??
+                  "No se ha podido sincronizar, guardado localmente en este dispositivo.",
+              );
+            }
+            return r.synced;
+          }}
         />
       )}
     </main>

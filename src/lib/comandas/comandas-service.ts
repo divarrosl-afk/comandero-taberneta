@@ -2,7 +2,7 @@ import { buildComandaPersistMeta } from "@/lib/comandas/comanda-persist-meta";
 import { createId } from "@/lib/id/create-id";
 import { ensureUuid } from "@/lib/id/uuid";
 import { esMismaFecha } from "@/lib/cierre/fecha";
-import { getComandasRepository } from "@/lib/data/data-layer";
+import { getComandasRepository, isRemoteOperativaReady } from "@/lib/data/data-layer";
 import { usesRemoteData } from "@/lib/data/backend";
 import { getComandasLocales } from "@/lib/storage/comandas-local";
 import {
@@ -65,6 +65,15 @@ export async function guardarComanda(
   }
 
   upsertCocinaCache(comandaRemota);
+
+  if (!isRemoteOperativaReady()) {
+    const error = "Servidor no listo — la comanda queda en cola de sincronización";
+    console.error("[comandas]", error);
+    await enqueueCocinaCreate(comandaRemota);
+    void flushOutbox();
+    dispatchAppSync();
+    return { data: comandaRemota, synced: false, error };
+  }
 
   try {
     const meta = await buildComandaPersistMeta(

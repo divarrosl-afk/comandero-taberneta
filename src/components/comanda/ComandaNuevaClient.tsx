@@ -12,7 +12,8 @@ import { useComandaForm } from "@/hooks/useComandaForm";
 import { formToComanda } from "@/lib/comanda/map-form";
 import { notificarComandaEnviada, marcarMesaOcupada } from "@/lib/mesas/estado-mesa";
 import { limpiarBorrador } from "@/lib/storage/borrador-comanda";
-import { guardarComanda } from "@/lib/comandas/comandas-service";
+import { guardarComanda, type PersistResult } from "@/lib/comandas/comandas-service";
+import type { ComandaCocina } from "@/types/comanda";
 
 function ComandaNuevaForm() {
   const searchParams = useSearchParams();
@@ -30,6 +31,7 @@ function ComandaNuevaForm() {
   } = formActions;
 
   const [syncAviso, setSyncAviso] = useState<string | null>(null);
+  const [envio, setEnvio] = useState<PersistResult<ComandaCocina> | null>(null);
 
   const comanda = useMemo(() => formToComanda(form), [form]);
 
@@ -42,6 +44,7 @@ function ComandaNuevaForm() {
     const resultado = await guardarComanda(comanda, {
       camareroUsername: sesion?.username ?? form.camareroId,
     });
+    setEnvio(resultado);
     if (!resultado.synced) {
       setSyncAviso(
         "No se ha podido sincronizar, guardado localmente en este dispositivo.",
@@ -88,11 +91,27 @@ function ComandaNuevaForm() {
         />
       )}
 
-      {step === "enviada" && comanda && (
+      {step === "enviada" && comanda && envio && (
         <ComandaEnviadaView
-          comanda={comanda}
+          comanda={envio.data}
+          synced={envio.synced}
           onNueva={reset}
           syncAviso={syncAviso}
+          onReintentarSync={async () => {
+            const r = await guardarComanda(comanda, {
+              camareroUsername: sesion?.username ?? form.camareroId,
+            });
+            setEnvio(r);
+            if (r.synced) {
+              setSyncAviso(null);
+            } else {
+              setSyncAviso(
+                r.error ??
+                  "No se ha podido sincronizar, guardado localmente en este dispositivo.",
+              );
+            }
+            return r.synced;
+          }}
         />
       )}
     </main>
