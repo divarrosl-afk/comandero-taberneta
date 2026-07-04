@@ -1,4 +1,5 @@
 import { normalizeComandaPostres } from "@/lib/postres/normalize-comanda";
+import { esMismaFechaRestaurante } from "@/lib/cierre/fecha";
 import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
 
@@ -58,4 +59,14 @@ export function eliminarPostresLocal(id: string): boolean {
   if (filtradas.length === comandas.length) return false;
   guardarTodas(filtradas);
   return true;
+}
+
+export function eliminarPostresLocalesDelDia(fecha: string): number {
+  const todas = getPostresLocales();
+  const restantes = todas.filter(
+    (c) => !esMismaFechaRestaurante(c.creadaEn, fecha),
+  );
+  const eliminadas = todas.length - restantes.length;
+  if (eliminadas > 0) guardarTodas(restantes);
+  return eliminadas;
 }

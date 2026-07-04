@@ -1,6 +1,7 @@
 import type { ComandaCocina } from "@/types/comanda";
 import type { EstadoPanel } from "@/types/panel";
 import { normalizeEstadoPanel } from "@/types/panel";
+import { esMismaFechaRestaurante } from "@/lib/cierre/fecha";
 
 const STORAGE_KEY = "comandero-taberneta:comandas";
 
@@ -82,6 +83,16 @@ export function eliminarComandaLocal(id: string): boolean {
   if (filtradas.length === comandas.length) return false;
   guardarTodas(filtradas);
   return true;
+}
+
+export function eliminarComandasLocalesDelDia(fecha: string): number {
+  const todas = getComandasLocales();
+  const restantes = todas.filter(
+    (c) => !esMismaFechaRestaurante(c.creadaEn, fecha),
+  );
+  const eliminadas = todas.length - restantes.length;
+  if (eliminadas > 0) guardarTodas(restantes);
+  return eliminadas;
 }
 
 export function generarIdComanda(): string {

@@ -1,4 +1,4 @@
-import { esMismaFecha } from "@/lib/cierre/fecha";
+import { esMismaFechaRestaurante } from "@/lib/cierre/fecha";
 import { getComandasSync } from "@/lib/comandas/comandas-service";
 import { getPostresSync } from "@/lib/postres/postres-service";
 import type { ComandaCocina } from "@/types/comanda";
@@ -29,10 +29,10 @@ function postresAEntrada(c: ComandaPostres): EntradaCierre {
 
 export function getEntradasDelDia(fecha: string): EntradaCierre[] {
   const cocina = getComandasSync()
-    .filter((c) => esMismaFecha(c.creadaEn, fecha))
+    .filter((c) => esMismaFechaRestaurante(c.creadaEn, fecha))
     .map(cocinaAEntrada);
   const postres = getPostresSync()
-    .filter((c) => esMismaFecha(c.creadaEn, fecha))
+    .filter((c) => esMismaFechaRestaurante(c.creadaEn, fecha))
     .map(postresAEntrada);
 
   return [...cocina, ...postres].sort(
@@ -45,7 +45,7 @@ export function filtrarEntradas(
   filtros: FiltrosCierre,
 ): EntradaCierre[] {
   return entradas.filter((e) => {
-    if (!esMismaFecha(e.creadaEn, filtros.fecha)) return false;
+    if (!esMismaFechaRestaurante(e.creadaEn, filtros.fecha)) return false;
     if (filtros.tipo !== "todos" && e.tipo !== filtros.tipo) return false;
     if (
       filtros.camarero !== "todos" &&

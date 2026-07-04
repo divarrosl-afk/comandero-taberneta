@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatearFechaDisplay } from "@/lib/cierre/fecha";
@@ -11,6 +11,7 @@ interface BorrarDiaPanelProps {
   totalCocina: number;
   totalPostres: number;
   onBorrar: () => Promise<ResultadoBorradoDia> | ResultadoBorradoDia;
+  onCompletado?: () => void;
 }
 
 const CONFIRMACION_TEXTO = "BORRAR";
@@ -20,6 +21,7 @@ export function BorrarDiaPanel({
   totalCocina,
   totalPostres,
   onBorrar,
+  onCompletado,
 }: BorrarDiaPanelProps) {
   const [paso1, setPaso1] = useState(false);
   const [paso2, setPaso2] = useState(false);
@@ -27,6 +29,10 @@ export function BorrarDiaPanel({
   const [resultado, setResultado] = useState<ResultadoBorradoDia | null>(null);
 
   const total = totalCocina + totalPostres;
+
+  useEffect(() => {
+    setResultado(null);
+  }, [fecha]);
 
   const handleConfirmarPaso1 = () => {
     setPaso1(false);
@@ -40,6 +46,7 @@ export function BorrarDiaPanel({
     setResultado(res);
     setPaso2(false);
     setTexto("");
+    onCompletado?.();
   };
 
   return (

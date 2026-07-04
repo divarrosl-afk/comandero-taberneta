@@ -73,6 +73,7 @@ export function CierreClient() {
           totalCocina={conteoDia.cocina}
           totalPostres={conteoDia.postres}
           onBorrar={borrarDia}
+          onCompletado={recargar}
         />
       </div>
     </main>
