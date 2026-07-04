@@ -23,6 +23,7 @@ type PanelTab = "cocina" | "postres";
 function PanelContent() {
   const searchParams = useSearchParams();
   const mesaFiltro = searchParams.get("mesa");
+  const tabParam = searchParams.get("tab");
   const [tab, setTab] = useState<PanelTab>("cocina");
   const [detalleCocina, setDetalleCocina] = useState<ComandaCocina | null>(
     null,
@@ -47,6 +48,11 @@ function PanelContent() {
     ? listaCocina.filter((c) => comandaPerteneceAMesa(c, mesaFiltro))
     : listaCocina;
   const mesaAbiertaRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (tabParam === "postres") setTab("postres");
+    else if (tabParam === "cocina") setTab("cocina");
+  }, [tabParam]);
 
   useEffect(() => {
     if (!mesaFiltro) {

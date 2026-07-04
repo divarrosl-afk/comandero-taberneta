@@ -14,7 +14,7 @@ vi.mock("@/lib/sync/operativa-read", () => ({
   loadOperativaMerged: vi.fn().mockResolvedValue({ cocina: [], postres: [] }),
 }));
 
-import { getComandasRepository } from "@/lib/data/data-layer";
+import { getComandasRepository, getPostresRepository } from "@/lib/data/data-layer";
 import {
   enqueueCocinaCreate,
   clearOutbox,
@@ -28,11 +28,17 @@ describe("flushOutbox", () => {
     vi.stubEnv("NEXT_PUBLIC_DATA_BACKEND", "supabase");
     await clearOutbox();
     vi.stubGlobal("navigator", { onLine: true });
+    vi.mocked(getPostresRepository).mockReturnValue({
+      getById: vi.fn().mockResolvedValue(null),
+    } as never);
   });
 
   it("procesa creates y vacía cola", async () => {
     const crear = vi.fn().mockResolvedValue({});
-    vi.mocked(getComandasRepository).mockReturnValue({ crear } as never);
+    vi.mocked(getComandasRepository).mockReturnValue({
+      crear,
+      getById: vi.fn().mockResolvedValue(null),
+    } as never);
 
     await enqueueCocinaCreate(comandaCocinaFixture({ id: "f1" }));
     const result = await flushOutbox();
@@ -44,7 +50,10 @@ describe("flushOutbox", () => {
 
   it("reintento fallido conserva operación e incrementa retries", async () => {
     const crear = vi.fn().mockRejectedValue(new Error("network down"));
-    vi.mocked(getComandasRepository).mockReturnValue({ crear } as never);
+    vi.mocked(getComandasRepository).mockReturnValue({
+      crear,
+      getById: vi.fn().mockResolvedValue(null),
+    } as never);
 
     await enqueueCocinaCreate(comandaCocinaFixture({ id: "f2" }));
     const result = await flushOutbox();
@@ -61,7 +70,10 @@ describe("flushOutbox", () => {
     const crear = vi.fn().mockRejectedValue(
       new Error('duplicate key value violates unique constraint "23505"'),
     );
-    vi.mocked(getComandasRepository).mockReturnValue({ crear } as never);
+    vi.mocked(getComandasRepository).mockReturnValue({
+      crear,
+      getById: vi.fn().mockResolvedValue(null),
+    } as never);
 
     await enqueueCocinaCreate(comandaCocinaFixture({ id: "f3" }));
     const result = await flushOutbox();
@@ -81,7 +93,10 @@ describe("flushOutbox", () => {
           crearGate.then(() => resolve({}));
         }),
     );
-    vi.mocked(getComandasRepository).mockReturnValue({ crear } as never);
+    vi.mocked(getComandasRepository).mockReturnValue({
+      crear,
+      getById: vi.fn().mockResolvedValue(null),
+    } as never);
 
     await enqueueCocinaCreate(comandaCocinaFixture({ id: "f4" }));
 

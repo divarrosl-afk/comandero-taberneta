@@ -28,8 +28,14 @@ describe("retryPendingSync", () => {
   it("delega en flushOutbox", async () => {
     const crearCocina = vi.fn().mockResolvedValue({});
     const crearPostres = vi.fn().mockResolvedValue({});
-    vi.mocked(getComandasRepository).mockReturnValue({ crear: crearCocina } as never);
-    vi.mocked(getPostresRepository).mockReturnValue({ crear: crearPostres } as never);
+    vi.mocked(getComandasRepository).mockReturnValue({
+      crear: crearCocina,
+      getById: vi.fn().mockResolvedValue(null),
+    } as never);
+    vi.mocked(getPostresRepository).mockReturnValue({
+      crear: crearPostres,
+      getById: vi.fn().mockResolvedValue(null),
+    } as never);
 
     await enqueueCocinaCreate(comandaCocinaFixture({ id: "c1" }));
     await enqueuePostresCreate(comandaPostresFixture({ id: "p1" }));

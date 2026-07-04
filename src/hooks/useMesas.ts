@@ -134,5 +134,5 @@ export function useMesasOperativas() {
     [operativas],
   );
 
-  return { operativas, refrescar, porZona, cargando };
+  return { operativas, refrescar, porZona, cargando, operativaRevision: revision };
 }

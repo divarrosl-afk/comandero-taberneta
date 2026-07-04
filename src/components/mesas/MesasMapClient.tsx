@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { MesaCard } from "@/components/mesas/MesaCard";
 import { Button } from "@/components/ui/Button";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -9,10 +10,18 @@ import {
   liberarMesa,
   toggleMesaCobrando,
 } from "@/lib/mesas/estado-mesa";
+import { usesRemoteData } from "@/lib/data/backend";
+import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { labelZona, ZONAS_MESA } from "@/types/mesas";
 
 export function MesasMapClient() {
-  const { operativas, refrescar, porZona, cargando } = useMesasOperativas();
+  const { operativas, refrescar, porZona, cargando, operativaRevision } =
+    useMesasOperativas();
+
+  useEffect(() => {
+    if (!usesRemoteData()) return;
+    void fetchOperativaData().then(() => refrescar());
+  }, [refrescar]);
 
   return (
     <RequireAuth>
@@ -66,6 +75,7 @@ export function MesasMapClient() {
                     <MesaCard
                       key={mesa.id}
                       mesa={mesa}
+                      operativaRevision={operativaRevision}
                       onToggleCobrando={() => {
                         toggleMesaCobrando(mesa.id);
                         refrescar();

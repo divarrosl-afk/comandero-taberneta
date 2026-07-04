@@ -9,16 +9,30 @@ import {
   type MesaOperativa,
 } from "@/types/mesas";
 import { getComandasDeMesa } from "@/lib/mesas/estado-mesa";
+import { isEstadoPanelActivo } from "@/types/panel";
 
 interface MesaCardProps {
   mesa: MesaOperativa;
+  operativaRevision: number;
   onToggleCobrando: () => void;
   onLiberar: () => void;
 }
 
-export function MesaCard({ mesa, onToggleCobrando, onLiberar }: MesaCardProps) {
+export function MesaCard({
+  mesa,
+  operativaRevision,
+  onToggleCobrando,
+  onLiberar,
+}: MesaCardProps) {
   const [expandido, setExpandido] = useState(false);
-  const { total } = getComandasDeMesa(mesa.id);
+  void operativaRevision;
+  const { cocina, total } = getComandasDeMesa(mesa.id);
+  const comandasCocinaActivas = cocina.filter((c) =>
+    isEstadoPanelActivo(c.estadoPanel),
+  ).length;
+  const tieneComanda = comandasCocinaActivas > 0;
+  const panelHref = `/panel?mesa=${encodeURIComponent(mesa.id)}`;
+  const panelPostresHref = `/panel?mesa=${encodeURIComponent(mesa.id)}&tab=postres`;
 
   return (
     <article
@@ -48,25 +62,36 @@ export function MesaCard({ mesa, onToggleCobrando, onLiberar }: MesaCardProps) {
       {expandido && (
         <div className="mt-3 space-y-2 border-t border-black/10 pt-3">
           <div className="grid grid-cols-2 gap-2">
+            {tieneComanda ? (
+              <Link
+                href={panelHref}
+                className="flex min-h-11 items-center justify-center rounded-xl bg-primary px-2 text-center text-xs font-bold text-primary-foreground"
+              >
+                Ver comanda ({comandasCocinaActivas})
+              </Link>
+            ) : (
+              <Link
+                href={`/comanda/nueva?mesa=${encodeURIComponent(mesa.id)}`}
+                className="flex min-h-11 items-center justify-center rounded-xl bg-primary px-2 text-center text-xs font-bold text-primary-foreground"
+              >
+                Nueva comanda
+              </Link>
+            )}
             <Link
-              href={`/comanda/nueva?mesa=${encodeURIComponent(mesa.id)}`}
-              className="flex min-h-11 items-center justify-center rounded-xl bg-primary px-2 text-center text-xs font-bold text-primary-foreground"
-            >
-              Nueva comanda
-            </Link>
-            <Link
-              href={`/postres/nuevo?mesa=${encodeURIComponent(mesa.id)}`}
+              href={tieneComanda ? panelPostresHref : `/postres/nuevo?mesa=${encodeURIComponent(mesa.id)}`}
               className="flex min-h-11 items-center justify-center rounded-xl border-2 border-border bg-background px-2 text-center text-xs font-bold"
             >
               Postres
             </Link>
           </div>
-          <Link
-            href={`/panel?mesa=${encodeURIComponent(mesa.id)}`}
-            className="flex min-h-10 w-full items-center justify-center rounded-xl border border-border text-xs font-semibold"
-          >
-            Ver comanda{total > 0 ? ` (${total})` : ""}
-          </Link>
+          {tieneComanda && (
+            <Link
+              href={`/comanda/nueva?mesa=${encodeURIComponent(mesa.id)}`}
+              className="flex min-h-9 w-full items-center justify-center rounded-xl border border-dashed border-border text-xs font-medium text-muted"
+            >
+              + Otra comanda
+            </Link>
+          )}
           <div className="flex gap-2">
             <Button
               variant={mesa.estado === "cobrando" ? "primary" : "outline"}

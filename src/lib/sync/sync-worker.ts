@@ -8,12 +8,12 @@ import {
   removeOutboxForEntity,
 } from "@/lib/sync/outbox";
 import type { OutboxEntry } from "@/lib/sync/outbox-types";
+import { reconcileOutbox, isOutboxEntryActionable } from "@/lib/sync/reconcile-outbox";
 import { loadOperativaMerged } from "@/lib/sync/operativa-read";
 import type { ComandaCocina } from "@/types/comanda";
 import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
 
-const MAX_RETRIES = 8;
 const BASE_BACKOFF_MS = 2000;
 
 export interface FlushResult {
@@ -28,11 +28,7 @@ function backoffMs(retries: number): number {
 }
 
 function shouldSkip(entry: OutboxEntry): boolean {
-  if (entry.retries >= MAX_RETRIES) return true;
-  if (entry.retries === 0) return false;
-  const waitUntil =
-    new Date(entry.createdAt).getTime() + backoffMs(entry.retries);
-  return Date.now() < waitUntil;
+  return !isOutboxEntryActionable(entry);
 }
 
 async function executeEntry(entry: OutboxEntry): Promise<void> {
@@ -68,7 +64,17 @@ async function executeEntry(entry: OutboxEntry): Promise<void> {
         entry.entityId,
         estado,
       );
-      if (!updated) throw new Error("No se pudo actualizar estado cocina");
+      if (!updated) {
+        const remota = await getComandasRepository().getById(entry.entityId);
+        if (
+          remota &&
+          remota.estadoPanel === estado
+        ) {
+          await removeOutboxForEntity(["cocina_estado"], entry.entityId);
+          return;
+        }
+        throw new Error("No se pudo actualizar estado cocina");
+      }
       await removeOutboxForEntity(["cocina_estado"], entry.entityId);
       return;
     }
@@ -78,7 +84,17 @@ async function executeEntry(entry: OutboxEntry): Promise<void> {
         entry.entityId,
         estado,
       );
-      if (!updated) throw new Error("No se pudo actualizar estado postres");
+      if (!updated) {
+        const remota = await getPostresRepository().getById(entry.entityId);
+        if (
+          remota &&
+          remota.estadoPanel === estado
+        ) {
+          await removeOutboxForEntity(["postres_estado"], entry.entityId);
+          return;
+        }
+        throw new Error("No se pudo actualizar estado postres");
+      }
       await removeOutboxForEntity(["postres_estado"], entry.entityId);
       return;
     }
@@ -100,10 +116,10 @@ export async function flushOutbox(): Promise<FlushResult> {
   let fail = 0;
 
   try {
+    await reconcileOutbox();
     const entries = await listOutboxEntries();
     for (const entry of entries) {
       if (shouldSkip(entry)) {
-        fail++;
         continue;
       }
       try {
