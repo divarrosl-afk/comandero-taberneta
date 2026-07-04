@@ -84,6 +84,9 @@ async function ensureUsuario(
     .maybeSingle();
 
   if (existente?.auth_user_id) {
+    if (user.password.length < 6) {
+      return "skipped";
+    }
     const { error } = await admin.auth.admin.updateUserById(existente.auth_user_id, {
       password: user.password,
       email_confirm: true,
@@ -95,6 +98,11 @@ async function ensureUsuario(
   let authUserId = existente?.auth_user_id ?? null;
 
   if (!authUserId) {
+    if (user.password.length < 6) {
+      throw new Error(
+        `${user.username}: contraseña demasiado corta (mínimo 6 caracteres, Supabase Auth)`,
+      );
+    }
     const { data: authData, error: authError } = await admin.auth.admin.createUser({
       email: authEmail,
       password: user.password,

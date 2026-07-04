@@ -17,6 +17,11 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import {
+  formatSeedPasswordError,
+  isSeedPasswordTooShort,
+  MIN_SEED_PASSWORD_LENGTH,
+} from "./ci/password-policy.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -38,6 +43,13 @@ if (!adminPassword || !camareroPassword) {
     "Define SEED_ADMIN_PASSWORD y SEED_CAMARERO_PASSWORD en el entorno",
   );
   process.exit(1);
+}
+
+if (isSeedPasswordTooShort(adminPassword)) {
+  console.warn(`⚠ ${formatSeedPasswordError("SEED_ADMIN_PASSWORD")}`);
+}
+if (isSeedPasswordTooShort(camareroPassword)) {
+  console.warn(`⚠ ${formatSeedPasswordError("SEED_CAMARERO_PASSWORD")}`);
 }
 
 const supabase = createClient(url, serviceKey, {
@@ -128,6 +140,13 @@ async function ensureUsuario(u) {
     .maybeSingle();
 
   if (existente?.auth_user_id) {
+    if (isSeedPasswordTooShort(u.password)) {
+      console.log(
+        `✓ Usuario ${u.username} ya existe — omitiendo cambio de contraseña (< ${MIN_SEED_PASSWORD_LENGTH} caracteres en SEED_*)`,
+      );
+      return;
+    }
+
     const { error } = await supabase.auth.admin.updateUserById(existente.auth_user_id, {
       password: u.password,
       email_confirm: true,
@@ -140,6 +159,12 @@ async function ensureUsuario(u) {
   let authUserId = existente?.auth_user_id ?? null;
 
   if (!authUserId) {
+    if (isSeedPasswordTooShort(u.password)) {
+      throw new Error(
+        `${u.username}: no existe en Auth y la contraseña SEED_* tiene menos de ${MIN_SEED_PASSWORD_LENGTH} caracteres — ${formatSeedPasswordError(u.rol === "ADMIN" ? "SEED_ADMIN_PASSWORD" : "SEED_CAMARERO_PASSWORD")}`,
+      );
+    }
+
     const { data: authData, error: authError } =
       await supabase.auth.admin.createUser({
         email: authEmail,
