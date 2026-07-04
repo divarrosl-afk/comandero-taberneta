@@ -9,6 +9,10 @@ import {
   type DbComandaCocina,
   type DbComandaPostres,
 } from "@/lib/supabase/comandas-mappers";
+import {
+  estadoPanelToLegacyDbEnum,
+  isInvalidEstadoPanelEnumError,
+} from "@/lib/supabase/estado-panel-db";
 import type { ComandaCocina } from "@/types/comanda";
 import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
@@ -30,6 +34,176 @@ function clientConToken(token: string) {
 function assertRestaurante(): string {
   if (!RESTAURANTE_ID) throw new Error("restauranteId no configurado");
   return RESTAURANTE_ID;
+}
+
+type OperativaClient = ReturnType<typeof clientConToken>;
+
+async function insertCocinaRow(
+  client: OperativaClient,
+  row: DbComandaCocina,
+): Promise<DbComandaCocina> {
+  const first = await client
+    .from("comandas_cocina")
+    .insert(row)
+    .select("*")
+    .single();
+
+  if (!first.error && first.data) {
+    return first.data as DbComandaCocina;
+  }
+
+  const msg = first.error?.message ?? "";
+  if (isInvalidEstadoPanelEnumError(msg)) {
+    const legacyRow = {
+      ...row,
+      estado_panel: estadoPanelToLegacyDbEnum(row.estado_panel),
+    };
+    const retry = await client
+      .from("comandas_cocina")
+      .insert(legacyRow)
+      .select("*")
+      .single();
+    if (!retry.error && retry.data) {
+      return retry.data as DbComandaCocina;
+    }
+    throw new Error(retry.error?.message ?? "Error al guardar comanda");
+  }
+
+  throw new Error(msg || "Error al guardar comanda");
+}
+
+async function insertPostresRow(
+  client: OperativaClient,
+  row: DbComandaPostres,
+): Promise<DbComandaPostres> {
+  const first = await client
+    .from("comandas_postres")
+    .insert(row)
+    .select("*")
+    .single();
+
+  if (!first.error && first.data) {
+    return first.data as DbComandaPostres;
+  }
+
+  const msg = first.error?.message ?? "";
+  if (isInvalidEstadoPanelEnumError(msg)) {
+    const legacyRow = {
+      ...row,
+      estado_panel: estadoPanelToLegacyDbEnum(row.estado_panel),
+    };
+    const retry = await client
+      .from("comandas_postres")
+      .insert(legacyRow)
+      .select("*")
+      .single();
+    if (!retry.error && retry.data) {
+      return retry.data as DbComandaPostres;
+    }
+    throw new Error(retry.error?.message ?? "Error al guardar postres");
+  }
+
+  throw new Error(msg || "Error al guardar postres");
+}
+
+async function updateCocinaRow(
+  client: OperativaClient,
+  id: string,
+  restauranteId: string,
+  patch: Record<string, unknown>,
+  estadoFallback?: EstadoPanel,
+  activeOnly = false,
+): Promise<DbComandaCocina | null> {
+  let query = client
+    .from("comandas_cocina")
+    .update(patch)
+    .eq("id", id)
+    .eq("restaurante_id", restauranteId);
+  if (activeOnly) {
+    query = query.is("deleted_at", null);
+  }
+  const first = await query.select("*").single();
+
+  if (!first.error && first.data) {
+    return first.data as DbComandaCocina;
+  }
+
+  const msg = first.error?.message ?? "";
+  if (
+    estadoFallback !== undefined &&
+    isInvalidEstadoPanelEnumError(msg) &&
+    "estado_panel" in patch
+  ) {
+    const retryQuery = client
+      .from("comandas_cocina")
+      .update({
+        ...patch,
+        estado_panel: estadoPanelToLegacyDbEnum(estadoFallback),
+      })
+      .eq("id", id)
+      .eq("restaurante_id", restauranteId);
+    const retry = await (activeOnly
+      ? retryQuery.is("deleted_at", null)
+      : retryQuery
+    )
+      .select("*")
+      .single();
+    if (!retry.error && retry.data) {
+      return retry.data as DbComandaCocina;
+    }
+  }
+
+  return null;
+}
+
+async function updatePostresRow(
+  client: OperativaClient,
+  id: string,
+  restauranteId: string,
+  patch: Record<string, unknown>,
+  estadoFallback?: EstadoPanel,
+  activeOnly = false,
+): Promise<DbComandaPostres | null> {
+  let query = client
+    .from("comandas_postres")
+    .update(patch)
+    .eq("id", id)
+    .eq("restaurante_id", restauranteId);
+  if (activeOnly) {
+    query = query.is("deleted_at", null);
+  }
+  const first = await query.select("*").single();
+
+  if (!first.error && first.data) {
+    return first.data as DbComandaPostres;
+  }
+
+  const msg = first.error?.message ?? "";
+  if (
+    estadoFallback !== undefined &&
+    isInvalidEstadoPanelEnumError(msg) &&
+    "estado_panel" in patch
+  ) {
+    const retryQuery = client
+      .from("comandas_postres")
+      .update({
+        ...patch,
+        estado_panel: estadoPanelToLegacyDbEnum(estadoFallback),
+      })
+      .eq("id", id)
+      .eq("restaurante_id", restauranteId);
+    const retry = await (activeOnly
+      ? retryQuery.is("deleted_at", null)
+      : retryQuery
+    )
+      .select("*")
+      .single();
+    if (!retry.error && retry.data) {
+      return retry.data as DbComandaPostres;
+    }
+  }
+
+  return null;
 }
 
 // --- Cocina ---
@@ -66,17 +240,8 @@ export async function crearComandaCocina(
   const client = clientConToken(token);
   const restauranteId = assertRestaurante();
   const row = comandaToRow(comanda, restauranteId, meta);
-
-  const { data, error } = await client
-    .from("comandas_cocina")
-    .insert(row)
-    .select("*")
-    .single();
-
-  if (error || !data) {
-    throw new Error(error?.message ?? "Error al guardar comanda");
-  }
-  return rowToComandaCocina(data as DbComandaCocina);
+  const data = await insertCocinaRow(client, row);
+  return rowToComandaCocina(data);
 }
 
 export async function actualizarComandaCocina(
@@ -95,9 +260,11 @@ export async function actualizarComandaCocina(
     mesaCodigo: String(merged.mesa),
   });
 
-  const { data, error } = await client
-    .from("comandas_cocina")
-    .update({
+  const data = await updateCocinaRow(
+    client,
+    id,
+    restauranteId,
+    {
       mesa_codigo: row.mesa_codigo,
       mesa_id: row.mesa_id,
       camarero_nombre: row.camarero_nombre,
@@ -110,14 +277,12 @@ export async function actualizarComandaCocina(
       observaciones: row.observaciones,
       estado_panel: row.estado_panel,
       enviada: row.enviada,
-    })
-    .eq("id", id)
-    .eq("restaurante_id", restauranteId)
-    .select("*")
-    .single();
+    },
+    merged.estadoPanel,
+  );
 
-  if (error || !data) return null;
-  return rowToComandaCocina(data as DbComandaCocina);
+  if (!data) return null;
+  return rowToComandaCocina(data);
 }
 
 export async function actualizarEstadoComandaCocina(
@@ -128,17 +293,17 @@ export async function actualizarEstadoComandaCocina(
   const client = clientConToken(token);
   const restauranteId = assertRestaurante();
 
-  const { data, error } = await client
-    .from("comandas_cocina")
-    .update({ estado_panel: estado })
-    .eq("id", id)
-    .eq("restaurante_id", restauranteId)
-    .is("deleted_at", null)
-    .select("*")
-    .single();
+  const data = await updateCocinaRow(
+    client,
+    id,
+    restauranteId,
+    { estado_panel: estado },
+    estado,
+    true,
+  );
 
-  if (error || !data) return null;
-  return rowToComandaCocina(data as DbComandaCocina);
+  if (!data) return null;
+  return rowToComandaCocina(data);
 }
 
 export async function eliminarComandaCocina(
@@ -225,17 +390,8 @@ export async function crearComandaPostres(
   const client = clientConToken(token);
   const restauranteId = assertRestaurante();
   const row = comandaPostresToRow(comanda, restauranteId, meta);
-
-  const { data, error } = await client
-    .from("comandas_postres")
-    .insert(row)
-    .select("*")
-    .single();
-
-  if (error || !data) {
-    throw new Error(error?.message ?? "Error al guardar postres");
-  }
-  return rowToComandaPostres(data as DbComandaPostres);
+  const data = await insertPostresRow(client, row);
+  return rowToComandaPostres(data);
 }
 
 export async function actualizarComandaPostres(
@@ -254,9 +410,11 @@ export async function actualizarComandaPostres(
     mesaCodigo: String(merged.mesa),
   });
 
-  const { data, error } = await client
-    .from("comandas_postres")
-    .update({
+  const data = await updatePostresRow(
+    client,
+    id,
+    restauranteId,
+    {
       mesa_codigo: row.mesa_codigo,
       mesa_id: row.mesa_id,
       camarero_nombre: row.camarero_nombre,
@@ -266,14 +424,12 @@ export async function actualizarComandaPostres(
       observaciones: row.observaciones,
       estado_panel: row.estado_panel,
       enviada: row.enviada,
-    })
-    .eq("id", id)
-    .eq("restaurante_id", restauranteId)
-    .select("*")
-    .single();
+    },
+    merged.estadoPanel,
+  );
 
-  if (error || !data) return null;
-  return rowToComandaPostres(data as DbComandaPostres);
+  if (!data) return null;
+  return rowToComandaPostres(data);
 }
 
 export async function actualizarEstadoComandaPostres(
@@ -284,17 +440,17 @@ export async function actualizarEstadoComandaPostres(
   const client = clientConToken(token);
   const restauranteId = assertRestaurante();
 
-  const { data, error } = await client
-    .from("comandas_postres")
-    .update({ estado_panel: estado })
-    .eq("id", id)
-    .eq("restaurante_id", restauranteId)
-    .is("deleted_at", null)
-    .select("*")
-    .single();
+  const data = await updatePostresRow(
+    client,
+    id,
+    restauranteId,
+    { estado_panel: estado },
+    estado,
+    true,
+  );
 
-  if (error || !data) return null;
-  return rowToComandaPostres(data as DbComandaPostres);
+  if (!data) return null;
+  return rowToComandaPostres(data);
 }
 
 export async function eliminarComandaPostres(
