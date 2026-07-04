@@ -25,6 +25,9 @@ const FILES = [
   "supabase/migrations/20250702_rls_hardening.sql",
   "supabase/migrations/20250703_drop_ct_is_camarero.sql",
   "supabase/migrations/20250704_print_jobs.sql",
+  "supabase/migrations/20250705_estado_panel_semaforo.sql",
+  "supabase/migrations/20250706_postres_cafes_seccion.sql",
+  "supabase/migrations/20250707_menu_importados.sql",
 ];
 
 const dbUrl =

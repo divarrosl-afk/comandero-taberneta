@@ -27,10 +27,25 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-  CREATE TYPE ct_estado_panel AS ENUM ('pendiente',
-  'en_preparacion',
-  'listo',
-  'servido');
+  CREATE TYPE ct_estado_panel AS ENUM (
+    'pendiente',
+    'en_preparacion',
+    'listo',
+    'servido',
+    'sentados',
+    'bebidas',
+    'tapas',
+    'marcha_1',
+    'tiene_primeros',
+    'marcha_segundos',
+    'segundos',
+    'marcha_postres',
+    'tiene_postres',
+    'marcha_cafes',
+    'tiene_cafes',
+    'marcha_cuenta',
+    'mesa_libre'
+  );
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
