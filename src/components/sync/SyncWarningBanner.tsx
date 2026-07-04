@@ -5,6 +5,7 @@ import { countOutbox, countOutboxSync, hydrateOutboxMirror } from "@/lib/sync/ou
 import { countActionableOutbox } from "@/lib/sync/reconcile-outbox";
 import { retryPendingSync } from "@/lib/sync/retry-pending";
 import { SYNC_PENDING_POLL_MS } from "@/lib/sync/constants";
+import { APP_SYNC_EVENT } from "@/lib/sync/app-sync";
 import { usesRemoteData } from "@/lib/data/backend";
 
 export function SyncWarningBanner() {

@@ -7,16 +7,23 @@ export async function GET() {
   const setup = validateSupabaseSetup();
   const env = getSupabaseEnv();
 
-  return NextResponse.json({
-    ok: setup.ok,
-    backend: getDataBackend(),
-    missing: setup.missing,
-    supabase: env
-      ? {
-          url: env.url,
-          anonKey: env.anonKey,
-          restauranteId: env.restauranteId,
-        }
-      : null,
-  });
+  return NextResponse.json(
+    {
+      ok: setup.ok,
+      backend: getDataBackend(),
+      missing: setup.missing,
+      supabase: env
+        ? {
+            url: env.url,
+            anonKey: env.anonKey,
+            restauranteId: env.restauranteId,
+          }
+        : null,
+    },
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    },
+  );
 }

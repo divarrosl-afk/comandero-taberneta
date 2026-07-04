@@ -3,6 +3,7 @@ import type { ComandaCocina } from "@/types/comanda";
 import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
 import { getSyncDb } from "@/lib/sync/idb";
+import { isOutboxEntryActionable } from "@/lib/sync/reconcile-outbox";
 import type { OutboxEntry, OutboxKind } from "@/lib/sync/outbox-types";
 
 const PENDING_COCINA_KEY = "comandero-taberneta:sync-pending-cocina";
@@ -14,13 +15,14 @@ let mirrorPostres: ComandaPostres[] = [];
 let mirrorCount = 0;
 
 function syncMirrorFromEntries(entries: OutboxEntry[]): void {
-  mirrorCocina = entries
+  const actionable = entries.filter(isOutboxEntryActionable);
+  mirrorCocina = actionable
     .filter((e) => e.kind === "cocina_create")
     .map((e) => e.payload as ComandaCocina);
-  mirrorPostres = entries
+  mirrorPostres = actionable
     .filter((e) => e.kind === "postres_create")
     .map((e) => e.payload as ComandaPostres);
-  mirrorCount = entries.length;
+  mirrorCount = actionable.length;
 }
 
 async function readAllEntries(): Promise<OutboxEntry[]> {

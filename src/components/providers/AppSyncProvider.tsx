@@ -5,6 +5,9 @@ import { usesRemoteData } from "@/lib/data/backend";
 import { APP_SYNC_POLL_MS } from "@/lib/sync/constants";
 import { dispatchAppSync } from "@/lib/sync/app-sync";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
+import { hydrateOutboxMirror } from "@/lib/sync/outbox";
+import { reconcileOutbox } from "@/lib/sync/reconcile-outbox";
+import { flushOutbox } from "@/lib/sync/sync-worker";
 import { useSupabaseOperativaRealtime } from "@/hooks/useSupabaseOperativaRealtime";
 
 /**
@@ -16,9 +19,12 @@ export function AppSyncProvider({ children }: { children: ReactNode }) {
     if (!usesRemoteData()) return;
 
     try {
+      await hydrateOutboxMirror();
+      await reconcileOutbox();
+      await flushOutbox();
       await fetchOperativaData();
     } catch (e) {
-      console.error("[app-sync] Error al refrescar operativa:", e);
+      console.error("[app-sync] Error al refrescar:", e);
     }
 
     dispatchAppSync();
@@ -29,7 +35,18 @@ export function AppSyncProvider({ children }: { children: ReactNode }) {
 
     void sincronizar();
     const interval = setInterval(() => void sincronizar(), APP_SYNC_POLL_MS);
-    return () => clearInterval(interval);
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void sincronizar();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [sincronizar]);
 
   useSupabaseOperativaRealtime(() => {

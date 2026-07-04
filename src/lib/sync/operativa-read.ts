@@ -4,6 +4,7 @@ import { mergeOperativa } from "@/lib/sync/merge-operativa";
 import {
   getOutboxPendingCocinaSync,
   getOutboxPendingPostresSync,
+  hydrateOutboxMirror,
   listOutboxEntries,
 } from "@/lib/sync/outbox";
 import type { OutboxEntry } from "@/lib/sync/outbox-types";
@@ -17,6 +18,7 @@ import {
   setComandasCache,
   setPostresCache,
 } from "@/lib/sync/operativa-cache";
+import { reconcileOutbox, isOutboxEntryActionable } from "@/lib/sync/reconcile-outbox";
 import type { ComandaCocina } from "@/types/comanda";
 import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
@@ -45,9 +47,11 @@ export function buildEstadoOverlayFromOutbox(
   createKind: "cocina_create" | "postres_create",
 ): Map<string, EstadoPanel> {
   const overlay = new Map<string, EstadoPanel>();
-  const sorted = [...entries].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
+  const sorted = [...entries]
+    .filter(isOutboxEntryActionable)
+    .sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
 
   for (const entry of sorted) {
     if (entry.kind === estadoKind) {
@@ -86,7 +90,10 @@ function overlayPendingEstados<T extends { id: string; estadoPanel: EstadoPanel 
   return applyEstadoOverlay(items, overlay);
 }
 
-/** Carga operativa: remoto → snapshot IDB → outbox. Persiste snapshot si remoto OK. */
+/**
+ * Carga operativa: Supabase es fuente de verdad cuando hay red.
+ * Solo fusiona creates pendientes aún no confirmados en servidor.
+ */
 export async function loadOperativaMerged(): Promise<OperativaData> {
   if (!usesRemoteData()) {
     const [cocina, postres] = await Promise.all([
@@ -97,6 +104,9 @@ export async function loadOperativaMerged(): Promise<OperativaData> {
     setPostresCache(postres);
     return { cocina, postres };
   }
+
+  await hydrateOutboxMirror();
+  await reconcileOutbox();
 
   const pendingCocina = getOutboxPendingCocinaSync();
   const pendingPostres = getOutboxPendingPostresSync();
@@ -117,25 +127,30 @@ export async function loadOperativaMerged(): Promise<OperativaData> {
   const cocinaMerged = mergeOperativa(baseCocina, pendingCocina);
   const postresMerged = mergeOperativa(basePostres, pendingPostres);
 
-  const outboxEntries = await listOutboxEntries();
-  const cocina = overlayPendingEstados(
-    cocinaMerged,
-    outboxEntries,
-    "cocina_estado",
-    "cocina_create",
-  );
-  const postres = overlayPendingEstados(
-    postresMerged,
-    outboxEntries,
-    "postres_estado",
-    "postres_create",
-  );
+  let cocina = cocinaMerged;
+  let postres = postresMerged;
+
+  if (!remoto) {
+    const outboxEntries = await listOutboxEntries();
+    cocina = overlayPendingEstados(
+      cocinaMerged,
+      outboxEntries,
+      "cocina_estado",
+      "cocina_create",
+    );
+    postres = overlayPendingEstados(
+      postresMerged,
+      outboxEntries,
+      "postres_estado",
+      "postres_create",
+    );
+  }
 
   setComandasCache(cocina);
   setPostresCache(postres);
 
   if (remoto) {
-    await saveOperativaSnapshot(cocina, postres);
+    await saveOperativaSnapshot(remoto.cocina, remoto.postres);
   }
 
   return { cocina, postres };

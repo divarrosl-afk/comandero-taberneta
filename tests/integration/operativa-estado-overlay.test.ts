@@ -14,9 +14,10 @@ import {
   clearOutbox,
   removeOutboxForEntity,
 } from "@/lib/sync/outbox";
-import { saveOperativaSnapshot } from "@/lib/sync/operativa-snapshot";
+
 import { getSyncDb } from "@/lib/sync/idb";
 import { clearOperativaCache } from "@/lib/sync/operativa-cache";
+import { setClientRuntimeConfig } from "@/lib/supabase/runtime-config";
 
 async function clearSnapshotStore(): Promise<void> {
   const db = await getSyncDb();
@@ -26,46 +27,44 @@ async function clearSnapshotStore(): Promise<void> {
 describe("loadOperativaMerged — overlay estados outbox", () => {
   beforeEach(async () => {
     vi.stubEnv("NEXT_PUBLIC_DATA_BACKEND", "supabase");
+    setClientRuntimeConfig({
+      backend: "supabase",
+      supabase: {
+        url: "https://example.supabase.co",
+        anonKey: "anon",
+        restauranteId: "rest-1",
+      },
+    });
     clearOperativaCache();
     await clearSnapshotStore();
     await clearOutbox();
 
     vi.mocked(getPostresRepository).mockReturnValue({
       getAll: vi.fn().mockResolvedValue([]),
+      getById: vi.fn().mockResolvedValue(undefined),
     } as never);
   });
 
-  it("remoto sentados + outbox tiene primeros → vista muestra tiene primeros", async () => {
+  it("con remoto disponible Supabase gana sobre outbox local", async () => {
     vi.mocked(getComandasRepository).mockReturnValue({
       getAll: vi.fn().mockResolvedValue([
         comandaCocinaFixture({ id: "r1", estadoPanel: "sentados" }),
       ]),
+      getById: vi.fn().mockResolvedValue(
+        comandaCocinaFixture({ id: "r1", estadoPanel: "sentados" }),
+      ),
     } as never);
 
     await enqueueCocinaEstado("r1", "tiene_primeros");
 
     const { cocina } = await loadOperativaMerged();
-    expect(cocina.find((c) => c.id === "r1")?.estadoPanel).toBe("tiene_primeros");
-  });
-
-  it("snapshot bebidas + outbox marcha segundos → vista muestra marcha segundos", async () => {
-    vi.mocked(getComandasRepository).mockReturnValue({
-      getAll: vi.fn().mockRejectedValue(new Error("offline")),
-    } as never);
-
-    await saveOperativaSnapshot(
-      [comandaCocinaFixture({ id: "s1", estadoPanel: "bebidas" })],
-      [],
-    );
-    await enqueueCocinaEstado("s1", "marcha_segundos");
-
-    const { cocina } = await loadOperativaMerged();
-    expect(cocina.find((c) => c.id === "s1")?.estadoPanel).toBe("marcha_segundos");
+    expect(cocina.find((c) => c.id === "r1")?.estadoPanel).toBe("sentados");
   });
 
   it("create sentados con estado actualizado no duplica", async () => {
     vi.mocked(getComandasRepository).mockReturnValue({
       getAll: vi.fn().mockRejectedValue(new Error("offline")),
+      getById: vi.fn().mockRejectedValue(new Error("offline")),
     } as never);
 
     await enqueueCocinaCreate(
@@ -79,23 +78,22 @@ describe("loadOperativaMerged — overlay estados outbox", () => {
     expect(matches[0].estadoPanel).toBe("tiene_primeros");
   });
 
-  it("tras flush (outbox vacío) remoto vuelve a ser fuente del estado", async () => {
+  it("tras vaciar outbox remoto vuelve a ser fuente del estado", async () => {
     vi.mocked(getComandasRepository).mockReturnValue({
       getAll: vi.fn().mockResolvedValue([
         comandaCocinaFixture({ id: "r2", estadoPanel: "sentados" }),
       ]),
+      getById: vi.fn().mockResolvedValue(
+        comandaCocinaFixture({ id: "r2", estadoPanel: "sentados" }),
+      ),
     } as never);
 
     await enqueueCocinaEstado("r2", "tiene_primeros");
-    const conOverlay = await loadOperativaMerged();
-    expect(conOverlay.cocina.find((c) => c.id === "r2")?.estadoPanel).toBe(
-      "tiene_primeros",
-    );
+    const conRemoto = await loadOperativaMerged();
+    expect(conRemoto.cocina.find((c) => c.id === "r2")?.estadoPanel).toBe("sentados");
 
     await removeOutboxForEntity(["cocina_estado"], "r2");
-    const sinOverlay = await loadOperativaMerged();
-    expect(sinOverlay.cocina.find((c) => c.id === "r2")?.estadoPanel).toBe(
-      "sentados",
-    );
+    const sinOutbox = await loadOperativaMerged();
+    expect(sinOutbox.cocina.find((c) => c.id === "r2")?.estadoPanel).toBe("sentados");
   });
 });

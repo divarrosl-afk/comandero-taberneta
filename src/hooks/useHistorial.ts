@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAppSync } from "@/hooks/useAppSync";
 import {
   getHistorialEntradas,
   type HistorialEntrada,
@@ -31,6 +32,10 @@ export function useHistorial() {
   useEffect(() => {
     void recargar();
   }, [recargar]);
+
+  useAppSync(() => {
+    void recargar();
+  });
 
   const eliminar = useCallback(
     async (entrada: HistorialEntrada) => {
