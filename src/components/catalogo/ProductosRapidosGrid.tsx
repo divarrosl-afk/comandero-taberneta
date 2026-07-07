@@ -12,6 +12,7 @@ import {
 import { CartaMenuSelector } from "@/components/carta/CartaMenuSelector";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import { productosMenuParaComanda } from "@/lib/menu-dia/menu-platos-comanda";
+import { esProductoCafeCatalogo } from "@/data/cafes-catalogo";
 import type { ProductoCatalogo, SeccionCatalogo, CategoriaCarta } from "@/types/catalogo";
 import type { SeccionPlatos } from "@/types/comanda";
 
@@ -46,6 +47,13 @@ export function ProductosRapidosGrid({
 
   const filtrarCategoria = (lista: ProductoCatalogo[]) => {
     if (!categoriaCarta) return lista;
+    if (categoriaCarta === "postres") {
+      return lista.filter(
+        (p) =>
+          p.categoriaCarta === "postres" ||
+          (p.seccion === "postres" && !esProductoCafeCatalogo(p)),
+      );
+    }
     return lista.filter((p) => p.categoriaCarta === categoriaCarta);
   };
 

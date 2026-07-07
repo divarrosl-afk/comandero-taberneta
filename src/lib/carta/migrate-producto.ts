@@ -12,6 +12,12 @@ import type {
   UsoComanda,
 } from "@/types/catalogo";
 
+const CATEGORIAS_CAFE: CategoriaCarta[] = [
+  "cafes",
+  "carajillos",
+  "infusiones",
+];
+
 function inferirTipo(
   seccion: SeccionCatalogo,
   suplemento?: number,
@@ -73,7 +79,7 @@ function enriquecerProductoDesdeDefault(
     ...producto,
     cartaServicio: producto.cartaServicio ?? ref.cartaServicio,
     categoriaCarta: producto.categoriaCarta ?? ref.categoriaCarta,
-    usosComanda: producto.usosComanda?.length
+    usosComanda: producto.usosComanda !== undefined
       ? producto.usosComanda
       : ref.usosComanda,
     tipo:
@@ -87,9 +93,13 @@ function enriquecerProductoDesdeDefault(
 
 function inferirUsosComanda(
   seccion: SeccionCatalogo,
-  usos?: UsoComanda[],
+  usos: UsoComanda[] | undefined,
+  categoriaCarta?: CategoriaCarta,
 ): UsoComanda[] | undefined {
-  if (usos?.length) return usos;
+  if (usos !== undefined) return usos;
+  if (categoriaCarta && CATEGORIAS_CAFE.includes(categoriaCarta)) {
+    return [];
+  }
   if (seccion === "entrantes") return ["entrantes"];
   if (seccion === "primeros") return ["primeros"];
   if (seccion === "segundos") return ["segundos"];
@@ -122,7 +132,13 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
   const usosComanda = inferirUsosComanda(
     seccion,
     raw.usosComanda ?? decoded.meta.usosComanda,
+    raw.categoriaCarta ?? decoded.meta.categoriaCarta,
   );
+
+  const categoriaCarta =
+    raw.categoriaCarta ??
+    decoded.meta.categoriaCarta ??
+    (seccion === "postres" ? "postres" : undefined);
 
   return enriquecerProductoDesdeDefault({
     id: raw.id ?? createId(),
@@ -131,7 +147,7 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
     seccion,
     tipo,
     cartaServicio,
-    categoriaCarta: raw.categoriaCarta ?? decoded.meta.categoriaCarta,
+    categoriaCarta,
     usosComanda,
     precio: precioCarta,
     precioCarta,

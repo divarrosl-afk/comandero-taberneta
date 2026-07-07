@@ -2,6 +2,7 @@ import {
   CATALOGO_VERSION,
   crearCatalogoDefault,
 } from "@/data/catalogo-default";
+import { mergeCatalogoCompleto } from "@/lib/setup/sync-catalogo";
 import { migrarProducto } from "@/lib/carta/migrate-producto";
 import { createId } from "@/lib/id/create-id";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
@@ -27,6 +28,27 @@ function instalarCatalogoDefault(): ProductoCatalogo[] {
   return defaults;
 }
 
+function actualizarCatalogoSiNecesario(): ProductoCatalogo[] {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  let existentes: ProductoCatalogo[] = [];
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as Partial<ProductoCatalogo>[];
+      if (Array.isArray(parsed)) {
+        existentes = parsed.map((p) => normalizar(migrarProducto(p)));
+      }
+    } catch {
+      existentes = [];
+    }
+  }
+  const merged = mergeCatalogoCompleto(existentes, crearCatalogoDefault()).map(
+    normalizar,
+  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  guardarVersion();
+  return merged;
+}
+
 function normalizar(producto: ProductoCatalogo): ProductoCatalogo {
   const m = migrarProducto(producto);
   return {
@@ -47,7 +69,7 @@ export function getCatalogo(): ProductoCatalogo[] {
 
   try {
     if (necesitaActualizarCatalogo()) {
-      return instalarCatalogoDefault();
+      return actualizarCatalogoSiNecesario();
     }
 
     const raw = localStorage.getItem(STORAGE_KEY);

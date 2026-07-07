@@ -67,8 +67,12 @@ function GrupoBotones({
                   <button
                     type="button"
                     aria-label={`Eliminar ${producto.nombre}`}
-                    onClick={() => onEliminar(producto.id)}
-                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onEliminar(producto.id);
+                    }}
+                    className="absolute -right-1 -top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white shadow"
                   >
                     ×
                   </button>
@@ -91,6 +95,7 @@ export function CafesFrecuentesGrid({ onSelect }: CafesFrecuentesGridProps) {
   const [nombreNuevo, setNombreNuevo] = useState("");
   const [ticketNuevo, setTicketNuevo] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const porCategoria = useMemo(() => {
     const cafes = productos.filter(
@@ -115,6 +120,7 @@ export function CafesFrecuentesGrid({ onSelect }: CafesFrecuentesGridProps) {
 
   const handleGuardarNuevo = async () => {
     if (!categoriaAlta || !nombreNuevo.trim()) return;
+    setError(null);
     const nombre = nombreNuevo.trim();
     const ticket = ticketNuevo.trim();
     const maxOrden =
@@ -126,27 +132,39 @@ export function CafesFrecuentesGrid({ onSelect }: CafesFrecuentesGridProps) {
             : "infusiones"
       ].reduce((max, p) => Math.max(max, p.orden), 0) + 10;
 
-    await agregar({
-      id: createId(),
-      nombre,
-      nombreCorto: ticket && ticket !== nombre ? ticket : undefined,
-      seccion: "postres",
-      tipo: "carta",
-      cartaServicio: "postres",
-      categoriaCarta: categoriaAlta,
-      usosComanda: [],
-      activo: true,
-      agotado: false,
-      favorito: false,
-      orden: maxOrden,
-      ingredientes: [],
-      alergenos: [],
-      recomendado: false,
-    });
+    try {
+      await agregar({
+        id: createId(),
+        nombre,
+        nombreCorto: ticket && ticket !== nombre ? ticket : undefined,
+        seccion: "postres",
+        tipo: "carta",
+        cartaServicio: "postres",
+        categoriaCarta: categoriaAlta,
+        usosComanda: [],
+        activo: true,
+        agotado: false,
+        favorito: false,
+        orden: maxOrden,
+        ingredientes: [],
+        alergenos: [],
+        recomendado: false,
+      });
+      setCategoriaAlta(null);
+      setNombreNuevo("");
+      setTicketNuevo("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo guardar el producto");
+    }
+  };
 
-    setCategoriaAlta(null);
-    setNombreNuevo("");
-    setTicketNuevo("");
+  const handleEliminar = async (id: string) => {
+    setError(null);
+    try {
+      await eliminar(id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo eliminar el producto");
+    }
   };
 
   if (cargando) {
@@ -166,6 +184,12 @@ export function CafesFrecuentesGrid({ onSelect }: CafesFrecuentesGridProps) {
         </p>
       )}
 
+      {error && (
+        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          {error}
+        </p>
+      )}
+
       {CATEGORIAS_CAFE_CATALOGO.map((cat) => (
         <GrupoBotones
           key={cat.id}
@@ -181,6 +205,7 @@ export function CafesFrecuentesGrid({ onSelect }: CafesFrecuentesGridProps) {
           onSelect={onSelect}
           onEliminar={(id) => setConfirmDelete(id)}
           onIniciarAlta={() => {
+            setError(null);
             setCategoriaAlta(cat.id);
             setNombreNuevo("");
             setTicketNuevo("");
@@ -241,7 +266,7 @@ export function CafesFrecuentesGrid({ onSelect }: CafesFrecuentesGridProps) {
         message="Se quitará de los botones rápidos de cafés para todos los camareros."
         confirmLabel="Eliminar"
         onConfirm={() => {
-          if (confirmDelete) void eliminar(confirmDelete);
+          if (confirmDelete) void handleEliminar(confirmDelete);
           setConfirmDelete(null);
         }}
         onCancel={() => setConfirmDelete(null)}

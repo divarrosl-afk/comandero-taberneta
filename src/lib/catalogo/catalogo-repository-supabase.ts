@@ -45,6 +45,21 @@ export const catalogoRepositorySupabase: CatalogoRepository = {
     if (error) throw new Error(error.message);
   },
 
+  async eliminar(id) {
+    const client = getSupabaseClient();
+    const env = getSupabaseEnv();
+    if (!client || !env) return;
+
+    const { error } = await client
+      .from("productos")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("restaurante_id", env.restauranteId)
+      .is("deleted_at", null);
+
+    if (error) throw new Error(error.message);
+  },
+
   async resetDefault() {
     const client = getSupabaseClient();
     const env = getSupabaseEnv();

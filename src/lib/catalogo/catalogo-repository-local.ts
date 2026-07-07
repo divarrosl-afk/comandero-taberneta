@@ -13,6 +13,10 @@ export const catalogoRepositoryLocal: CatalogoRepository = {
   saveAll: async (productos) => {
     guardarCatalogo(productos);
   },
+  eliminar: async (id) => {
+    const lista = getCatalogo().filter((p) => p.id !== id);
+    guardarCatalogo(lista);
+  },
   resetDefault: async () => resetCatalogo(),
   getBySeccion: async (seccion, opts) =>
     getProductosPorSeccion(seccion, opts),

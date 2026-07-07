@@ -19,9 +19,12 @@ function parseMeta(raw: string): ProductoMeta {
     const cartaServicio = params.get("cs") as CartaServicio | null;
     const categoriaCarta = params.get("cat") as CategoriaCarta | null;
     const usosRaw = params.get("uso");
-    const usosComanda = usosRaw
-      ? (usosRaw.split(",") as UsoComanda[])
-      : undefined;
+    const usosComanda =
+      usosRaw === null
+        ? undefined
+        : usosRaw === ""
+          ? []
+          : (usosRaw.split(",").filter(Boolean) as UsoComanda[]);
     return {
       cartaServicio: cartaServicio ?? undefined,
       categoriaCarta: categoriaCarta ?? undefined,
@@ -66,7 +69,9 @@ export function encodeProductoMeta(
   const params = new URLSearchParams();
   if (meta.cartaServicio) params.set("cs", meta.cartaServicio);
   if (meta.categoriaCarta) params.set("cat", meta.categoriaCarta);
-  if (meta.usosComanda?.length) params.set("uso", meta.usosComanda.join(","));
+  if (meta.usosComanda !== undefined) {
+    params.set("uso", meta.usosComanda.join(","));
+  }
 
   const parts: string[] = [];
   if ([...params.keys()].length > 0) {

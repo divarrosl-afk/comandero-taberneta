@@ -77,6 +77,35 @@ export function prepararSyncCatalogo(
   return { aSubir, inserted, updated };
 }
 
+/** Fusiona catálogo guardado con defaults (nuevos productos sin borrar personalizados). */
+export function mergeCatalogoCompleto(
+  existentes: ProductoCatalogo[],
+  defectos: ProductoCatalogo[],
+): ProductoCatalogo[] {
+  const porClave = new Map<string, ProductoCatalogo>();
+  for (const producto of existentes) {
+    porClave.set(claveProductoCatalogo(producto), producto);
+  }
+
+  const resultado = [...existentes];
+
+  for (const defecto of defectos) {
+    const clave = claveProductoCatalogo(defecto);
+    const existente = porClave.get(clave);
+    if (existente) {
+      const fusionado = fusionarConExistente(defecto, existente);
+      const idx = resultado.findIndex((p) => p.id === existente.id);
+      if (idx >= 0) resultado[idx] = fusionado;
+    } else {
+      const nuevo = { ...defecto, id: createId() };
+      resultado.push(nuevo);
+      porClave.set(clave, nuevo);
+    }
+  }
+
+  return resultado;
+}
+
 export async function syncCatalogoConDefaults(
   restauranteId: string,
 ): Promise<SyncCatalogoResult> {
