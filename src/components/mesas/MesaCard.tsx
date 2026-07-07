@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { CamareroAccesosBar } from "@/components/navigation/CamareroAccesosBar";
 import {
   estiloMesaOperativa,
   labelMesaOperativa,
@@ -17,55 +17,6 @@ interface MesaCardProps {
   onLiberar: () => void | Promise<void>;
 }
 
-const ACCESOS_MESA = [
-  {
-    id: "mes",
-    label: "MES",
-    href: "/mesas",
-    className: "bg-stone-600 hover:bg-stone-700",
-  },
-  {
-    id: "nota",
-    label: "NOTA",
-    mesaParam: "comanda/nueva",
-    className: "bg-primary hover:bg-primary/90",
-  },
-  {
-    id: "post",
-    label: "POST",
-    mesaParam: "postres/nuevo",
-    className: "bg-violet-600 hover:bg-violet-700",
-  },
-  {
-    id: "pc",
-    label: "PC",
-    mesaParam: "panel",
-    className: "bg-accent hover:bg-accent/90",
-  },
-] as const;
-
-function MesaAccesoDirecto({
-  href,
-  label,
-  className,
-}: {
-  href: string;
-  label: string;
-  className: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={[
-        "flex min-h-11 items-center justify-center rounded-lg text-xs font-extrabold tracking-wide text-white shadow-sm transition active:scale-95",
-        className,
-      ].join(" ")}
-    >
-      {label}
-    </Link>
-  );
-}
-
 export function MesaCard({
   mesa,
   operativaRevision,
@@ -75,9 +26,6 @@ export function MesaCard({
   const [expandido, setExpandido] = useState(false);
   void operativaRevision;
   const ticketsVisibles = contadorTicketsMesaVisible(mesa.id, mesa.estadoPanel);
-
-  const hrefConMesa = (ruta: string) =>
-    `/${ruta}?mesa=${encodeURIComponent(mesa.id)}`;
 
   return (
     <article
@@ -105,20 +53,11 @@ export function MesaCard({
           </p>
         </button>
 
-        <div className="grid w-[8.25rem] shrink-0 grid-cols-2 gap-1.5 sm:w-[9rem]">
-          {ACCESOS_MESA.map((acceso) => (
-            <MesaAccesoDirecto
-              key={acceso.id}
-              href={
-                "href" in acceso
-                  ? acceso.href
-                  : hrefConMesa(acceso.mesaParam)
-              }
-              label={acceso.label}
-              className={acceso.className}
-            />
-          ))}
-        </div>
+        <CamareroAccesosBar
+          mesaId={mesa.id}
+          layout="grid"
+          className="w-[8.25rem] shrink-0 sm:w-[9rem]"
+        />
       </div>
 
       {expandido && (
