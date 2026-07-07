@@ -157,7 +157,10 @@ export function notificarComandaEnviada(mesaId: string): void {
 export function getComandasDeMesa(mesaId: string) {
   const cocina = getComandasSync().filter((c) => comandaPerteneceAMesa(c, mesaId));
   const postres = getPostresSync().filter((c) => comandaPerteneceAMesa(c, mesaId));
-  return { cocina, postres, total: cocina.length + postres.length };
+  const activas = [...cocina, ...postres].filter((c) =>
+    isEstadoPanelActivo(normalizeEstadoPanel(c.estadoPanel)),
+  ).length;
+  return { cocina, postres, total: cocina.length + postres.length, activas };
 }
 
 export function limpiarEstadoMesa(mesaId: string): void {

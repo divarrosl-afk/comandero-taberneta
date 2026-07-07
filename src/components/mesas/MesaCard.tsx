@@ -26,7 +26,7 @@ export function MesaCard({
 }: MesaCardProps) {
   const [expandido, setExpandido] = useState(false);
   void operativaRevision;
-  const { cocina, total } = getComandasDeMesa(mesa.id);
+  const { cocina, activas } = getComandasDeMesa(mesa.id);
   const comandasCocinaActivas = cocina.filter((c) =>
     isEstadoPanelActivo(c.estadoPanel),
   ).length;
@@ -52,9 +52,9 @@ export function MesaCard({
             {labelMesaOperativa(mesa)}
           </p>
         </div>
-        {total > 0 && (
+        {activas > 0 && (
           <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs font-bold">
-            {total}
+            {activas}
           </span>
         )}
       </button>

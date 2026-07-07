@@ -129,7 +129,7 @@ function MesaBotonOperativa({
   onClick: () => void;
 }) {
   void operativaRevision;
-  const { total } = getComandasDeMesa(mesa.id);
+  const { activas } = getComandasDeMesa(mesa.id);
 
   return (
     <button
@@ -142,9 +142,9 @@ function MesaBotonOperativa({
         seleccionada ? "ring-2 ring-primary ring-offset-2" : "",
       ].join(" ")}
     >
-      {total > 0 && (
+      {activas > 0 && (
         <span className="absolute right-1.5 top-1.5 rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] font-bold">
-          {total}
+          {activas}
         </span>
       )}
       <span className={compact ? "text-sm" : "text-base"}>{mesa.nombreVisible}</span>

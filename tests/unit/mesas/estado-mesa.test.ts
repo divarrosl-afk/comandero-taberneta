@@ -13,6 +13,7 @@ import { getPostresSync } from "@/lib/postres/postres-service";
 import {
   getEstadoMesa,
   getEstadoPanelMesa,
+  getComandasDeMesa,
   liberarMesa,
   marcarMesaCobrando,
   notificarComandaEnviada,
@@ -95,5 +96,20 @@ describe("estado-mesa", () => {
     vi.mocked(getPostresSync).mockReturnValue([]);
     marcarMesaCobrando("C5");
     expect(getEstadoPanelMesa("C5")).toBeNull();
+  });
+
+  it("getComandasDeMesa cuenta solo comandas activas en panel", () => {
+    vi.mocked(getComandasSync).mockReturnValue([
+      comandaCocinaFixture({ mesa: "C1", estadoPanel: "mesa_libre" }),
+      comandaCocinaFixture({ id: "c2", mesa: "C1", estadoPanel: "bebidas" }),
+      comandaCocinaFixture({ id: "c3", mesa: "C1", estadoPanel: "mesa_libre" }),
+    ]);
+    vi.mocked(getPostresSync).mockReturnValue([
+      comandaPostresFixture({ mesa: "C1", estadoPanel: "mesa_libre" }),
+      comandaPostresFixture({ id: "p2", mesa: "C1", estadoPanel: "tiene_postres" }),
+    ]);
+    const { total, activas } = getComandasDeMesa("C1");
+    expect(total).toBe(5);
+    expect(activas).toBe(2);
   });
 });
