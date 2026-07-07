@@ -160,9 +160,9 @@ export function PanelComandaCard({
 
       <ConfirmDialog
         open={confirmEliminar}
-        title="¿Eliminar comanda?"
-        message={`Se quitará la comanda de ${nombreMesa} (${formatHora(comanda.creadaEn)}) del panel.`}
-        confirmLabel="Eliminar"
+        title="¿Marcar mesa libre?"
+        message={`La comanda de ${nombreMesa} (${formatHora(comanda.creadaEn)}) saldrá del panel activo, igual que con «Mesa libre» en el semáforo.`}
+        confirmLabel="Mesa libre"
         onConfirm={() => {
           void (async () => {
             try {
@@ -170,7 +170,7 @@ export function PanelComandaCard({
               setConfirmEliminar(false);
             } catch (e) {
               setEliminarError(
-                e instanceof Error ? e.message : "No se pudo eliminar",
+                e instanceof Error ? e.message : "No se pudo marcar mesa libre",
               );
               setConfirmEliminar(false);
             }

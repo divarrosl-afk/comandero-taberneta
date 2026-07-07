@@ -4,11 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useAppSync } from "@/hooks/useAppSync";
 import {
   actualizarEstadoComanda,
-  eliminarComanda,
 } from "@/lib/comandas/comandas-service";
 import {
   actualizarEstadoPostres,
-  eliminarPostres,
 } from "@/lib/postres/postres-service";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import type { ComandaCocina } from "@/types/comanda";
@@ -57,22 +55,6 @@ export function usePanel() {
     [recargar],
   );
 
-  const eliminarCocina = useCallback(
-    async (id: string) => {
-      await eliminarComanda(id);
-      await recargar();
-    },
-    [recargar],
-  );
-
-  const eliminarPostresComanda = useCallback(
-    async (id: string) => {
-      await eliminarPostres(id);
-      await recargar();
-    },
-    [recargar],
-  );
-
   const cocinaActivas = comandasCocina.filter((c) =>
     isEstadoPanelActivo(normalizeEstadoPanel(c.estadoPanel)),
   );
@@ -89,7 +71,5 @@ export function usePanel() {
     recargar,
     cambiarEstadoCocina,
     cambiarEstadoPostres,
-    eliminarCocina,
-    eliminarPostresComanda,
   };
 }

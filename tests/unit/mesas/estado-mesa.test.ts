@@ -14,6 +14,7 @@ import {
   getEstadoMesa,
   getEstadoPanelMesa,
   liberarMesa,
+  liberarMesaSiSinComandasActivas,
   marcarMesaCobrando,
   notificarComandaEnviada,
 } from "@/lib/mesas/estado-mesa";
@@ -95,5 +96,27 @@ describe("estado-mesa", () => {
     vi.mocked(getPostresSync).mockReturnValue([]);
     marcarMesaCobrando("C5");
     expect(getEstadoPanelMesa("C5")).toBeNull();
+  });
+
+  it("liberarMesaSiSinComandasActivas marca libre si todas inactivas", () => {
+    vi.mocked(getComandasSync).mockReturnValue([
+      comandaCocinaFixture({ mesa: "C6", estadoPanel: "mesa_libre" }),
+    ]);
+    vi.mocked(getPostresSync).mockReturnValue([
+      comandaPostresFixture({ mesa: "C6", estadoPanel: "mesa_libre" }),
+    ]);
+    liberarMesaSiSinComandasActivas("C6");
+    expect(getEstadoMesa("C6")).toBe("libre");
+    expect(getEstadoPanelMesa("C6")).toBe("mesa_libre");
+  });
+
+  it("liberarMesaSiSinComandasActivas no libera si queda comanda activa", () => {
+    vi.mocked(getComandasSync).mockReturnValue([
+      comandaCocinaFixture({ mesa: "C7", estadoPanel: "mesa_libre" }),
+      comandaCocinaFixture({ id: "c2", mesa: "C7", estadoPanel: "bebidas" }),
+    ]);
+    vi.mocked(getPostresSync).mockReturnValue([]);
+    liberarMesaSiSinComandasActivas("C7");
+    expect(getEstadoMesa("C7")).toBe("pendiente");
   });
 });

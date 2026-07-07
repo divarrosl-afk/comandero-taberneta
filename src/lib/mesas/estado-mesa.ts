@@ -141,6 +141,17 @@ export function liberarMesa(mesaId: string): void {
   setEstadoPersistido(mesaId, "libre", true);
 }
 
+/** Marca la mesa como libre si ya no quedan comandas activas en panel. */
+export function liberarMesaSiSinComandasActivas(mesaId: string): void {
+  const { cocina, postres } = getComandasDeMesa(mesaId);
+  const todas = [...cocina, ...postres].map((c) =>
+    normalizeEstadoPanel(c.estadoPanel),
+  );
+  if (todas.length > 0 && todas.every((e) => !isEstadoPanelActivo(e))) {
+    liberarMesa(mesaId);
+  }
+}
+
 export function marcarMesaOcupada(mesaId: string): void {
   const actual = getEstadoMesa(mesaId);
   if (actual === "libre") {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +11,9 @@ import { PanelDetalleSheet } from "@/components/panel/PanelDetalleSheet";
 import { PanelPostresCard } from "@/components/panel/PanelPostresCard";
 import { PanelPostresTile } from "@/components/panel/PanelPostresTile";
 import { PanelCocinaTicketRails } from "@/components/panel/PanelCocinaTicketRails";
+import { liberarMesaSiSinComandasActivas } from "@/lib/mesas/estado-mesa";
 import { comandaPerteneceAMesa } from "@/lib/mesas/resolve-mesa";
+import type { EstadoPanel } from "@/types/panel";
 import { ordenarComandasPorLlegada, minutosEspera } from "@/lib/panel/orden-tickets-cocina";
 import { useMesas } from "@/hooks/useMesas";
 import { usePanel } from "@/hooks/usePanel";
@@ -21,6 +23,7 @@ import type { ComandaPostres } from "@/types/postres";
 type PanelTab = "cocina" | "postres";
 
 function PanelContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const mesaFiltro = searchParams.get("mesa");
   const tabParam = searchParams.get("tab");
@@ -40,9 +43,51 @@ function PanelContent() {
     recargar,
     cambiarEstadoCocina,
     cambiarEstadoPostres,
-    eliminarCocina,
-    eliminarPostresComanda,
   } = usePanel();
+
+  const aplicarMesaLibre = (mesaId: string) => {
+    liberarMesaSiSinComandasActivas(mesaId);
+  };
+
+  const handleCambiarEstadoCocina = async (
+    comanda: ComandaCocina,
+    estado: EstadoPanel,
+  ) => {
+    await cambiarEstadoCocina(comanda.id, estado);
+    if (estado === "mesa_libre") {
+      aplicarMesaLibre(comanda.mesa);
+      setDetalleCocina(null);
+      router.push("/mesas");
+      return;
+    }
+    setDetalleCocina({ ...comanda, estadoPanel: estado });
+  };
+
+  const handleCambiarEstadoPostres = async (
+    comanda: ComandaPostres,
+    estado: EstadoPanel,
+  ) => {
+    await cambiarEstadoPostres(comanda.id, estado);
+    if (estado === "mesa_libre") {
+      aplicarMesaLibre(comanda.mesa);
+      setDetallePostres(null);
+      router.push("/mesas");
+      return;
+    }
+    setDetallePostres({ ...comanda, estadoPanel: estado });
+  };
+
+  const handleMarcarMesaLibreCocina = async (comanda: ComandaCocina) => {
+    await cambiarEstadoCocina(comanda.id, "mesa_libre");
+    aplicarMesaLibre(comanda.mesa);
+    setDetalleCocina(null);
+  };
+
+  const handleMarcarMesaLibrePostres = async (comanda: ComandaPostres) => {
+    await cambiarEstadoPostres(comanda.id, "mesa_libre");
+    aplicarMesaLibre(comanda.mesa);
+    setDetallePostres(null);
+  };
 
   const listaCocina = tab === "cocina" ? cocinaActivas : [];
   const listaPostres = tab === "postres" ? postresActivas : [];
@@ -217,14 +262,10 @@ function PanelContent() {
               comanda={detalleCocina}
               mesas={mesas}
               postresMesa={postresDeMesa(detalleCocina)}
-              onCambiarEstado={async (estado) => {
-                await cambiarEstadoCocina(detalleCocina.id, estado);
-                setDetalleCocina({ ...detalleCocina, estadoPanel: estado });
-              }}
-              onEliminar={async () => {
-                await eliminarCocina(detalleCocina.id);
-                setDetalleCocina(null);
-              }}
+              onCambiarEstado={(estado) =>
+                handleCambiarEstadoCocina(detalleCocina, estado)
+              }
+              onEliminar={() => handleMarcarMesaLibreCocina(detalleCocina)}
             />
           )}
         </PanelDetalleSheet>
@@ -237,14 +278,10 @@ function PanelContent() {
             <PanelPostresCard
               comanda={detallePostres}
               mesas={mesas}
-              onCambiarEstado={async (estado) => {
-                await cambiarEstadoPostres(detallePostres.id, estado);
-                setDetallePostres({ ...detallePostres, estadoPanel: estado });
-              }}
-              onEliminar={async () => {
-                await eliminarPostresComanda(detallePostres.id);
-                setDetallePostres(null);
-              }}
+              onCambiarEstado={(estado) =>
+                handleCambiarEstadoPostres(detallePostres, estado)
+              }
+              onEliminar={() => handleMarcarMesaLibrePostres(detallePostres)}
             />
           )}
         </PanelDetalleSheet>
