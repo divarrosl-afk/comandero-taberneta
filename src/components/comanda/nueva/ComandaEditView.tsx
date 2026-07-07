@@ -52,7 +52,7 @@ interface ComandaEditViewProps {
 
 function getValidationHint(form: ComandaFormActions["form"]): string | undefined {
   if (!form.mesa) return "Selecciona una mesa";
-  return "Añade al menos un plato";
+  return "Añade al menos un plato, bebida o extra";
 }
 
 export function ComandaEditView({

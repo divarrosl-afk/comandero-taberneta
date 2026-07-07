@@ -95,6 +95,14 @@ export function formTienePlatos(form: ComandaFormState): boolean {
   );
 }
 
+export function formTieneExtras(form: ComandaFormState): boolean {
+  return form.extras.some((e) => e.cantidad > 0);
+}
+
+export function formTieneContenido(form: ComandaFormState): boolean {
+  return formTienePlatos(form) || formTieneExtras(form);
+}
+
 export function formEsValido(form: ComandaFormState): boolean {
-  return form.mesa !== null && formTienePlatos(form);
+  return form.mesa !== null && formTieneContenido(form);
 }
