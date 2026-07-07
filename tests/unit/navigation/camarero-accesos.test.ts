@@ -9,6 +9,9 @@ describe("camarero-accesos", () => {
       "/comanda/nueva?mesa=C1",
     );
     expect(hrefCamareroAcceso("post", "TV")).toBe("/postres/nuevo?mesa=TV");
-    expect(hrefCamareroAcceso("pc", "B3")).toBe("/panel?mesa=B3");
+    expect(hrefCamareroAcceso("pc")).toBe("/panel?tab=cocina");
+    expect(hrefCamareroAcceso("pc", "B3")).toBe(
+      "/panel?tab=cocina&mesa=B3",
+    );
   });
 });

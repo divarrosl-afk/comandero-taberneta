@@ -46,7 +46,17 @@ export function hrefCamareroAcceso(
   if (!acceso) return "/";
   if (acceso.href) return acceso.href;
   if (!acceso.path) return "/";
+
   const base = `/${acceso.path}`;
-  if (!mesaId) return base;
-  return `${base}?mesa=${encodeURIComponent(mesaId)}`;
+  const params = new URLSearchParams();
+
+  if (id === "pc") {
+    params.set("tab", "cocina");
+  }
+  if (mesaId) {
+    params.set("mesa", mesaId);
+  }
+
+  const query = params.toString();
+  return query ? `${base}?${query}` : base;
 }

@@ -53,8 +53,7 @@ function PanelContent() {
   const mesaAbiertaRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (tabParam === "postres") setTab("postres");
-    else if (tabParam === "cocina") setTab("cocina");
+    setTab(tabParam === "postres" ? "postres" : "cocina");
   }, [tabParam]);
 
   useEffect(() => {

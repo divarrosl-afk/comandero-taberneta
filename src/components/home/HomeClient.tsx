@@ -34,7 +34,7 @@ const accionesBase = [
   {
     titulo: "Panel cocina",
     descripcion: "Ver comandas por secciones",
-    href: "/panel",
+    href: "/panel?tab=cocina",
     disponible: true,
     adminOnly: false,
   },

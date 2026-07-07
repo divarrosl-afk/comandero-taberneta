@@ -32,7 +32,7 @@ export function MesaCard({
     isEstadoPanelActivo(c.estadoPanel),
   ).length;
   const tieneComanda = comandasCocinaActivas > 0;
-  const panelHref = `/panel?mesa=${encodeURIComponent(mesa.id)}`;
+  const panelHref = `/panel?tab=cocina&mesa=${encodeURIComponent(mesa.id)}`;
   const panelPostresHref = `/panel?mesa=${encodeURIComponent(mesa.id)}&tab=postres`;
 
   return (
