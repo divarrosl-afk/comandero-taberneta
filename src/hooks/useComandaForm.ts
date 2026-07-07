@@ -179,17 +179,20 @@ export function useComandaForm(
   );
 
   const addPlatoFromCatalog = useCallback(
-    (seccion: SeccionPlatos, producto: ProductoCatalogo) => {
-      if (!producto.activo || producto.agotado) return;
+    (seccion: SeccionPlatos, producto: ProductoCatalogo): string | null => {
+      if (!producto.activo || producto.agotado) return null;
 
       const platoData = platoFieldsFromProducto(producto, {
         seccion,
         menu,
       });
 
+      let platoId: string | null = null;
+
       setForm((prev) => {
         const vacio = prev[seccion].find((p) => !p.nombre.trim());
         if (vacio) {
+          platoId = vacio.id;
           return {
             ...prev,
             [seccion]: prev[seccion].map((p) =>
@@ -197,11 +200,15 @@ export function useComandaForm(
             ),
           };
         }
+        const nuevo = { ...crearPlatoVacio(), ...platoData };
+        platoId = nuevo.id;
         return {
           ...prev,
-          [seccion]: [...prev[seccion], { ...crearPlatoVacio(), ...platoData }],
+          [seccion]: [...prev[seccion], nuevo],
         };
       });
+
+      return platoId;
     },
     [menu],
   );

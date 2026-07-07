@@ -49,6 +49,8 @@ interface SeccionPlatosPanelProps {
   conTipo?: boolean;
   active?: boolean;
   busqueda?: string;
+  platoEnfocadoId?: string;
+  onPlatoEnfocado?: () => void;
   onBusquedaChange?: (value: string) => void;
   onUpdate: (id: string, cambios: Partial<PlatoFormItem>) => void;
   onAdd: () => void;
@@ -67,6 +69,8 @@ export function SeccionPlatosPanel({
   conTipo = false,
   active = false,
   busqueda = "",
+  platoEnfocadoId,
+  onPlatoEnfocado,
   onBusquedaChange,
   onUpdate,
   onAdd,
@@ -139,6 +143,8 @@ export function SeccionPlatosPanel({
               plato={plato}
               indice={index}
               conTipo={conTipo}
+              enfocado={plato.id === platoEnfocadoId}
+              onEnfocado={onPlatoEnfocado}
               onChange={(cambios) => onUpdate(plato.id, cambios)}
               onRemove={() => onRemove(plato.id)}
               onDuplicate={() => onDuplicate(plato.id)}

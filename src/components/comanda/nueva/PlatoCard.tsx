@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
@@ -14,6 +14,8 @@ interface PlatoCardProps {
   plato: PlatoFormItem;
   indice: number;
   conTipo?: boolean;
+  enfocado?: boolean;
+  onEnfocado?: () => void;
   onChange: (cambios: Partial<PlatoFormItem>) => void;
   onRemove: () => void;
   onDuplicate: () => void;
@@ -25,6 +27,8 @@ export function PlatoCard({
   plato,
   indice,
   conTipo = false,
+  enfocado = false,
+  onEnfocado,
   onChange,
   onRemove,
   onDuplicate,
@@ -33,7 +37,18 @@ export function PlatoCard({
 }: PlatoCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [expandido, setExpandido] = useState(true);
+  const cardRef = useRef<HTMLElement>(null);
   const tieneContenido = platoTieneContenido(plato);
+
+  useEffect(() => {
+    if (!enfocado) return;
+    setExpandido(true);
+    const frame = requestAnimationFrame(() => {
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      onEnfocado?.();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [enfocado, onEnfocado]);
 
   const resumen =
     plato.nombre.trim() ||
@@ -41,7 +56,13 @@ export function PlatoCard({
 
   return (
     <>
-      <article className="overflow-hidden rounded-2xl border-2 border-border bg-background">
+      <article
+        ref={cardRef}
+        className={[
+          "overflow-hidden rounded-2xl border-2 bg-background transition-shadow",
+          enfocado ? "border-primary shadow-md ring-2 ring-primary/30" : "border-border",
+        ].join(" ")}
+      >
         <button
           type="button"
           onClick={() => setExpandido((v) => !v)}

@@ -19,6 +19,14 @@ export type EstadoPlato = "pendiente" | "marchado" | "servido";
 export type SeccionPlatos = "entrantes" | "primeros" | "segundos" | "bebidas";
 
 export type ModificacionId =
+  | "champis"
+  | "mong"
+  | "fritas"
+  | "caliu"
+  | "escalibada_15"
+  | "huevo"
+  | "pim_verde"
+  | "pim_rojo"
   | "sin_cebolla"
   | "sin_tomate"
   | "sin_queso"

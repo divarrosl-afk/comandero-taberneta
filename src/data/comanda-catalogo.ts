@@ -12,6 +12,14 @@ export interface CatalogoItem<T extends string> {
 }
 
 export const MODIFICACIONES: CatalogoItem<ModificacionId>[] = [
+  { id: "champis", label: "Champiñones", labelCorto: "Champis" },
+  { id: "mong", label: "Mongetes", labelCorto: "Mong" },
+  { id: "fritas", label: "Patatas fritas", labelCorto: "Fritas" },
+  { id: "caliu", label: "Patata al caliu", labelCorto: "Caliu" },
+  { id: "escalibada_15", label: "Escalibada +1,5", labelCorto: "Escalibada +1,5" },
+  { id: "huevo", label: "Huevo", labelCorto: "Huevo" },
+  { id: "pim_verde", label: "Pimiento verde", labelCorto: "Pim verde" },
+  { id: "pim_rojo", label: "Pimiento rojo", labelCorto: "Pim rojo" },
   { id: "sin_cebolla", label: "Sin cebolla", labelCorto: "S/cebolla" },
   { id: "sin_tomate", label: "Sin tomate", labelCorto: "S/tomate" },
   { id: "sin_queso", label: "Sin queso", labelCorto: "S/queso" },
