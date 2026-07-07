@@ -249,7 +249,7 @@ export function useComandaForm(
   const setExtraCantidad = useCallback(
     (extraId: string, nombre: string, cantidad: number) => {
       setForm((prev) => {
-        const extras = prev.extras.filter((e) => e.id !== extraId);
+        const extras = (prev.extras ?? []).filter((e) => e.id !== extraId);
         if (cantidad > 0) {
           extras.push({ id: extraId, nombre, cantidad });
         }

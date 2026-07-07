@@ -25,7 +25,6 @@ function ComandaNuevaForm() {
     step,
     setStep,
     reset,
-    esValido,
     borradorRecuperado,
     descartarBorrador,
   } = formActions;
@@ -63,7 +62,6 @@ function ComandaNuevaForm() {
         <ComandaEditView
           form={form}
           borradorRecuperado={borradorRecuperado}
-          esValido={esValido}
           onSetMesa={formActions.setMesa}
           onUpdatePlato={formActions.updatePlato}
           onAddPlato={formActions.addPlato}

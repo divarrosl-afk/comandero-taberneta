@@ -76,8 +76,8 @@ export function formToComanda(form: ComandaFormState): ComandaCocina | null {
     primeros: form.primeros.filter(platoTieneContenido).map(mapPlatoConTipo),
     segundos: form.segundos.filter(platoTieneContenido).map(mapPlatoConTipo),
     bebidas: form.bebidas.filter(platoTieneContenido).map(mapPlatoBase),
-    extras: form.extras
-      .filter((e) => e.cantidad > 0)
+    extras: (form.extras ?? [])
+      .filter((e) => Number(e.cantidad) > 0)
       .map((e) => ({
         nombre: e.nombre || getExtraLabel(e.id as ExtraMesaId),
         cantidad: e.cantidad,
@@ -96,7 +96,7 @@ export function formTienePlatos(form: ComandaFormState): boolean {
 }
 
 export function formTieneExtras(form: ComandaFormState): boolean {
-  return form.extras.some((e) => e.cantidad > 0);
+  return (form.extras ?? []).some((e) => Number(e.cantidad) > 0);
 }
 
 export function formTieneContenido(form: ComandaFormState): boolean {

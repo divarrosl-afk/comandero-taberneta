@@ -18,6 +18,10 @@ import {
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 import type { SeccionPlatos } from "@/types/comanda";
 import { scrollSeccionAlInicio } from "@/lib/ui/scroll-seccion";
+import {
+  formEsValido,
+  formTieneContenido,
+} from "@/lib/comanda/map-form";
 
 const CATALOGO_A_PLATOS: Partial<Record<SeccionCatalogo, SeccionPlatos>> = {
   entrantes: "entrantes",
@@ -31,7 +35,6 @@ type ComandaFormActions = ReturnType<typeof useComandaForm>;
 interface ComandaEditViewProps {
   form: ComandaFormActions["form"];
   borradorRecuperado: boolean;
-  esValido: boolean;
   onSetMesa: ComandaFormActions["setMesa"];
   onUpdatePlato: ComandaFormActions["updatePlato"];
   onAddPlato: ComandaFormActions["addPlato"];
@@ -52,13 +55,15 @@ interface ComandaEditViewProps {
 
 function getValidationHint(form: ComandaFormActions["form"]): string | undefined {
   if (!form.mesa) return "Selecciona una mesa";
-  return "Añade al menos un plato, bebida o extra";
+  if (!formTieneContenido(form)) {
+    return "Añade al menos un plato, bebida o extra";
+  }
+  return undefined;
 }
 
 export function ComandaEditView({
   form,
   borradorRecuperado,
-  esValido,
   onSetMesa,
   onUpdatePlato,
   onAddPlato,
@@ -76,6 +81,7 @@ export function ComandaEditView({
   onDescartarBorrador,
   onPreview,
 }: ComandaEditViewProps) {
+  const puedeEnviar = formEsValido(form);
   const [tab, setTab] = useState<TabComanda>("mesa");
   const [busqueda, setBusqueda] = useState("");
   const [platoEnfocado, setPlatoEnfocado] = useState<PlatoEnfocado | null>(null);
@@ -300,8 +306,8 @@ export function ComandaEditView({
         )}
       </div>
 
-      <BottomBar hint={!esValido ? getValidationHint(form) : undefined}>
-        <Button fullWidth size="lg" disabled={!esValido} onClick={onPreview}>
+      <BottomBar hint={getValidationHint(form)}>
+        <Button fullWidth size="lg" disabled={!puedeEnviar} onClick={onPreview}>
           Ver vista previa
         </Button>
       </BottomBar>

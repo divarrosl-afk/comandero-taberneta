@@ -28,7 +28,7 @@ export function ExtrasMesaSection({
   );
 
   const cantidadDe = (id: string) =>
-    extras.find((e) => e.id === id)?.cantidad ?? 0;
+    (extras ?? []).find((e) => e.id === id)?.cantidad ?? 0;
 
   const manejarToque = (id: string, nombre: string) => {
     const actual = cantidadDe(id);
@@ -102,7 +102,7 @@ export function ExtrasMesaSection({
               Cant.
             </button>
           </div>
-          {extras
+          {(extras ?? [])
             .filter((e) => e.id.startsWith("extra-libre-"))
             .map((e) => (
               <Chip
