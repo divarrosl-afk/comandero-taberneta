@@ -41,7 +41,7 @@ interface ComandaEditViewProps {
   onClearSeccion: ComandaFormActions["clearSeccion"];
   onToggleModificacion: ComandaFormActions["toggleModificacion"];
   onCycleSalsa: ComandaFormActions["cycleSalsa"];
-  onCycleExtra: ComandaFormActions["cycleExtra"];
+  onSetExtraCantidad: ComandaFormActions["setExtraCantidad"];
   onSetObservacion: ComandaFormActions["setObservacion"];
   onAddObservacion: ComandaFormActions["addObservacion"];
   onRemoveObservacion: ComandaFormActions["removeObservacion"];
@@ -68,7 +68,7 @@ export function ComandaEditView({
   onClearSeccion,
   onToggleModificacion,
   onCycleSalsa,
-  onCycleExtra,
+  onSetExtraCantidad,
   onSetObservacion,
   onAddObservacion,
   onRemoveObservacion,
@@ -283,7 +283,10 @@ export function ComandaEditView({
         )}
 
         {tab === "extras" && (
-          <ExtrasMesaSection extras={form.extras} onCycle={onCycleExtra} />
+          <ExtrasMesaSection
+            extras={form.extras}
+            onSetCantidad={onSetExtraCantidad}
+          />
         )}
 
         {tab === "observaciones" && (

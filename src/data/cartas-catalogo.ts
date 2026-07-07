@@ -222,34 +222,36 @@ export function crearCatalogoCartas(): ProductoCatalogo[] {
     "bebidas",
   );
 
-  const bebidasBasicas: ProductoCatalogo[] = [
-    crearProducto("Agua", 2, {
-      cartaServicio: "bebidas",
-      categoriaCarta: "refrescos",
-      usosComanda: ["bebidas"],
-      favorito: true,
-      orden: 9000,
-    }),
-    crearProducto("Caña", 2.5, {
-      cartaServicio: "bebidas",
-      categoriaCarta: "refrescos",
-      usosComanda: ["bebidas"],
-      favorito: true,
-      orden: 9010,
-    }),
-    crearProducto("Refresco", 2.5, {
-      cartaServicio: "bebidas",
-      categoriaCarta: "refrescos",
-      usosComanda: ["bebidas"],
-      orden: 9020,
-    }),
-    crearProducto("Cerveza sin alcohol", 2.5, {
-      cartaServicio: "bebidas",
-      categoriaCarta: "refrescos",
-      usosComanda: ["bebidas"],
-      orden: 9030,
-    }),
-  ];
+  const refrescos = bebidasDesdeLista(
+    [
+      "CocaCola normal vidrio",
+      "CocaCola normal lata",
+      "CocaCola Zero vidrio",
+      "CocaCola Zero lata",
+      "Vichy",
+      "Nestea",
+      "Fanta naranja",
+      "Fanta limón",
+      "Aquarius naranja",
+      "Aquarius limón",
+      "Schweppes tónica",
+      "Schweppes limón",
+      "Schweppes naranja",
+      "Rockstar",
+      "Fanta limón lata",
+      "Fanta naranja lata",
+      "Aquarius limón lata",
+      "Aquarius naranja lata",
+    ],
+    "refrescos",
+    1000,
+  );
+
+  const cervezas = bebidasDesdeLista(
+    ["DAMM mediana", "Torrada +DAMM", "0,0 Azul DAMM"],
+    "cervezas",
+    2000,
+  );
 
   const postres = CARTAS_RESTAURANTE.cartaVinosPostres.postres.map(
     (item, i) =>
@@ -262,47 +264,21 @@ export function crearCatalogoCartas(): ProductoCatalogo[] {
       }),
   );
 
-  const operativa: ProductoCatalogo[] = [
-    crearProducto("Pan", 0, {
-      cartaServicio: "almuerzo",
-      categoriaCarta: "extrasSuplementos",
-      usosComanda: ["extras"],
-      favorito: true,
-      orden: 10000,
-    }),
-    crearProducto("Cubiertos", 0, {
-      cartaServicio: "almuerzo",
-      categoriaCarta: "extrasSuplementos",
-      usosComanda: ["extras"],
-      favorito: true,
-      orden: 10010,
-    }),
-    crearProducto("Plato vacío", 0, {
-      cartaServicio: "almuerzo",
-      categoriaCarta: "extrasSuplementos",
-      usosComanda: ["extras"],
-      orden: 10020,
-    }),
-    crearProducto("Servilletas", 0, {
-      cartaServicio: "almuerzo",
-      categoriaCarta: "extrasSuplementos",
-      usosComanda: ["extras"],
-      orden: 10030,
-    }),
-    crearProducto("Hielo", 0, {
-      cartaServicio: "almuerzo",
-      categoriaCarta: "extrasSuplementos",
-      usosComanda: ["extras"],
-      favorito: true,
-      orden: 10040,
-    }),
-    crearProducto("Limón", 0, {
-      cartaServicio: "almuerzo",
-      categoriaCarta: "extrasSuplementos",
-      usosComanda: ["extras"],
-      orden: 10050,
-    }),
-  ];
+  return [...almuerzo, ...cenas, ...vinos, ...refrescos, ...cervezas, ...postres];
+}
 
-  return [...almuerzo, ...cenas, ...vinos, ...bebidasBasicas, ...postres, ...operativa];
+function bebidasDesdeLista(
+  nombres: string[],
+  categoria: "refrescos" | "cervezas",
+  ordenBase: number,
+  precio = 2.5,
+): ProductoCatalogo[] {
+  return nombres.map((nombre, i) =>
+    crearProducto(nombre, precio, {
+      cartaServicio: "bebidas",
+      categoriaCarta: categoria,
+      usosComanda: ["bebidas"],
+      orden: ordenBase + i * 10,
+    }),
+  );
 }

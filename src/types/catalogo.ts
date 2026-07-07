@@ -42,6 +42,7 @@ export type CategoriaCarta =
   | "cavas"
   | "corpinnats"
   | "refrescos"
+  | "cervezas"
   | "postres";
 
 export const CARTAS_SERVICIO: {
@@ -79,12 +80,13 @@ export const CATEGORIAS_CARTA: Record<
     { id: "brasa", label: "Brasa" },
   ],
   bebidas: [
+    { id: "refrescos", label: "Refrescos" },
+    { id: "cervezas", label: "Cervezas" },
     { id: "blancos", label: "Blancos" },
     { id: "tintos", label: "Tintos" },
     { id: "rosados", label: "Rosados" },
     { id: "cavas", label: "Cavas" },
     { id: "corpinnats", label: "Corpinnats" },
-    { id: "refrescos", label: "Refrescos y cervezas" },
   ],
   postres: [{ id: "postres", label: "Postres" }],
 };

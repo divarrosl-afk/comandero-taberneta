@@ -246,19 +246,18 @@ export function useComandaForm(
     [],
   );
 
-  const cycleExtra = useCallback((extraId: string, nombre: string) => {
-    setForm((prev) => {
-      const actual = prev.extras.find((e) => e.id === extraId)?.cantidad ?? 0;
-      const siguiente = actual >= 3 ? 0 : actual + 1;
-      const extras = prev.extras.filter((e) => e.id !== extraId);
-
-      if (siguiente > 0) {
-        extras.push({ id: extraId, nombre, cantidad: siguiente });
-      }
-
-      return { ...prev, extras };
-    });
-  }, []);
+  const setExtraCantidad = useCallback(
+    (extraId: string, nombre: string, cantidad: number) => {
+      setForm((prev) => {
+        const extras = prev.extras.filter((e) => e.id !== extraId);
+        if (cantidad > 0) {
+          extras.push({ id: extraId, nombre, cantidad });
+        }
+        return { ...prev, extras };
+      });
+    },
+    [],
+  );
 
   const setObservacion = useCallback((index: number, valor: string) => {
     setForm((prev) => {
@@ -326,7 +325,7 @@ export function useComandaForm(
     clearSeccion,
     toggleModificacion,
     cycleSalsa,
-    cycleExtra,
+    setExtraCantidad,
     setObservacion,
     addObservacion,
     removeObservacion,

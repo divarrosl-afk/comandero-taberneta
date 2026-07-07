@@ -73,7 +73,7 @@ function ComandaNuevaForm() {
           onClearSeccion={formActions.clearSeccion}
           onToggleModificacion={formActions.toggleModificacion}
           onCycleSalsa={formActions.cycleSalsa}
-          onCycleExtra={formActions.cycleExtra}
+          onSetExtraCantidad={formActions.setExtraCantidad}
           onSetObservacion={formActions.setObservacion}
           onAddObservacion={formActions.addObservacion}
           onRemoveObservacion={formActions.removeObservacion}

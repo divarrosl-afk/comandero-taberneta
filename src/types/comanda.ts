@@ -27,6 +27,20 @@ export type ModificacionId =
   | "huevo"
   | "pim_verde"
   | "pim_rojo"
+  | "alcachofas_2"
+  | "allioli_mod"
+  | "alubias_mongetes"
+  | "cebolla_frita"
+  | "cebolla_cruda"
+  | "ensalada"
+  | "limon"
+  | "patatas_bravas"
+  | "pimiento"
+  | "plato_vacio"
+  | "queso"
+  | "salsa_romesco"
+  | "salsa_roquefort_mod"
+  | "servilletas"
   | "sin_cebolla"
   | "sin_tomate"
   | "sin_queso"
@@ -50,13 +64,23 @@ export type SalsaId =
   | "salsa_roquefort";
 
 export type ExtraMesaId =
-  | "pan"
-  | "pan_sin_gluten"
-  | "cubiertos"
-  | "plato_vacio"
-  | "servilletas"
-  | "hielo"
-  | "limon";
+  | "cuenta_efectivo"
+  | "cuenta_datafono"
+  | "vaso_hielo"
+  | "vaso_agua"
+  | "vaso_cortado"
+  | "taza_cafe_solo"
+  | "taza_cafe_leche"
+  | "vaso_cafe_leche"
+  | "copa_fria"
+  | "vaso_vermouth"
+  | "copa_grande"
+  | "copa_pequena"
+  | "vaso_tubo"
+  | "vaso_tubo_hielo"
+  | "copa_cava"
+  | "enfriador_vino"
+  | "cubeta_cava";
 
 export interface SalsaCantidad {
   id: string;
