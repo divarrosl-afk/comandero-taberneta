@@ -98,24 +98,28 @@ export function CafesFrecuentesGrid({ onSelect }: CafesFrecuentesGridProps) {
   const [error, setError] = useState<string | null>(null);
 
   const porCategoria = useMemo(() => {
-    const validos = productos.filter(
-      (p) => p?.id && typeof p.nombre === "string",
-    );
-    const cafes = validos.filter((p) => p.activo && p.categoriaCarta === "cafes");
-    const carajillos = validos.filter(
-      (p) => p.activo && p.categoriaCarta === "carajillos",
-    );
-    const infusiones = validos.filter(
-      (p) => p.activo && p.categoriaCarta === "infusiones",
-    );
+    const vistos = new Set<string>();
+    const validos = productos.filter((p) => {
+      if (!p?.id || typeof p.nombre !== "string" || vistos.has(p.id)) return false;
+      vistos.add(p.id);
+      return true;
+    });
     const ordenar = (lista: ProductoCatalogo[]) =>
       [...lista].sort(
-        (a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es"),
+        (a, b) =>
+          (a.orden ?? 0) - (b.orden ?? 0) ||
+          String(a.nombre).localeCompare(String(b.nombre), "es"),
       );
     return {
-      cafes: ordenar(cafes),
-      carajillos: ordenar(carajillos),
-      infusiones: ordenar(infusiones),
+      cafes: ordenar(
+        validos.filter((p) => p.activo && p.categoriaCarta === "cafes"),
+      ),
+      carajillos: ordenar(
+        validos.filter((p) => p.activo && p.categoriaCarta === "carajillos"),
+      ),
+      infusiones: ordenar(
+        validos.filter((p) => p.activo && p.categoriaCarta === "infusiones"),
+      ),
     };
   }, [productos]);
 

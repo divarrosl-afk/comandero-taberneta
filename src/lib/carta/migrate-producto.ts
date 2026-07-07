@@ -172,7 +172,9 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
     agotado: raw.agotado ?? false,
     favorito: raw.favorito ?? false,
     orden: raw.orden ?? 0,
-    descripcionCamarero: raw.descripcionCamarero?.trim() || undefined,
+    descripcionCamarero: raw.descripcionCamarero
+      ? String(raw.descripcionCamarero).trim() || undefined
+      : undefined,
     ingredientes: Array.isArray(raw.ingredientes) ? raw.ingredientes : [],
     alergenos: Array.isArray(raw.alergenos) ? raw.alergenos : [],
     notasInternas: decoded.notasLimpias?.trim() || undefined,

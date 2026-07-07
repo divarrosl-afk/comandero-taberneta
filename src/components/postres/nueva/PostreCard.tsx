@@ -29,7 +29,7 @@ export function PostreCard({
   const tieneContenido = postreTieneContenido(postre);
 
   const resumen =
-    postre.nombre.trim() || `Postre ${indice + 1}`;
+    String(postre.nombre ?? "").trim() || `Postre ${indice + 1}`;
 
   const toggleExpandido = () => {
     setExpandido((v) => {
@@ -52,8 +52,8 @@ export function PostreCard({
         >
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold">
-              {tieneContenido ? postre.nombre : `Postre ${indice + 1}`}
-              {postre.cantidad > 1 && (
+              {tieneContenido ? String(postre.nombre ?? "") : `Postre ${indice + 1}`}
+              {(postre.cantidad ?? 1) > 1 && (
                 <span className="ml-1 text-accent">x{postre.cantidad}</span>
               )}
             </p>
@@ -69,14 +69,14 @@ export function PostreCard({
             <div className="flex gap-2">
               <input
                 type="text"
-                value={postre.nombre}
+                value={postre.nombre ?? ""}
                 onChange={(e) => onChange({ nombre: e.target.value })}
                 placeholder="Nombre del postre"
                 className="min-h-14 flex-1 rounded-xl border-2 border-border bg-card px-3 text-lg font-medium outline-none focus:border-primary"
                 autoComplete="off"
               />
               <QuantityStepper
-                value={postre.cantidad}
+                value={postre.cantidad ?? 1}
                 onChange={(cantidad) => onChange({ cantidad })}
               />
             </div>

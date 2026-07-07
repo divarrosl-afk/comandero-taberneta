@@ -1,3 +1,4 @@
+import { migrarProducto } from "@/lib/carta/migrate-producto";
 import { crearCatalogoDefault } from "@/data/catalogo-default";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { getSupabaseEnv } from "@/lib/supabase/env";
@@ -29,7 +30,11 @@ export const catalogoRepositorySupabase: CatalogoRepository = {
       .order("orden")
       .order("nombre");
 
-    if (error || !data?.length) return [];
+    if (error) {
+      console.error("[catalogo] getAll:", error.message);
+      return crearCatalogoDefault();
+    }
+    if (!data?.length) return [];
     return (data as DbProducto[]).map(rowToProducto);
   },
 
@@ -40,6 +45,18 @@ export const catalogoRepositorySupabase: CatalogoRepository = {
 
     const rows = productos.map((p) => productoToRow(p, env.restauranteId));
     const { error } = await client.from("productos").upsert(rows, {
+      onConflict: "id",
+    });
+    if (error) throw new Error(error.message);
+  },
+
+  async agregar(producto) {
+    const client = getSupabaseClient();
+    const env = getSupabaseEnv();
+    if (!client || !env) return;
+
+    const row = productoToRow(migrarProducto(producto), env.restauranteId);
+    const { error } = await client.from("productos").upsert([row], {
       onConflict: "id",
     });
     if (error) throw new Error(error.message);

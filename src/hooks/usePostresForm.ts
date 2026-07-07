@@ -5,6 +5,7 @@ import {
   crearPostreVacio,
   duplicarPostre,
 } from "@/lib/postres/postre-factory";
+import { normalizarListaPostreForm } from "@/lib/postres/normalize-form-item";
 import { formPostresEsValido } from "@/lib/postres/map-form";
 import {
   borradorPostresTieneDatos,
@@ -76,9 +77,8 @@ export function usePostresForm(
         aplicarCamareroFijo(
           {
             ...borrador,
-            cafes: borrador.cafes?.length
-              ? borrador.cafes
-              : [crearPostreVacio()],
+            postres: normalizarListaPostreForm(borrador.postres),
+            cafes: normalizarListaPostreForm(borrador.cafes),
             estadoXCafe: borrador.estadoXCafe ?? null,
           },
           camareroFijo,
@@ -210,9 +210,11 @@ export function usePostresForm(
   }, []);
 
   const addCafeRapido = useCallback((nombre: string) => {
+    const etiqueta = String(nombre ?? "").trim();
+    if (!etiqueta) return;
     setForm((prev) => {
-      const vacio = prev.cafes.find((c) => !c.nombre.trim());
-      const datos = { nombre };
+      const vacio = prev.cafes.find((c) => !String(c.nombre ?? "").trim());
+      const datos = { nombre: etiqueta };
       if (vacio) {
         return {
           ...prev,

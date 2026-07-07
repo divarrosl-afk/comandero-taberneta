@@ -14,6 +14,10 @@ export const catalogoRepositoryLocal: CatalogoRepository = {
   saveAll: async (productos) => {
     guardarCatalogo(productos);
   },
+  agregar: async (producto) => {
+    const lista = getCatalogo();
+    guardarCatalogo([...lista, producto]);
+  },
   eliminar: async (id) => {
     const producto = getProductoPorId(id);
     if (producto) registrarExclusionCatalogo(producto);

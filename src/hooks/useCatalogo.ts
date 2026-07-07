@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   crearProductoVacio,
+  agregarProductoCatalogo,
   eliminarProductoCatalogo,
   getCatalogo,
   getProductoPorId,
@@ -57,10 +58,10 @@ export function useCatalogo() {
 
   const agregar = useCallback(
     async (producto: ProductoCatalogo) => {
-      const lista = await getCatalogo();
-      await guardar([...lista, producto]);
+      await agregarProductoCatalogo(producto);
+      await refrescarLista();
     },
-    [guardar],
+    [refrescarLista],
   );
 
   const actualizar = useCallback(

@@ -3,6 +3,7 @@ import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 export interface CatalogoRepository {
   getAll(): Promise<ProductoCatalogo[]>;
   saveAll(productos: ProductoCatalogo[]): Promise<void>;
+  agregar(producto: ProductoCatalogo): Promise<void>;
   eliminar(id: string): Promise<void>;
   resetDefault(): Promise<ProductoCatalogo[]>;
   getBySeccion(

@@ -1,21 +1,18 @@
 import { createId } from "@/lib/id/create-id";
+import { normalizarPostreFormItem } from "@/lib/postres/normalize-form-item";
 import type { PostreFormItem } from "@/types/postres";
 
 export function crearPostreVacio(): PostreFormItem {
-  return {
-    id: createId(),
-    nombre: "",
-    cantidad: 1,
-  };
+  return normalizarPostreFormItem(null);
 }
 
 export function duplicarPostre(postre: PostreFormItem): PostreFormItem {
   return {
-    ...postre,
+    ...normalizarPostreFormItem(postre),
     id: createId(),
   };
 }
 
 export function postreTieneContenido(postre: PostreFormItem): boolean {
-  return postre.nombre.trim().length > 0;
+  return String(postre.nombre ?? "").trim().length > 0;
 }

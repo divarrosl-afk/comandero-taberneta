@@ -21,6 +21,12 @@ export function crearProductoVacio(
   });
 }
 
+export async function agregarProductoCatalogo(
+  producto: ProductoCatalogo,
+): Promise<void> {
+  await getCatalogoRepository().agregar(producto);
+}
+
 export async function eliminarProductoCatalogo(id: string): Promise<void> {
   await getCatalogoRepository().eliminar(id);
 }
