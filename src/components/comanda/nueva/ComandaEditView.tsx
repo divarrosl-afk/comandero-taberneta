@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { BottomBar } from "@/components/ui/BottomBar";
 import { MesaSelector } from "@/components/comanda/MesaSelector";
@@ -82,6 +82,22 @@ export function ComandaEditView({
   const limpiarEnfoque = useCallback(() => setPlatoEnfocado(null), []);
   useScrollToPlatoCard(platoEnfocado, limpiarEnfoque);
 
+  const seleccionarMesa = useCallback(
+    (mesaId: string) => {
+      onSetMesa(mesaId);
+      setTab("entrantes");
+      setBusqueda("");
+      setPlatoEnfocado(null);
+    },
+    [onSetMesa],
+  );
+
+  useEffect(() => {
+    if (form.mesa) {
+      setTab((t) => (t === "mesa" ? "entrantes" : t));
+    }
+  }, [form.mesa]);
+
   const seleccionarCatalogo = (
     seccionTab: SeccionPlatos,
     producto: ProductoCatalogo,
@@ -139,7 +155,7 @@ export function ComandaEditView({
       <div className="mt-4 space-y-4 pb-4">
         {tab === "mesa" && (
           <div className="space-y-6">
-            <MesaSelector mesaSeleccionada={form.mesa} onSelect={onSetMesa} />
+            <MesaSelector mesaSeleccionada={form.mesa} onSelect={seleccionarMesa} />
           </div>
         )}
 
