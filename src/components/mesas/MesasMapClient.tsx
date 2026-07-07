@@ -25,7 +25,7 @@ export function MesasMapClient() {
 
   return (
     <RequireAuth>
-      <main className="mx-auto min-h-dvh max-w-2xl px-4 py-4 pb-8">
+      <main className="mx-auto min-h-dvh max-w-3xl px-4 py-4 pb-8">
         <header className="mb-4 flex items-start justify-between gap-3">
           <div>
             <Link
@@ -70,7 +70,7 @@ export function MesasMapClient() {
                 <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">
                   {labelZona(zona.id)}
                 </h2>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {lista.map((mesa) => (
                     <MesaCard
                       key={mesa.id}
