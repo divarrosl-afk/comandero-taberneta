@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, Suspense, useEffect, useState } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { CamareroAccesosBar } from "@/components/navigation/CamareroAccesosBar";
 import { ComandaEditView } from "@/components/comanda/nueva/ComandaEditView";
 import { ComandaEnviadaView } from "@/components/comanda/nueva/ComandaEnviadaView";
 import { ComandaPreviewView } from "@/components/comanda/nueva/ComandaPreviewView";
@@ -56,8 +57,11 @@ function ComandaNuevaForm() {
     setStep("enviada");
   };
 
+  const mesaId = mesaParam ?? form.mesa ?? null;
+
   return (
     <main className="mx-auto min-h-dvh max-w-lg px-4 py-4 pb-32">
+      <CamareroAccesosBar activo="nota" mesaId={mesaId} className="mb-4" />
       {step === "editar" && (
         <ComandaEditView
           form={form}

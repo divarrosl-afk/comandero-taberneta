@@ -110,7 +110,7 @@ export function MesaCard({
                 void Promise.resolve(onLiberar());
               }}
             >
-              Mesa libre
+              Liberar
             </Button>
           </div>
         </div>

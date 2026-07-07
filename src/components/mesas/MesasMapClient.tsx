@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { MesaCard } from "@/components/mesas/MesaCard";
 import { Button } from "@/components/ui/Button";
+import { CamareroAccesosBar } from "@/components/navigation/CamareroAccesosBar";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useMesasOperativas } from "@/hooks/useMesas";
 import { liberarMesaOperativa } from "@/lib/mesas/liberar-mesa-operativa";
@@ -43,6 +44,8 @@ export function MesasMapClient() {
             Actualizar
           </Button>
         </header>
+
+        <CamareroAccesosBar activo="mes" className="mb-4" />
 
         <div className="mb-6 flex flex-wrap gap-2 text-xs">
           {ZONAS_MESA.map((z) => (
