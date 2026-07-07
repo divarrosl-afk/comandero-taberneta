@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
@@ -9,6 +9,7 @@ import { PostresFrecuentesGrid } from "@/components/postres/nueva/PostresFrecuen
 import { CatalogoBuscadorRapido } from "@/components/catalogo/CatalogoBuscadorRapido";
 import type { ProductoCatalogo } from "@/types/catalogo";
 import type { PostreFormItem } from "@/types/postres";
+import { scrollSeccionAlInicio } from "@/lib/ui/scroll-seccion";
 
 interface PostresSeccionPanelProps {
   postres: PostreFormItem[];
@@ -34,6 +35,7 @@ export function PostresSeccionPanel({
   onClear,
 }: PostresSeccionPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
+  const catalogoRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -64,7 +66,9 @@ export function PostresSeccionPanel({
           />
         )}
 
+        <div ref={catalogoRef} className="scroll-mt-28">
         <PostresFrecuentesGrid busqueda={busqueda} onSelect={onAddFrecuente} />
+        </div>
 
         <div className="mt-4 space-y-3">
           {postres.map((postre, index) => (
@@ -72,6 +76,7 @@ export function PostresSeccionPanel({
               key={postre.id}
               postre={postre}
               indice={index}
+              onColapsar={() => scrollSeccionAlInicio(catalogoRef.current)}
               onChange={(cambios) => onUpdate(postre.id, cambios)}
               onRemove={() => onRemove(postre.id)}
               onDuplicate={() => onDuplicate(postre.id)}

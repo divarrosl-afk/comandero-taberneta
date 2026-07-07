@@ -20,6 +20,7 @@ interface PlatoCardProps {
   onDuplicate: () => void;
   onToggleModificacion: (mod: ModificacionId) => void;
   onCycleSalsa: (salsaId: string, nombre: string) => void;
+  onColapsar?: () => void;
 }
 
 export function PlatoCard({
@@ -32,6 +33,7 @@ export function PlatoCard({
   onDuplicate,
   onToggleModificacion,
   onCycleSalsa,
+  onColapsar,
 }: PlatoCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [expandido, setExpandido] = useState(true);
@@ -45,6 +47,17 @@ export function PlatoCard({
     plato.nombre.trim() ||
     `Plato ${indice + 1}${plato.cantidad > 1 ? ` x${plato.cantidad}` : ""}`;
 
+  const toggleExpandido = () => {
+    setExpandido((v) => {
+      if (v) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => onColapsar?.());
+        });
+      }
+      return !v;
+    });
+  };
+
   return (
     <>
       <article
@@ -56,7 +69,7 @@ export function PlatoCard({
       >
         <button
           type="button"
-          onClick={() => setExpandido((v) => !v)}
+          onClick={toggleExpandido}
           className="flex w-full items-center justify-between gap-2 bg-card px-3 py-3 text-left"
         >
           <div className="min-w-0 flex-1">

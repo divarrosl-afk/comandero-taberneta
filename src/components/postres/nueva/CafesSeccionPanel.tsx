@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
@@ -8,6 +8,7 @@ import { PostreCard } from "@/components/postres/nueva/PostreCard";
 import { CafesFrecuentesGrid } from "@/components/postres/nueva/CafesFrecuentesGrid";
 import { EstadoXCafeSelector } from "@/components/postres/nueva/EstadoXCafeSelector";
 import type { EstadoCafeX, PostreFormItem } from "@/types/postres";
+import { scrollSeccionAlInicio } from "@/lib/ui/scroll-seccion";
 
 interface CafesSeccionPanelProps {
   cafes: PostreFormItem[];
@@ -33,6 +34,7 @@ export function CafesSeccionPanel({
   onSetEstadoXCafe,
 }: CafesSeccionPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
+  const catalogoRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -56,7 +58,9 @@ export function CafesSeccionPanel({
           </div>
         }
       >
+        <div ref={catalogoRef} className="scroll-mt-28">
         <CafesFrecuentesGrid onSelect={onAddRapido} />
+        </div>
 
         <div className="mt-4 space-y-3">
           {cafes.map((cafe, index) => (
@@ -64,6 +68,7 @@ export function CafesSeccionPanel({
               key={cafe.id}
               postre={cafe}
               indice={index}
+              onColapsar={() => scrollSeccionAlInicio(catalogoRef.current)}
               onChange={(cambios) => onUpdate(cafe.id, cambios)}
               onRemove={() => onRemove(cafe.id)}
               onDuplicate={() => onDuplicate(cafe.id)}

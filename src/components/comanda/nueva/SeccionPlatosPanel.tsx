@@ -86,6 +86,7 @@ export function SeccionPlatosPanel({
     origenInicial(seccion, menu?.activo ?? false),
   );
   const panelRef = useRef<HTMLDivElement>(null);
+  const catalogoRef = useRef<HTMLDivElement>(null);
   const origenInicializado = useRef(false);
 
   useLayoutEffect(() => {
@@ -133,6 +134,7 @@ export function SeccionPlatosPanel({
           />
         )}
 
+        <div ref={catalogoRef} className="scroll-mt-28">
         {conSelectorOrigen && (
           <OrigenPlatosSelector
             value={origen}
@@ -149,6 +151,7 @@ export function SeccionPlatosPanel({
           origen={conSelectorOrigen ? origen : undefined}
           onSelect={onSelectCatalogo}
         />
+        </div>
 
         <div className="mt-4 space-y-3">
           {platos.map((plato, index) => (
@@ -158,6 +161,7 @@ export function SeccionPlatosPanel({
               indice={index}
               conTipo={conTipo}
               enfocado={plato.id === platoEnfocadoId}
+              onColapsar={() => scrollSeccionAlInicio(catalogoRef.current)}
               onChange={(cambios) => onUpdate(plato.id, cambios)}
               onRemove={() => onRemove(plato.id)}
               onDuplicate={() => onDuplicate(plato.id)}

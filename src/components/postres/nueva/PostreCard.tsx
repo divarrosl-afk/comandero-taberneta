@@ -13,6 +13,7 @@ interface PostreCardProps {
   onChange: (cambios: Partial<PostreFormItem>) => void;
   onRemove: () => void;
   onDuplicate: () => void;
+  onColapsar?: () => void;
 }
 
 export function PostreCard({
@@ -21,6 +22,7 @@ export function PostreCard({
   onChange,
   onRemove,
   onDuplicate,
+  onColapsar,
 }: PostreCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [expandido, setExpandido] = useState(true);
@@ -29,12 +31,23 @@ export function PostreCard({
   const resumen =
     postre.nombre.trim() || `Postre ${indice + 1}`;
 
+  const toggleExpandido = () => {
+    setExpandido((v) => {
+      if (v) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => onColapsar?.());
+        });
+      }
+      return !v;
+    });
+  };
+
   return (
     <>
       <article className="overflow-hidden rounded-2xl border-2 border-border bg-background">
         <button
           type="button"
-          onClick={() => setExpandido((v) => !v)}
+          onClick={toggleExpandido}
           className="flex w-full items-center justify-between gap-2 bg-card px-3 py-3 text-left"
         >
           <div className="min-w-0 flex-1">
