@@ -5,6 +5,7 @@ import {
 import { mergeCatalogoCompleto } from "@/lib/setup/sync-catalogo";
 import { migrarProducto } from "@/lib/carta/migrate-producto";
 import { createId } from "@/lib/id/create-id";
+import { getClavesExcluidasCatalogo, limpiarExclusionesCatalogo } from "@/lib/storage/catalogo-exclusiones";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 
 const STORAGE_KEY = "comandero-taberneta:catalogo";
@@ -24,6 +25,7 @@ function necesitaActualizarCatalogo(): boolean {
 function instalarCatalogoDefault(): ProductoCatalogo[] {
   const defaults = crearCatalogoDefault();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
+  limpiarExclusionesCatalogo();
   guardarVersion();
   return defaults;
 }
@@ -41,9 +43,11 @@ function actualizarCatalogoSiNecesario(): ProductoCatalogo[] {
       existentes = [];
     }
   }
-  const merged = mergeCatalogoCompleto(existentes, crearCatalogoDefault()).map(
-    normalizar,
-  );
+  const merged = mergeCatalogoCompleto(
+    existentes,
+    crearCatalogoDefault(),
+    getClavesExcluidasCatalogo(),
+  ).map(normalizar);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
   guardarVersion();
   return merged;

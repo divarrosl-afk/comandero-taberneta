@@ -71,4 +71,19 @@ describe("prepararSyncCatalogo", () => {
     expect(updated).toBe(0);
     expect(aSubir).toHaveLength(0);
   });
+
+  it("no reinserta productos eliminados por el admin", () => {
+    const defectos = [bebida("Tarta cheesebrownie", "refrescos", "def-id")];
+    const existentes: ProductoCatalogo[] = [];
+    const clavesExcluidas = new Set(["bebidas|refrescos|tarta cheesebrownie"]);
+
+    const { aSubir, inserted } = prepararSyncCatalogo(
+      defectos,
+      existentes,
+      clavesExcluidas,
+    );
+
+    expect(inserted).toBe(0);
+    expect(aSubir).toHaveLength(0);
+  });
 });

@@ -45,6 +45,7 @@ function necesitaActualizacion(
 export function prepararSyncCatalogo(
   defectos: ProductoCatalogo[],
   existentes: ProductoCatalogo[],
+  clavesExcluidas: ReadonlySet<string> = new Set(),
 ): {
   aSubir: ProductoCatalogo[];
   inserted: number;
@@ -61,6 +62,8 @@ export function prepararSyncCatalogo(
 
   for (const defecto of defectos) {
     const clave = claveProductoCatalogo(defecto);
+    if (clavesExcluidas.has(clave)) continue;
+
     const existente = porClave.get(clave);
     if (existente) {
       const fusionado = fusionarConExistente(defecto, existente);
@@ -81,6 +84,7 @@ export function prepararSyncCatalogo(
 export function mergeCatalogoCompleto(
   existentes: ProductoCatalogo[],
   defectos: ProductoCatalogo[],
+  clavesExcluidas: ReadonlySet<string> = new Set(),
 ): ProductoCatalogo[] {
   const porClave = new Map<string, ProductoCatalogo>();
   for (const producto of existentes) {
@@ -91,6 +95,8 @@ export function mergeCatalogoCompleto(
 
   for (const defecto of defectos) {
     const clave = claveProductoCatalogo(defecto);
+    if (clavesExcluidas.has(clave)) continue;
+
     const existente = porClave.get(clave);
     if (existente) {
       const fusionado = fusionarConExistente(defecto, existente);
@@ -122,9 +128,28 @@ export async function syncCatalogoConDefaults(
 
   if (error) throw new Error(`Catálogo: ${error.message}`);
 
+  const { data: eliminadosData, error: eliminadosError } = await admin
+    .from("productos")
+    .select("*")
+    .eq("restaurante_id", restauranteId)
+    .not("deleted_at", "is", null);
+
+  if (eliminadosError) {
+    throw new Error(`Catálogo eliminados: ${eliminadosError.message}`);
+  }
+
   const existentes = ((data ?? []) as DbProducto[]).map(rowToProducto);
+  const clavesExcluidas = new Set(
+    ((eliminadosData ?? []) as DbProducto[]).map((row) =>
+      claveProductoCatalogo(rowToProducto(row)),
+    ),
+  );
   const defectos = crearCatalogoDefault();
-  const { aSubir, inserted, updated } = prepararSyncCatalogo(defectos, existentes);
+  const { aSubir, inserted, updated } = prepararSyncCatalogo(
+    defectos,
+    existentes,
+    clavesExcluidas,
+  );
 
   if (aSubir.length === 0) {
     return { inserted: 0, updated: 0, total: existentes.length };

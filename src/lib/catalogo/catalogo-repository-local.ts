@@ -5,6 +5,7 @@ import {
   guardarCatalogo,
   resetCatalogo,
 } from "@/lib/storage/catalogo";
+import { registrarExclusionCatalogo } from "@/lib/storage/catalogo-exclusiones";
 import type { CatalogoRepository } from "@/lib/catalogo/catalogo-repository";
 import type { SeccionCatalogo } from "@/types/catalogo";
 
@@ -14,6 +15,8 @@ export const catalogoRepositoryLocal: CatalogoRepository = {
     guardarCatalogo(productos);
   },
   eliminar: async (id) => {
+    const producto = getProductoPorId(id);
+    if (producto) registrarExclusionCatalogo(producto);
     const lista = getCatalogo().filter((p) => p.id !== id);
     guardarCatalogo(lista);
   },

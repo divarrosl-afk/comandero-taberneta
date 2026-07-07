@@ -74,6 +74,7 @@ export function getUsuariosRepository(): UsuariosRepository {
 }
 
 export function getCatalogoRepository(): CatalogoRepository {
+  ensureInitialized();
   return catalogoRepo;
 }
 
