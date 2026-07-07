@@ -35,7 +35,6 @@ export type ModificacionId =
   | "ensalada"
   | "limon"
   | "patatas_bravas"
-  | "pimiento"
   | "plato_vacio"
   | "queso"
   | "salsa_romesco"
