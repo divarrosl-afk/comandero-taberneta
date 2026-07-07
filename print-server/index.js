@@ -180,7 +180,13 @@ const server = http.createServer(async (req, res) => {
     try {
       const raw = await readBody(req);
       const body = raw ? JSON.parse(raw) : {};
-      const imp = body.impresora ?? {};
+      const imp = { ...(body.impresora ?? {}) };
+      if (!imp.ip?.trim() && process.env.PRINTER_IP?.trim()) {
+        imp.ip = process.env.PRINTER_IP.trim();
+      }
+      if (imp.puerto == null && process.env.PRINTER_PORT) {
+        imp.puerto = Number(process.env.PRINTER_PORT);
+      }
       const advanced = url.searchParams.get("advanced") === "1";
       const result = await printTestTicket(imp, advanced);
       json(res, result.ok ? 200 : 502, {
