@@ -39,13 +39,17 @@ export function useHistorial() {
 
   const eliminar = useCallback(
     async (entrada: HistorialEntrada) => {
-      const ok =
-        entrada.tipo === "cocina"
-          ? await eliminarComanda(entrada.comanda.id)
-          : await eliminarPostres(entrada.comanda.id);
+      try {
+        const ok =
+          entrada.tipo === "cocina"
+            ? await eliminarComanda(entrada.comanda.id)
+            : await eliminarPostres(entrada.comanda.id);
 
-      if (ok) await recargar();
-      return ok;
+        if (ok) await recargar();
+        return ok;
+      } catch {
+        return false;
+      }
     },
     [recargar],
   );

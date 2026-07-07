@@ -133,21 +133,23 @@ export async function actualizarEstadoComanda(
 }
 
 export async function eliminarComanda(id: string): Promise<boolean> {
-  const eraPendiente = getComandasCache().some((c) => c.id === id);
+  const anterior = getComandasCache();
+  const eraPendiente = anterior.some((c) => c.id === id);
   await removeOutboxForEntity(["cocina_create", "cocina_estado"], id);
 
-  const filtradas = getComandasCache().filter((c) => c.id !== id);
-  setComandasCache(filtradas);
+  setComandasCache(anterior.filter((c) => c.id !== id));
 
   try {
     await getComandasRepository().eliminar(id);
     if (usesRemoteData()) await loadOperativaMerged();
     dispatchAppSync();
     return true;
-  } catch {
+  } catch (error) {
+    setComandasCache(anterior);
     if (usesRemoteData()) await loadOperativaMerged();
     dispatchAppSync();
-    return eraPendiente;
+    if (eraPendiente && !usesRemoteData()) return true;
+    throw error;
   }
 }
 

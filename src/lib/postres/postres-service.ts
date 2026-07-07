@@ -128,21 +128,23 @@ export async function actualizarEstadoPostres(
 }
 
 export async function eliminarPostres(id: string): Promise<boolean> {
-  const eraPendiente = getPostresCache().some((c) => c.id === id);
+  const anterior = getPostresCache();
+  const eraPendiente = anterior.some((c) => c.id === id);
   await removeOutboxForEntity(["postres_create", "postres_estado"], id);
 
-  const filtradas = getPostresCache().filter((c) => c.id !== id);
-  setPostresCache(filtradas);
+  setPostresCache(anterior.filter((c) => c.id !== id));
 
   try {
     await getPostresRepository().eliminar(id);
     if (usesRemoteData()) await loadOperativaMerged();
     dispatchAppSync();
     return true;
-  } catch {
+  } catch (error) {
+    setPostresCache(anterior);
     if (usesRemoteData()) await loadOperativaMerged();
     dispatchAppSync();
-    return eraPendiente;
+    if (eraPendiente && !usesRemoteData()) return true;
+    throw error;
   }
 }
 

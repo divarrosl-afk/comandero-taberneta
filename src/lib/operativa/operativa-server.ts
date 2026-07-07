@@ -13,6 +13,7 @@ import {
   estadoPanelToLegacyDbEnum,
   isInvalidEstadoPanelEnumError,
 } from "@/lib/supabase/estado-panel-db";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { ComandaCocina } from "@/types/comanda";
 import type { ComandaPostres } from "@/types/postres";
 import type { EstadoPanel } from "@/types/panel";
@@ -37,6 +38,47 @@ function assertRestaurante(): string {
 }
 
 type OperativaClient = ReturnType<typeof clientConToken>;
+
+async function softDeleteComanda(
+  tabla: "comandas_cocina" | "comandas_postres",
+  id: string,
+  token: string,
+): Promise<void> {
+  const restauranteId = assertRestaurante();
+  const deletedAt = new Date().toISOString();
+  const patch = { deleted_at: deletedAt };
+
+  const admin = getSupabaseAdminClient();
+  if (admin) {
+    const { data, error } = await admin
+      .from(tabla)
+      .update(patch)
+      .eq("id", id)
+      .eq("restaurante_id", restauranteId)
+      .is("deleted_at", null)
+      .select("id");
+
+    if (error) throw new Error(error.message);
+    if (!data?.length) throw new Error("Comanda no encontrada");
+    return;
+  }
+
+  const client = clientConToken(token);
+  const { data, error } = await client
+    .from(tabla)
+    .update(patch)
+    .eq("id", id)
+    .eq("restaurante_id", restauranteId)
+    .is("deleted_at", null)
+    .select("id");
+
+  if (error) throw new Error(error.message);
+  if (!data?.length) {
+    throw new Error(
+      "No se pudo eliminar la comanda. Comprueba permisos o contacta con el administrador.",
+    );
+  }
+}
 
 async function insertCocinaRow(
   client: OperativaClient,
@@ -310,17 +352,7 @@ export async function eliminarComandaCocina(
   token: string,
   id: string,
 ): Promise<boolean> {
-  const client = clientConToken(token);
-  const restauranteId = assertRestaurante();
-
-  const { error } = await client
-    .from("comandas_cocina")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id)
-    .eq("restaurante_id", restauranteId)
-    .is("deleted_at", null);
-
-  if (error) throw new Error(error.message);
+  await softDeleteComanda("comandas_cocina", id, token);
   return true;
 }
 
@@ -457,17 +489,7 @@ export async function eliminarComandaPostres(
   token: string,
   id: string,
 ): Promise<boolean> {
-  const client = clientConToken(token);
-  const restauranteId = assertRestaurante();
-
-  const { error } = await client
-    .from("comandas_postres")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id)
-    .eq("restaurante_id", restauranteId)
-    .is("deleted_at", null);
-
-  if (error) throw new Error(error.message);
+  await softDeleteComanda("comandas_postres", id, token);
   return true;
 }
 

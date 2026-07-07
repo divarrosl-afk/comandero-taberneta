@@ -549,7 +549,6 @@ CREATE POLICY comandas_cocina_update ON comandas_cocina
   )
   WITH CHECK (
     restaurante_id = ct_current_restaurante_id()
-    AND (ct_is_admin() OR deleted_at IS NULL)
   );
 
 DROP POLICY IF EXISTS comandas_cocina_admin_delete ON comandas_cocina;
@@ -583,7 +582,6 @@ CREATE POLICY comandas_postres_update ON comandas_postres
   )
   WITH CHECK (
     restaurante_id = ct_current_restaurante_id()
-    AND (ct_is_admin() OR deleted_at IS NULL)
   );
 
 DROP POLICY IF EXISTS comandas_postres_admin_delete ON comandas_postres;

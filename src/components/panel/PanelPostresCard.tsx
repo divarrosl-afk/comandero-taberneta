@@ -30,6 +30,7 @@ export function PanelPostresCard({
   const [reimpresionMsg, setReimpresionMsg] = useState<string | null>(null);
   const [reimpresionError, setReimpresionError] = useState(false);
   const [confirmEliminar, setConfirmEliminar] = useState(false);
+  const [eliminarError, setEliminarError] = useState<string | null>(null);
 
   const handleReimprimir = async () => {
     setReimpresionMsg("Enviando a impresora…");
@@ -116,10 +117,18 @@ export function PanelPostresCard({
         <Button
           variant="ghost"
           fullWidth
-          onClick={() => setConfirmEliminar(true)}
+          onClick={() => {
+            setEliminarError(null);
+            setConfirmEliminar(true);
+          }}
         >
           Eliminar
         </Button>
+        {eliminarError && (
+          <p className="text-center text-xs font-medium text-red-600">
+            {eliminarError}
+          </p>
+        )}
         {reimpresionMsg && (
           <p
             className={[
@@ -138,8 +147,17 @@ export function PanelPostresCard({
         message={`Se quitará la comanda de postres de ${nombreMesa} (${formatHora(comanda.creadaEn)}) del panel.`}
         confirmLabel="Eliminar"
         onConfirm={() => {
-          void onEliminar();
-          setConfirmEliminar(false);
+          void (async () => {
+            try {
+              await onEliminar();
+              setConfirmEliminar(false);
+            } catch (e) {
+              setEliminarError(
+                e instanceof Error ? e.message : "No se pudo eliminar",
+              );
+              setConfirmEliminar(false);
+            }
+          })();
         }}
         onCancel={() => setConfirmEliminar(false)}
       />
