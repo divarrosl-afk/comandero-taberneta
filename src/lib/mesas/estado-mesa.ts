@@ -163,6 +163,15 @@ export function getComandasDeMesa(mesaId: string) {
   return { cocina, postres, total: cocina.length + postres.length, activas };
 }
 
+/** Contador de tickets para badge en Mesas / selector: 0 si la mesa se muestra como libre. */
+export function contadorTicketsMesaVisible(
+  mesaId: string,
+  estadoPanel: EstadoPanel | null,
+): number {
+  if (estadoPanel === "mesa_libre") return 0;
+  return getComandasDeMesa(mesaId).activas;
+}
+
 export function limpiarEstadoMesa(mesaId: string): void {
   guardarEstados(getEstadosRaw().filter((e) => e.mesaId !== mesaId));
 }

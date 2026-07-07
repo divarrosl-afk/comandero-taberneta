@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useMesasOperativas } from "@/hooks/useMesas";
-import { getComandasDeMesa } from "@/lib/mesas/estado-mesa";
+import { contadorTicketsMesaVisible } from "@/lib/mesas/estado-mesa";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import { usesRemoteData } from "@/lib/data/backend";
 import {
@@ -129,7 +129,7 @@ function MesaBotonOperativa({
   onClick: () => void;
 }) {
   void operativaRevision;
-  const { activas } = getComandasDeMesa(mesa.id);
+  const ticketsVisibles = contadorTicketsMesaVisible(mesa.id, mesa.estadoPanel);
 
   return (
     <button
@@ -142,9 +142,9 @@ function MesaBotonOperativa({
         seleccionada ? "ring-2 ring-primary ring-offset-2" : "",
       ].join(" ")}
     >
-      {activas > 0 && (
+      {ticketsVisibles > 0 && (
         <span className="absolute right-1.5 top-1.5 rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] font-bold">
-          {activas}
+          {ticketsVisibles}
         </span>
       )}
       <span className={compact ? "text-sm" : "text-base"}>{mesa.nombreVisible}</span>

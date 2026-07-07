@@ -14,6 +14,7 @@ import {
   getEstadoMesa,
   getEstadoPanelMesa,
   getComandasDeMesa,
+  contadorTicketsMesaVisible,
   liberarMesa,
   marcarMesaCobrando,
   notificarComandaEnviada,
@@ -111,5 +112,14 @@ describe("estado-mesa", () => {
     const { total, activas } = getComandasDeMesa("C1");
     expect(total).toBe(5);
     expect(activas).toBe(2);
+  });
+
+  it("contadorTicketsMesaVisible oculta badge si la mesa se muestra como libre", () => {
+    vi.mocked(getComandasSync).mockReturnValue([
+      comandaCocinaFixture({ mesa: "C1", estadoPanel: "bebidas" }),
+    ]);
+    vi.mocked(getPostresSync).mockReturnValue([]);
+    expect(contadorTicketsMesaVisible("C1", "mesa_libre")).toBe(0);
+    expect(contadorTicketsMesaVisible("C1", "bebidas")).toBe(1);
   });
 });

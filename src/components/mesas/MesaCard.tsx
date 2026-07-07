@@ -8,7 +8,7 @@ import {
   labelMesaOperativa,
   type MesaOperativa,
 } from "@/types/mesas";
-import { getComandasDeMesa } from "@/lib/mesas/estado-mesa";
+import { getComandasDeMesa, contadorTicketsMesaVisible } from "@/lib/mesas/estado-mesa";
 import { isEstadoPanelActivo } from "@/types/panel";
 
 interface MesaCardProps {
@@ -26,7 +26,8 @@ export function MesaCard({
 }: MesaCardProps) {
   const [expandido, setExpandido] = useState(false);
   void operativaRevision;
-  const { cocina, activas } = getComandasDeMesa(mesa.id);
+  const { cocina } = getComandasDeMesa(mesa.id);
+  const ticketsVisibles = contadorTicketsMesaVisible(mesa.id, mesa.estadoPanel);
   const comandasCocinaActivas = cocina.filter((c) =>
     isEstadoPanelActivo(c.estadoPanel),
   ).length;
@@ -52,9 +53,9 @@ export function MesaCard({
             {labelMesaOperativa(mesa)}
           </p>
         </div>
-        {activas > 0 && (
+        {ticketsVisibles > 0 && (
           <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs font-bold">
-            {activas}
+            {ticketsVisibles}
           </span>
         )}
       </button>
