@@ -15,7 +15,7 @@ import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 async function ensureCatalogoRemoto() {
   if (!usesRemoteData()) return;
   try {
-    await fetch("/api/catalogo/ensure");
+    await fetch("/api/catalogo/ensure", { cache: "no-store" });
   } catch {
     /* reintento en recargar */
   }
@@ -28,11 +28,10 @@ export function useCatalogo() {
   const recargar = useCallback(async () => {
     setCargando(true);
     try {
-      let lista = await getCatalogo();
-      if (lista.length === 0 && usesRemoteData()) {
+      if (usesRemoteData()) {
         await ensureCatalogoRemoto();
-        lista = await getCatalogo();
       }
+      const lista = await getCatalogo();
       setProductos(lista);
     } finally {
       setCargando(false);

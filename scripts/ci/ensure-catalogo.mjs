@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Asegura catálogo por defecto en Supabase vía API Vercel.
+ * Asegura catálogo por defecto en Supabase vía API Vercel y comprueba refrescos/cervezas.
  */
 import { getVercelConfig } from "./vercel-client.mjs";
 
@@ -21,8 +21,12 @@ async function main() {
       console.log(JSON.stringify(data, null, 2));
 
       if (res.ok && data.productCount > 0) {
-        console.log("\n✓ Catálogo listo.");
-        process.exit(0);
+        const refrescosOk =
+          !data.synced || (data.inserted ?? 0) > 0 || data.productCount >= 250;
+        if (refrescosOk) {
+          console.log("\n✓ Catálogo listo.");
+          process.exit(0);
+        }
       }
     } catch {
       console.log("… esperando deploy /api/catalogo/ensure");
