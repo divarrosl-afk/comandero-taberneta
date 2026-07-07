@@ -162,7 +162,7 @@ describe("ticket-kitchen", () => {
     expect(comandaToTicketBarra(comanda)).toBeNull();
   });
 
-  it("platos repetidos con mods distintas muestran #1 y #2", () => {
+  it("platos repetidos con mods distintas agregan cantidad por mod", () => {
     const comanda = comandaCocinaFixture({
       entrantes: [],
       primeros: [],
@@ -184,8 +184,8 @@ describe("ticket-kitchen", () => {
     });
     const texto = formatKitchenTicketPlain(comanda, "cocina");
     expect(texto).toContain("2 HAMBURGUESAS ANGUS");
-    expect(texto).toContain("#1");
-    expect(texto).toContain("#2");
+    expect(texto).not.toContain("#1");
+    expect(texto).not.toContain("#2");
     expect(texto).toContain(" - 1 MUY HECHO");
     expect(texto).toContain(" - 1 POCO HECHO");
   });
@@ -212,8 +212,8 @@ describe("ticket-kitchen", () => {
     });
     const texto = formatKitchenTicketPlain(comanda, "cocina");
     expect(texto).toContain("3 ENSALADAS");
-    expect(texto).toContain("#1-2");
-    expect(texto).toContain("#3");
+    expect(texto).not.toContain("#1");
+    expect(texto).not.toContain("#3");
     expect(texto).toContain(" - 2 CHAMPIÑONES");
     expect(texto).toContain(" - 1 PATATAS FRITAS");
   });

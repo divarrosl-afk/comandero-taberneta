@@ -294,19 +294,11 @@ function lineasGrupo(grupo: GrupoImpresion): string[] {
     return lineas;
   }
 
-  let idx = 1;
   const conteoMods = new Map<string, number>();
 
   for (const variante of variantes) {
     const u = variante[0]!;
-    const count = variante.length;
-    if (count > 1) {
-      lineas.push(`${MARK_INDENT}#${idx}-${idx + count - 1}`);
-    } else {
-      lineas.push(`${MARK_INDENT}#${idx}`);
-    }
-    agregarConteoMods(conteoMods, u.bullets, count);
-    idx += count;
+    agregarConteoMods(conteoMods, u.bullets, variante.length);
   }
 
   lineas.push(...lineasModsAgregados(conteoMods));
