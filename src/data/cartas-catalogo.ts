@@ -197,6 +197,60 @@ function crearDesdeCategorias<
   return productos;
 }
 
+const REFRESCOS_BEBIDAS = [
+  "Coca-Cola normal vidrio",
+  "Coca-Cola normal lata",
+  "Coca-Cola Zero vidrio",
+  "Coca-Cola Zero lata",
+  "Vichy",
+  "Nestea",
+  "Fanta naranja",
+  "Fanta limón",
+  "Aquarius naranja",
+  "Aquarius limón",
+  "Schweppes tónica",
+  "Schweppes limón",
+  "Schweppes naranja",
+  "Rockstar",
+  "Fanta limón lata",
+  "Fanta naranja lata",
+  "Aquarius limón lata",
+  "Aquarius naranja lata",
+  "Zumo natural",
+  "Zumo bote melocotón",
+  "Zumo bote naranja",
+  "Zumo bote piña",
+  "Cacaolat",
+  "ColaCao",
+] as const;
+
+const CERVEZAS_BEBIDAS = [
+  "DAMM mediana",
+  "Torrada DAMM",
+  "0,0 Azul DAMM",
+  "Quinto DAMM",
+  "Quinto 0,0 Azul",
+  "Clara",
+  "Clara manual",
+  "Caña",
+  "Caña pequeña",
+  "Zurito",
+  "Voll-Damm",
+  "Turia",
+  "18/70",
+  "Copa tinto casa",
+  "Copa tinto Rioja",
+  "Copa blanco casa",
+  "Copa blanco Verdejo",
+  "Copa cava casa",
+  "Chupito hierbas",
+  "Chupito café",
+  "Chupito orujo blanco",
+  "Chupito hostia",
+  "Chupito crema hostia",
+  "Chupito crema orujo",
+] as const;
+
 export function crearCatalogoCartas(): ProductoCatalogo[] {
   const almuerzo = crearDesdeCategorias(
     CARTAS_RESTAURANTE.cartaAlmuerzo,
@@ -222,36 +276,9 @@ export function crearCatalogoCartas(): ProductoCatalogo[] {
     "bebidas",
   );
 
-  const refrescos = bebidasDesdeLista(
-    [
-      "CocaCola normal vidrio",
-      "CocaCola normal lata",
-      "CocaCola Zero vidrio",
-      "CocaCola Zero lata",
-      "Vichy",
-      "Nestea",
-      "Fanta naranja",
-      "Fanta limón",
-      "Aquarius naranja",
-      "Aquarius limón",
-      "Schweppes tónica",
-      "Schweppes limón",
-      "Schweppes naranja",
-      "Rockstar",
-      "Fanta limón lata",
-      "Fanta naranja lata",
-      "Aquarius limón lata",
-      "Aquarius naranja lata",
-    ],
-    "refrescos",
-    1000,
-  );
+  const refrescos = bebidasDesdeLista([...REFRESCOS_BEBIDAS], "refrescos", 1000);
 
-  const cervezas = bebidasDesdeLista(
-    ["DAMM mediana", "Torrada +DAMM", "0,0 Azul DAMM"],
-    "cervezas",
-    2000,
-  );
+  const cervezas = bebidasDesdeLista([...CERVEZAS_BEBIDAS], "cervezas", 2000);
 
   const postres = CARTAS_RESTAURANTE.cartaVinosPostres.postres.map(
     (item, i) =>
