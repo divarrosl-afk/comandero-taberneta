@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { BottomBar } from "@/components/ui/BottomBar";
 import { MesaSelector } from "@/components/comanda/MesaSelector";
@@ -10,6 +10,7 @@ import { CafesSeccionPanel } from "@/components/postres/nueva/CafesSeccionPanel"
 import { PostresObservacionesSection } from "@/components/postres/nueva/PostresObservacionesSection";
 import { PostresSeccionPanel } from "@/components/postres/nueva/PostresSeccionPanel";
 import type { usePostresForm } from "@/hooks/usePostresForm";
+import { scrollSeccionAlInicio } from "@/lib/ui/scroll-seccion";
 
 type PostresFormActions = ReturnType<typeof usePostresForm>;
 
@@ -80,6 +81,20 @@ export function PostresEditView({
 }: PostresEditViewProps) {
   const [tab, setTab] = useState<TabPostres>("mesa");
   const [busqueda, setBusqueda] = useState("");
+  const tabContentRef = useRef<HTMLDivElement>(null);
+  const scrollTabAlInicio = useRef(false);
+
+  useEffect(() => {
+    if (!scrollTabAlInicio.current) return;
+    scrollTabAlInicio.current = false;
+    scrollSeccionAlInicio(tabContentRef.current);
+  }, [tab]);
+
+  const cambiarTab = (t: TabPostres) => {
+    scrollTabAlInicio.current = true;
+    setTab(t);
+    setBusqueda("");
+  };
 
   return (
     <>
@@ -117,10 +132,7 @@ export function PostresEditView({
             <button
               key={t.id}
               type="button"
-              onClick={() => {
-                setTab(t.id);
-                setBusqueda("");
-              }}
+              onClick={() => cambiarTab(t.id)}
               className={[
                 "shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-95",
                 tab === t.id
@@ -134,7 +146,7 @@ export function PostresEditView({
         </div>
       </nav>
 
-      <div className="mt-4 space-y-4 pb-4">
+      <div ref={tabContentRef} className="mt-4 space-y-4 pb-4 scroll-mt-28">
         {tab === "mesa" && (
           <div className="space-y-6">
             <MesaSelector mesaSeleccionada={form.mesa} onSelect={onSetMesa} />

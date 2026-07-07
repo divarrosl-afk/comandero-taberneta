@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
@@ -17,6 +17,7 @@ import type {
   SeccionPlatos,
 } from "@/types/comanda";
 import type { ProductoCatalogo } from "@/types/catalogo";
+import { scrollSeccionAlInicio } from "@/lib/ui/scroll-seccion";
 
 const SECCION_A_CATALOGO: Record<SeccionPlatos, SeccionCatalogo> = {
   entrantes: "entrantes",
@@ -84,12 +85,27 @@ export function SeccionPlatosPanel({
   const [origen, setOrigen] = useState<OrigenPlatos>(() =>
     origenInicial(seccion, menu?.activo ?? false),
   );
+  const panelRef = useRef<HTMLDivElement>(null);
+  const origenInicializado = useRef(false);
+
+  useLayoutEffect(() => {
+    if (!origenInicializado.current) {
+      origenInicializado.current = true;
+      return;
+    }
+    scrollSeccionAlInicio(panelRef.current);
+  }, [origen]);
 
   const conSelectorOrigen =
     seccion === "entrantes" || seccion === "primeros" || seccion === "segundos";
 
   return (
     <>
+      <div
+        ref={panelRef}
+        data-seccion-panel={seccion}
+        className="scroll-mt-28"
+      >
       <SectionCard
         title={titulo}
         active={active}
@@ -153,6 +169,7 @@ export function SeccionPlatosPanel({
           ))}
         </div>
       </SectionCard>
+      </div>
 
       <ConfirmDialog
         open={confirmClear}

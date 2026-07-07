@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { BottomBar } from "@/components/ui/BottomBar";
 import { MesaSelector } from "@/components/comanda/MesaSelector";
@@ -17,6 +17,7 @@ import {
 } from "@/hooks/useScrollToPlatoCard";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 import type { SeccionPlatos } from "@/types/comanda";
+import { scrollSeccionAlInicio } from "@/lib/ui/scroll-seccion";
 
 const CATALOGO_A_PLATOS: Partial<Record<SeccionCatalogo, SeccionPlatos>> = {
   entrantes: "entrantes",
@@ -78,13 +79,22 @@ export function ComandaEditView({
   const [tab, setTab] = useState<TabComanda>("mesa");
   const [busqueda, setBusqueda] = useState("");
   const [platoEnfocado, setPlatoEnfocado] = useState<PlatoEnfocado | null>(null);
+  const tabContentRef = useRef<HTMLDivElement>(null);
+  const scrollTabAlInicio = useRef(false);
 
   const limpiarEnfoque = useCallback(() => setPlatoEnfocado(null), []);
   useScrollToPlatoCard(platoEnfocado, limpiarEnfoque);
 
+  useEffect(() => {
+    if (!scrollTabAlInicio.current) return;
+    scrollTabAlInicio.current = false;
+    scrollSeccionAlInicio(tabContentRef.current);
+  }, [tab]);
+
   const seleccionarMesa = useCallback(
     (mesaId: string) => {
       onSetMesa(mesaId);
+      scrollTabAlInicio.current = true;
       setTab("entrantes");
       setBusqueda("");
       setPlatoEnfocado(null);
@@ -94,7 +104,13 @@ export function ComandaEditView({
 
   useEffect(() => {
     if (form.mesa) {
-      setTab((t) => (t === "mesa" ? "entrantes" : t));
+      setTab((t) => {
+        if (t === "mesa") {
+          scrollTabAlInicio.current = true;
+          return "entrantes";
+        }
+        return t;
+      });
     }
   }, [form.mesa]);
 
@@ -146,13 +162,14 @@ export function ComandaEditView({
       <SectionTabs
         active={tab}
         onChange={(t) => {
+          scrollTabAlInicio.current = true;
           setTab(t);
           setBusqueda("");
           setPlatoEnfocado(null);
         }}
       />
 
-      <div className="mt-4 space-y-4 pb-4">
+      <div ref={tabContentRef} className="mt-4 space-y-4 pb-4 scroll-mt-28">
         {tab === "mesa" && (
           <div className="space-y-6">
             <MesaSelector mesaSeleccionada={form.mesa} onSelect={seleccionarMesa} />
