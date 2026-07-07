@@ -8,6 +8,7 @@ import {
 } from "@/lib/comandas/comandas-service";
 import {
   actualizarEstadoPostres,
+  eliminarPostres,
 } from "@/lib/postres/postres-service";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
 import type { ComandaCocina } from "@/types/comanda";
@@ -64,6 +65,14 @@ export function usePanel() {
     [recargar],
   );
 
+  const eliminarPostresComanda = useCallback(
+    async (id: string) => {
+      await eliminarPostres(id);
+      await recargar();
+    },
+    [recargar],
+  );
+
   const cocinaActivas = comandasCocina.filter((c) =>
     isEstadoPanelActivo(normalizeEstadoPanel(c.estadoPanel)),
   );
@@ -81,5 +90,6 @@ export function usePanel() {
     cambiarEstadoCocina,
     cambiarEstadoPostres,
     eliminarCocina,
+    eliminarPostresComanda,
   };
 }

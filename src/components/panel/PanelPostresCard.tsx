@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getEstadoXCafeLabel } from "@/data/postres-catalogo";
 import { formatHora } from "@/lib/historial/items";
 import { resolveNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
@@ -16,16 +17,19 @@ interface PanelPostresCardProps {
   comanda: ComandaPostres;
   mesas?: MesaConfig[];
   onCambiarEstado: (estado: EstadoPanel) => void;
+  onEliminar: () => void | Promise<void>;
 }
 
 export function PanelPostresCard({
   comanda,
   mesas = [],
   onCambiarEstado,
+  onEliminar,
 }: PanelPostresCardProps) {
   const nombreMesa = resolveNombreMesaComanda(comanda, mesas);
   const [reimpresionMsg, setReimpresionMsg] = useState<string | null>(null);
   const [reimpresionError, setReimpresionError] = useState(false);
+  const [confirmEliminar, setConfirmEliminar] = useState(false);
 
   const handleReimprimir = async () => {
     setReimpresionMsg("Enviando a impresora…");
@@ -109,6 +113,13 @@ export function PanelPostresCard({
         <Button variant="outline" fullWidth onClick={handleReimprimir}>
           Reimprimir ticket
         </Button>
+        <Button
+          variant="ghost"
+          fullWidth
+          onClick={() => setConfirmEliminar(true)}
+        >
+          Eliminar
+        </Button>
         {reimpresionMsg && (
           <p
             className={[
@@ -120,6 +131,18 @@ export function PanelPostresCard({
           </p>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmEliminar}
+        title="¿Eliminar comanda?"
+        message={`Se quitará la comanda de postres de ${nombreMesa} (${formatHora(comanda.creadaEn)}) del panel.`}
+        confirmLabel="Eliminar"
+        onConfirm={() => {
+          void onEliminar();
+          setConfirmEliminar(false);
+        }}
+        onCancel={() => setConfirmEliminar(false)}
+      />
     </article>
   );
 }

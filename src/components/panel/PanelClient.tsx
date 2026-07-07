@@ -41,6 +41,7 @@ function PanelContent() {
     cambiarEstadoCocina,
     cambiarEstadoPostres,
     eliminarCocina,
+    eliminarPostresComanda,
   } = usePanel();
 
   const listaCocina = tab === "cocina" ? cocinaActivas : [];
@@ -239,6 +240,10 @@ function PanelContent() {
               onCambiarEstado={async (estado) => {
                 await cambiarEstadoPostres(detallePostres.id, estado);
                 setDetallePostres({ ...detallePostres, estadoPanel: estado });
+              }}
+              onEliminar={async () => {
+                await eliminarPostresComanda(detallePostres.id);
+                setDetallePostres(null);
               }}
             />
           )}
