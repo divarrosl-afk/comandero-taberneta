@@ -1,4 +1,5 @@
 import { CARTAS_RESTAURANTE, type ItemCarta } from "@/data/cartas-restaurante";
+import { crearProductosCafesCatalogo } from "@/data/cafes-catalogo";
 import { createId } from "@/lib/id/create-id";
 import type {
   CartaServicio,
@@ -291,7 +292,15 @@ export function crearCatalogoCartas(): ProductoCatalogo[] {
       }),
   );
 
-  return [...almuerzo, ...cenas, ...vinos, ...refrescos, ...cervezas, ...postres];
+  return [
+    ...almuerzo,
+    ...cenas,
+    ...vinos,
+    ...refrescos,
+    ...cervezas,
+    ...postres,
+    ...crearProductosCafesCatalogo(),
+  ];
 }
 
 function bebidasDesdeLista(

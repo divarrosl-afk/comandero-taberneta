@@ -15,6 +15,7 @@ export function PostresFrecuentesGrid({
   return (
     <ProductosRapidosGrid
       seccion="postres"
+      categoriaCarta="postres"
       alcanceSecciones={["postres"]}
       busqueda={busqueda}
       onSelect={onSelect}

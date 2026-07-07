@@ -97,11 +97,16 @@ export function CartaConfigClient() {
   const iniciarNuevo = () => {
     setNuevo(true);
     const base = crearProductoVacio(seccionParaNuevo());
+    const esCafe =
+      categoria === "cafes" ||
+      categoria === "carajillos" ||
+      categoria === "infusiones";
     setEditando({
       ...base,
       tipo: "carta",
       cartaServicio: carta,
       categoriaCarta: categoria,
+      usosComanda: esCafe ? [] : categoria === "postres" ? ["postres"] : base.usosComanda,
     });
   };
 

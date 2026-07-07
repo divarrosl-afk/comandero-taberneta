@@ -43,7 +43,10 @@ export type CategoriaCarta =
   | "corpinnats"
   | "refrescos"
   | "cervezas"
-  | "postres";
+  | "postres"
+  | "cafes"
+  | "carajillos"
+  | "infusiones";
 
 export const CARTAS_SERVICIO: {
   id: CartaServicio;
@@ -88,7 +91,12 @@ export const CATEGORIAS_CARTA: Record<
     { id: "cavas", label: "Cavas" },
     { id: "corpinnats", label: "Corpinnats" },
   ],
-  postres: [{ id: "postres", label: "Postres" }],
+  postres: [
+    { id: "postres", label: "Postres" },
+    { id: "cafes", label: "Cafés" },
+    { id: "carajillos", label: "Carajillos" },
+    { id: "infusiones", label: "Infusiones" },
+  ],
 };
 
 export function labelCategoriaCarta(

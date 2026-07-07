@@ -47,7 +47,7 @@ export function productoParaUsoComanda(
   producto: ProductoCatalogo,
   uso: UsoComanda,
 ): boolean {
-  if (producto.usosComanda?.length) {
+  if (producto.usosComanda !== undefined) {
     return producto.usosComanda.includes(uso);
   }
   if (uso === "entrantes") return producto.seccion === "entrantes";

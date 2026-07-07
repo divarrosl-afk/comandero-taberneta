@@ -12,7 +12,7 @@ import {
 import { CartaMenuSelector } from "@/components/carta/CartaMenuSelector";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import { productosMenuParaComanda } from "@/lib/menu-dia/menu-platos-comanda";
-import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
+import type { ProductoCatalogo, SeccionCatalogo, CategoriaCarta } from "@/types/catalogo";
 import type { SeccionPlatos } from "@/types/comanda";
 
 interface ProductosRapidosGridProps {
@@ -21,6 +21,7 @@ interface ProductosRapidosGridProps {
   alcanceSecciones?: SeccionCatalogo[];
   busqueda?: string;
   origen?: OrigenPlatos;
+  categoriaCarta?: CategoriaCarta;
   onSelect: (producto: ProductoCatalogo) => void;
 }
 
@@ -30,6 +31,7 @@ export function ProductosRapidosGrid({
   alcanceSecciones,
   busqueda = "",
   origen,
+  categoriaCarta,
   onSelect,
 }: ProductosRapidosGridProps) {
   const { productos } = useCatalogo();
@@ -42,13 +44,20 @@ export function ProductosRapidosGrid({
   const uso = aUsoComanda(seccionPlatos ?? seccion);
   const enBusqueda = busqueda.trim().length > 0;
 
+  const filtrarCategoria = (lista: ProductoCatalogo[]) => {
+    if (!categoriaCarta) return lista;
+    return lista.filter((p) => p.categoriaCarta === categoriaCarta);
+  };
+
   const lista = useMemo(() => {
     if (enBusqueda) {
       const alcance = alcanceSecciones ?? [seccion];
-      const resultados = buscarEnCatalogo(productos, busqueda, {
-        secciones: alcance,
-        soloActivos: true,
-      });
+      const resultados = filtrarCategoria(
+        buscarEnCatalogo(productos, busqueda, {
+          secciones: alcance,
+          soloActivos: true,
+        }),
+      );
       if (!origen) return resultados;
       return filtrarProductosComanda(resultados, { uso, origen });
     }
@@ -65,7 +74,9 @@ export function ProductosRapidosGrid({
         return delMenu;
       }
 
-      const filtrados = filtrarProductosComanda(productos, { uso, origen });
+      const filtrados = filtrarCategoria(
+        filtrarProductosComanda(productos, { uso, origen }),
+      );
 
       return filtrados.sort(
         (a, b) =>
@@ -73,10 +84,12 @@ export function ProductosRapidosGrid({
       );
     }
 
-    return buscarEnCatalogo(productos, "", {
-      secciones: [seccion],
-      soloActivos: true,
-    });
+    return filtrarCategoria(
+      buscarEnCatalogo(productos, "", {
+        secciones: [seccion],
+        soloActivos: true,
+      }),
+    );
   }, [
     productos,
     busqueda,
@@ -87,6 +100,7 @@ export function ProductosRapidosGrid({
     uso,
     menu,
     seccionPlatos,
+    categoriaCarta,
   ]);
 
   if (!enBusqueda && origen === "menu" && !menu?.activo) {
