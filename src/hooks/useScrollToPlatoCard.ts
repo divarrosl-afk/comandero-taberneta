@@ -58,8 +58,8 @@ export function useScrollToPlatoCard(
 
     timeouts.push(
       setTimeout(() => {
-        if (!scrolled) {
-          scrollToPlatoCard(platoEnfocado.id);
+        if (scrolled) return;
+        if (scrollToPlatoCard(platoEnfocado.id)) {
           scrolled = true;
           finalizar();
         }
