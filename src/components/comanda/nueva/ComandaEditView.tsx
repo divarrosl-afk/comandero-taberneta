@@ -11,6 +11,10 @@ import { ObservacionesSection } from "@/components/comanda/nueva/ObservacionesSe
 import { SeccionPlatosPanel } from "@/components/comanda/nueva/SeccionPlatosPanel";
 import { SectionTabs, type TabComanda } from "@/components/comanda/nueva/SectionTabs";
 import type { useComandaForm } from "@/hooks/useComandaForm";
+import {
+  useScrollToPlatoCard,
+  type PlatoEnfocado,
+} from "@/hooks/useScrollToPlatoCard";
 import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
 import type { SeccionPlatos } from "@/types/comanda";
 
@@ -73,12 +77,10 @@ export function ComandaEditView({
 }: ComandaEditViewProps) {
   const [tab, setTab] = useState<TabComanda>("mesa");
   const [busqueda, setBusqueda] = useState("");
-  const [platoEnfocado, setPlatoEnfocado] = useState<{
-    seccion: SeccionPlatos;
-    id: string;
-  } | null>(null);
+  const [platoEnfocado, setPlatoEnfocado] = useState<PlatoEnfocado | null>(null);
 
   const limpiarEnfoque = useCallback(() => setPlatoEnfocado(null), []);
+  useScrollToPlatoCard(platoEnfocado, limpiarEnfoque);
 
   const seleccionarCatalogo = (
     seccionTab: SeccionPlatos,
@@ -94,7 +96,7 @@ export function ComandaEditView({
     if (tab !== destino) {
       setTab(destino);
     }
-    setPlatoEnfocado({ seccion: destino, id: platoId });
+    setPlatoEnfocado({ seccion: destino, id: platoId, nonce: Date.now() });
   };
 
   return (
@@ -153,7 +155,6 @@ export function ComandaEditView({
             platoEnfocadoId={
               platoEnfocado?.seccion === "entrantes" ? platoEnfocado.id : undefined
             }
-            onPlatoEnfocado={limpiarEnfoque}
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
             onRemove={(id) => onRemovePlato("entrantes", id)}
@@ -181,7 +182,6 @@ export function ComandaEditView({
             platoEnfocadoId={
               platoEnfocado?.seccion === "primeros" ? platoEnfocado.id : undefined
             }
-            onPlatoEnfocado={limpiarEnfoque}
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
             onRemove={(id) => onRemovePlato("primeros", id)}
@@ -209,7 +209,6 @@ export function ComandaEditView({
             platoEnfocadoId={
               platoEnfocado?.seccion === "segundos" ? platoEnfocado.id : undefined
             }
-            onPlatoEnfocado={limpiarEnfoque}
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
             onRemove={(id) => onRemovePlato("segundos", id)}
@@ -236,7 +235,6 @@ export function ComandaEditView({
             platoEnfocadoId={
               platoEnfocado?.seccion === "bebidas" ? platoEnfocado.id : undefined
             }
-            onPlatoEnfocado={limpiarEnfoque}
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
             onRemove={(id) => onRemovePlato("bebidas", id)}
