@@ -6,8 +6,8 @@ import { MesaCard } from "@/components/mesas/MesaCard";
 import { Button } from "@/components/ui/Button";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useMesasOperativas } from "@/hooks/useMesas";
+import { liberarMesaOperativa } from "@/lib/mesas/liberar-mesa-operativa";
 import {
-  liberarMesa,
   toggleMesaCobrando,
 } from "@/lib/mesas/estado-mesa";
 import { usesRemoteData } from "@/lib/data/backend";
@@ -81,8 +81,7 @@ export function MesasMapClient() {
                         refrescar();
                       }}
                       onLiberar={() => {
-                        liberarMesa(mesa.id);
-                        refrescar();
+                        void liberarMesaOperativa(mesa.id).then(() => refrescar());
                       }}
                     />
                   ))}

@@ -15,7 +15,7 @@ interface MesaCardProps {
   mesa: MesaOperativa;
   operativaRevision: number;
   onToggleCobrando: () => void;
-  onLiberar: () => void;
+  onLiberar: () => void | Promise<void>;
 }
 
 export function MesaCard({
@@ -102,8 +102,15 @@ export function MesaCard({
             >
               {mesa.estado === "cobrando" ? "✓ Cobrando" : "Cobrando"}
             </Button>
-            <Button variant="ghost" size="sm" fullWidth onClick={onLiberar}>
-              Liberar
+            <Button
+              variant="ghost"
+              size="sm"
+              fullWidth
+              onClick={() => {
+                void Promise.resolve(onLiberar());
+              }}
+            >
+              Mesa libre
             </Button>
           </div>
         </div>
