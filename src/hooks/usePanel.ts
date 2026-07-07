@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAppSync } from "@/hooks/useAppSync";
 import {
   actualizarEstadoComanda,
+  eliminarComanda,
 } from "@/lib/comandas/comandas-service";
 import {
   actualizarEstadoPostres,
@@ -55,6 +56,14 @@ export function usePanel() {
     [recargar],
   );
 
+  const eliminarCocina = useCallback(
+    async (id: string) => {
+      await eliminarComanda(id);
+      await recargar();
+    },
+    [recargar],
+  );
+
   const cocinaActivas = comandasCocina.filter((c) =>
     isEstadoPanelActivo(normalizeEstadoPanel(c.estadoPanel)),
   );
@@ -71,5 +80,6 @@ export function usePanel() {
     recargar,
     cambiarEstadoCocina,
     cambiarEstadoPostres,
+    eliminarCocina,
   };
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { etiquetaTipoPlato } from "@/lib/comanda/tipo-plato";
 import { resolveNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { formatHora } from "@/lib/historial/items";
@@ -57,6 +58,7 @@ interface PanelComandaCardProps {
   mesas?: MesaConfig[];
   postresMesa?: ComandaPostres;
   onCambiarEstado: (estado: EstadoPanel) => void;
+  onEliminar: () => void | Promise<void>;
 }
 
 export function PanelComandaCard({
@@ -64,10 +66,12 @@ export function PanelComandaCard({
   mesas = [],
   postresMesa,
   onCambiarEstado,
+  onEliminar,
 }: PanelComandaCardProps) {
   const nombreMesa = resolveNombreMesaComanda(comanda, mesas);
   const [reimpresionMsg, setReimpresionMsg] = useState<string | null>(null);
   const [reimpresionError, setReimpresionError] = useState(false);
+  const [confirmEliminar, setConfirmEliminar] = useState(false);
 
   const handleReimprimir = async () => {
     setReimpresionMsg("Enviando a impresora…");
@@ -126,6 +130,13 @@ export function PanelComandaCard({
         <Button variant="outline" fullWidth onClick={handleReimprimir}>
           Reimprimir ticket
         </Button>
+        <Button
+          variant="ghost"
+          fullWidth
+          onClick={() => setConfirmEliminar(true)}
+        >
+          Eliminar
+        </Button>
         {reimpresionMsg && (
           <p
             className={[
@@ -137,6 +148,18 @@ export function PanelComandaCard({
           </p>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmEliminar}
+        title="¿Eliminar comanda?"
+        message={`Se quitará la comanda de ${nombreMesa} (${formatHora(comanda.creadaEn)}) del panel.`}
+        confirmLabel="Eliminar"
+        onConfirm={() => {
+          void onEliminar();
+          setConfirmEliminar(false);
+        }}
+        onCancel={() => setConfirmEliminar(false)}
+      />
     </article>
   );
 }
