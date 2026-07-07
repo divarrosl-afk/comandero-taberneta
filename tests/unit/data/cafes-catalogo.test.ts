@@ -5,6 +5,7 @@ import {
   etiquetaTicketDeProductoCafe,
 } from "@/data/cafes-catalogo";
 import { productoParaUsoComanda } from "@/lib/carta/carta-admin";
+import { migrarProducto } from "@/lib/carta/migrate-producto";
 
 describe("cafes-catalogo", () => {
   it("crea productos por categoría", () => {
@@ -28,5 +29,23 @@ describe("cafes-catalogo", () => {
   it("productos de café no aparecen en uso postres", () => {
     const cafe = crearProductosCafesCatalogo()[0];
     expect(productoParaUsoComanda(cafe, "postres")).toBe(false);
+  });
+
+  it("migra cafés legacy sin meta a categoría cafes", () => {
+    const migrado = migrarProducto({
+      id: "legacy-cafe",
+      nombre: "Café solo",
+      seccion: "postres",
+      tipo: "carta",
+      activo: true,
+      agotado: false,
+      favorito: false,
+      orden: 10,
+      ingredientes: [],
+      alergenos: [],
+      recomendado: false,
+    });
+    expect(migrado.categoriaCarta).toBe("cafes");
+    expect(migrado.usosComanda).toEqual([]);
   });
 });

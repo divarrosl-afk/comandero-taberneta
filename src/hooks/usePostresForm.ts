@@ -14,7 +14,6 @@ import {
 } from "@/lib/storage/borrador-postres";
 import type { ProductoCatalogo } from "@/types/catalogo";
 import type {
-  EstadoCafeX,
   EstadoPostreX,
   PostreFormItem,
   PostresFormState,
@@ -262,13 +261,6 @@ export function usePostresForm(
     }));
   }, []);
 
-  const setEstadoXCafe = useCallback((estado: EstadoCafeX | null) => {
-    setForm((prev) => ({
-      ...prev,
-      estadoXCafe: prev.estadoXCafe === estado ? null : estado,
-    }));
-  }, []);
-
   const toggleClH = useCallback(() => {
     setForm((prev) => ({ ...prev, clH: !prev.clH }));
   }, []);
@@ -344,7 +336,6 @@ export function usePostresForm(
     duplicateCafe,
     clearCafes,
     setEstadoX,
-    setEstadoXCafe,
     toggleClH,
     setObservacion,
     addObservacion,

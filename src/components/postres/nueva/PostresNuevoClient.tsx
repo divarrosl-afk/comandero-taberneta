@@ -81,7 +81,6 @@ function PostresNuevoForm() {
           onRemoveCafe={formActions.removeCafe}
           onDuplicateCafe={formActions.duplicateCafe}
           onClearCafes={formActions.clearCafes}
-          onSetEstadoXCafe={formActions.setEstadoXCafe}
           onSetObservacion={formActions.setObservacion}
           onAddObservacion={formActions.addObservacion}
           onRemoveObservacion={formActions.removeObservacion}

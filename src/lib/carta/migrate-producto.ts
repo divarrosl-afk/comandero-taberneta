@@ -67,6 +67,10 @@ function referenciaCatalogoDefault(): Map<string, ProductoCatalogo> {
   return referenciaPorNombre;
 }
 
+function esCategoriaCafe(categoria?: CategoriaCarta): boolean {
+  return Boolean(categoria && CATEGORIAS_CAFE.includes(categoria));
+}
+
 function enriquecerProductoDesdeDefault(
   producto: ProductoCatalogo,
 ): ProductoCatalogo {
@@ -75,10 +79,15 @@ function enriquecerProductoDesdeDefault(
   );
   if (!ref) return producto;
 
+  const categoriaCorregida =
+    producto.categoriaCarta === "postres" && esCategoriaCafe(ref.categoriaCarta)
+      ? ref.categoriaCarta
+      : (producto.categoriaCarta ?? ref.categoriaCarta);
+
   return {
     ...producto,
     cartaServicio: producto.cartaServicio ?? ref.cartaServicio,
-    categoriaCarta: producto.categoriaCarta ?? ref.categoriaCarta,
+    categoriaCarta: categoriaCorregida,
     usosComanda: producto.usosComanda !== undefined
       ? producto.usosComanda
       : ref.usosComanda,
@@ -124,26 +133,32 @@ export function migrarProducto(raw: Partial<ProductoCatalogo>): ProductoCatalogo
 
   const decoded = decodeProductoMeta(raw.notasInternas);
   const tipo = inferirTipo(seccion, suplemento, raw.tipo);
+  const nombre = String(raw.nombre ?? "").trim();
+  const refNombre = referenciaCatalogoDefault().get(normalizarNombreCatalogo(nombre));
   const cartaServicio = inferirCartaServicio(
     seccion,
     raw.cartaServicio ?? decoded.meta.cartaServicio,
     tipo,
   );
-  const usosComanda = inferirUsosComanda(
-    seccion,
-    raw.usosComanda ?? decoded.meta.usosComanda,
-    raw.categoriaCarta ?? decoded.meta.categoriaCarta,
-  );
 
   const categoriaCarta =
     raw.categoriaCarta ??
     decoded.meta.categoriaCarta ??
+    refNombre?.categoriaCarta ??
     (seccion === "postres" ? "postres" : undefined);
+
+  const usosComanda = inferirUsosComanda(
+    seccion,
+    raw.usosComanda ?? decoded.meta.usosComanda,
+    categoriaCarta,
+  );
 
   return enriquecerProductoDesdeDefault({
     id: raw.id ?? createId(),
-    nombre: (raw.nombre ?? "").trim(),
-    nombreCorto: raw.nombreCorto?.trim() || undefined,
+    nombre,
+    nombreCorto: raw.nombreCorto
+      ? String(raw.nombreCorto).trim() || undefined
+      : undefined,
     seccion,
     tipo,
     cartaServicio,

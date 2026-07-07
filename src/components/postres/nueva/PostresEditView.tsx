@@ -40,7 +40,6 @@ interface PostresEditViewProps {
   onRemoveCafe: PostresFormActions["removeCafe"];
   onDuplicateCafe: PostresFormActions["duplicateCafe"];
   onClearCafes: PostresFormActions["clearCafes"];
-  onSetEstadoXCafe: PostresFormActions["setEstadoXCafe"];
   onSetObservacion: PostresFormActions["setObservacion"];
   onAddObservacion: PostresFormActions["addObservacion"];
   onRemoveObservacion: PostresFormActions["removeObservacion"];
@@ -51,7 +50,7 @@ interface PostresEditViewProps {
 
 function getValidationHint(form: PostresFormActions["form"]): string | undefined {
   if (!form.mesa) return "Selecciona una mesa";
-  return "Añade al menos un postre, café o X sin café";
+  return "Añade al menos un postre o café";
 }
 
 export function PostresEditView({
@@ -71,7 +70,6 @@ export function PostresEditView({
   onRemoveCafe,
   onDuplicateCafe,
   onClearCafes,
-  onSetEstadoXCafe,
   onSetObservacion,
   onAddObservacion,
   onRemoveObservacion,
@@ -170,14 +168,12 @@ export function PostresEditView({
         {tab === "cafes" && (
           <CafesSeccionPanel
             cafes={form.cafes}
-            estadoXCafe={form.estadoXCafe}
             onUpdate={onUpdateCafe}
             onAdd={onAddCafe}
             onAddRapido={onAddCafeRapido}
             onRemove={onRemoveCafe}
             onDuplicate={onDuplicateCafe}
             onClear={onClearCafes}
-            onSetEstadoXCafe={onSetEstadoXCafe}
           />
         )}
 

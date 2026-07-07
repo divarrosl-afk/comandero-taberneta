@@ -114,11 +114,13 @@ export function crearProductosCafesCatalogo(): ProductoCatalogo[] {
 }
 
 export function etiquetaTicketDeProductoCafe(producto: ProductoCatalogo): string {
-  if (producto.nombreCorto?.trim()) return producto.nombreCorto.trim();
-  if (producto.categoriaCarta === "carajillos") {
-    return etiquetaCarajillo(producto.nombre);
+  const corto = producto.nombreCorto ? String(producto.nombreCorto).trim() : "";
+  if (corto) return corto;
+  const nombre = String(producto.nombre ?? "").trim();
+  if (producto.categoriaCarta === "carajillos" && nombre) {
+    return etiquetaCarajillo(nombre);
   }
-  return producto.nombre;
+  return nombre || "Café";
 }
 
 export function esProductoCafeCatalogo(producto: ProductoCatalogo): boolean {

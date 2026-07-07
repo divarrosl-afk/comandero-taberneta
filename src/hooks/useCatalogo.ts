@@ -26,18 +26,22 @@ export function useCatalogo() {
   const [productos, setProductos] = useState<ProductoCatalogo[]>([]);
   const [cargando, setCargando] = useState(true);
 
+  const refrescarLista = useCallback(async () => {
+    const lista = await getCatalogo();
+    setProductos(lista);
+  }, []);
+
   const recargar = useCallback(async () => {
     setCargando(true);
     try {
       if (usesRemoteData()) {
         await ensureCatalogoRemoto();
       }
-      const lista = await getCatalogo();
-      setProductos(lista);
+      await refrescarLista();
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [refrescarLista]);
 
   useEffect(() => {
     void recargar();
@@ -46,9 +50,9 @@ export function useCatalogo() {
   const guardar = useCallback(
     async (lista: ProductoCatalogo[]) => {
       await guardarCatalogo(lista);
-      await recargar();
+      await refrescarLista();
     },
-    [recargar],
+    [refrescarLista],
   );
 
   const agregar = useCallback(
@@ -79,9 +83,9 @@ export function useCatalogo() {
   const eliminar = useCallback(
     async (id: string) => {
       await eliminarProductoCatalogo(id);
-      await recargar();
+      await refrescarLista();
     },
-    [recargar],
+    [refrescarLista],
   );
 
   const restaurarDefault = useCallback(async () => {

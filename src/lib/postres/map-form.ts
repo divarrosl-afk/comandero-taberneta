@@ -53,8 +53,6 @@ export function formTieneCafes(form: PostresFormState): boolean {
 export function formPostresEsValido(form: PostresFormState): boolean {
   return (
     form.mesa !== null &&
-    (formTienePostres(form) ||
-      formTieneCafes(form) ||
-      form.estadoXCafe !== null)
+    (formTienePostres(form) || formTieneCafes(form))
   );
 }

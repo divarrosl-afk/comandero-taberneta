@@ -6,40 +6,33 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { PostreCard } from "@/components/postres/nueva/PostreCard";
 import { CafesFrecuentesGrid } from "@/components/postres/nueva/CafesFrecuentesGrid";
-import { EstadoXCafeSelector } from "@/components/postres/nueva/EstadoXCafeSelector";
-import type { EstadoCafeX, PostreFormItem } from "@/types/postres";
+import type { PostreFormItem } from "@/types/postres";
 import { scrollSeccionAlInicio } from "@/lib/ui/scroll-seccion";
 
 interface CafesSeccionPanelProps {
   cafes: PostreFormItem[];
-  estadoXCafe: EstadoCafeX | null;
   onUpdate: (id: string, cambios: Partial<PostreFormItem>) => void;
   onAdd: () => void;
   onAddRapido: (nombre: string) => void;
   onRemove: (id: string) => void;
   onDuplicate: (id: string) => void;
   onClear: () => void;
-  onSetEstadoXCafe: (estado: EstadoCafeX | null) => void;
 }
 
 export function CafesSeccionPanel({
   cafes,
-  estadoXCafe,
   onUpdate,
   onAdd,
   onAddRapido,
   onRemove,
   onDuplicate,
   onClear,
-  onSetEstadoXCafe,
 }: CafesSeccionPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
   const catalogoRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
-      <EstadoXCafeSelector value={estadoXCafe} onChange={onSetEstadoXCafe} />
-
       <SectionCard
         title="Cafés e infusiones"
         actions={

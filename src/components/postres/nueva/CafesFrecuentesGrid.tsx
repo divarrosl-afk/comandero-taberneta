@@ -98,13 +98,14 @@ export function CafesFrecuentesGrid({ onSelect }: CafesFrecuentesGridProps) {
   const [error, setError] = useState<string | null>(null);
 
   const porCategoria = useMemo(() => {
-    const cafes = productos.filter(
-      (p) => p.activo && p.categoriaCarta === "cafes",
+    const validos = productos.filter(
+      (p) => p?.id && typeof p.nombre === "string",
     );
-    const carajillos = productos.filter(
+    const cafes = validos.filter((p) => p.activo && p.categoriaCarta === "cafes");
+    const carajillos = validos.filter(
       (p) => p.activo && p.categoriaCarta === "carajillos",
     );
-    const infusiones = productos.filter(
+    const infusiones = validos.filter(
       (p) => p.activo && p.categoriaCarta === "infusiones",
     );
     const ordenar = (lista: ProductoCatalogo[]) =>
@@ -124,13 +125,13 @@ export function CafesFrecuentesGrid({ onSelect }: CafesFrecuentesGridProps) {
     const nombre = nombreNuevo.trim();
     const ticket = ticketNuevo.trim();
     const maxOrden =
-      porCategoria[
+      (porCategoria[
         categoriaAlta === "cafes"
           ? "cafes"
           : categoriaAlta === "carajillos"
             ? "carajillos"
             : "infusiones"
-      ].reduce((max, p) => Math.max(max, p.orden), 0) + 10;
+      ].reduce((max, p) => Math.max(max, p.orden ?? 0), 0) || 0) + 10;
 
     try {
       await agregar({
