@@ -230,8 +230,32 @@ function lineasSuplemento(tipo: TipoPlato | undefined, suplemento?: number): str
   return [`${MARK_DETAIL} +${suplemento} EUR`];
 }
 
-function lineasBullets(bullets: string[]): string[] {
-  return bullets.map((b) => `${MARK_DETAIL}${INDENT_MOD}${b}`);
+function lineasBulletsConCantidad(
+  bullets: string[],
+  cantidad: number,
+): string[] {
+  return bullets.map((b) => {
+    if (cantidad > 1) {
+      return `${MARK_DETAIL}${INDENT_MOD}${cantidad} ${b}`;
+    }
+    return `${MARK_DETAIL}${INDENT_MOD}${b}`;
+  });
+}
+
+function agregarConteoMods(
+  conteo: Map<string, number>,
+  bullets: string[],
+  unidades: number,
+): void {
+  for (const bullet of bullets) {
+    conteo.set(bullet, (conteo.get(bullet) ?? 0) + unidades);
+  }
+}
+
+function lineasModsAgregados(conteo: Map<string, number>): string[] {
+  return [...conteo.entries()].map(([mod, qty]) =>
+    `${MARK_DETAIL}${INDENT_MOD}${qty} ${mod}`,
+  );
 }
 
 function lineasGrupo(grupo: GrupoImpresion): string[] {
@@ -260,7 +284,7 @@ function lineasGrupo(grupo: GrupoImpresion): string[] {
 
   if (todasIguales) {
     const u = variantes[0]![0]!;
-    lineas.push(...lineasBullets(u.bullets));
+    lineas.push(...lineasBulletsConCantidad(u.bullets, total));
     if (u.notaLibre) {
       for (const parte of u.notaLibre.split(/\s*[·•]\s*/)) {
         const t = parte.trim();
@@ -271,6 +295,8 @@ function lineasGrupo(grupo: GrupoImpresion): string[] {
   }
 
   let idx = 1;
+  const conteoMods = new Map<string, number>();
+
   for (const variante of variantes) {
     const u = variante[0]!;
     const count = variante.length;
@@ -279,9 +305,17 @@ function lineasGrupo(grupo: GrupoImpresion): string[] {
     } else {
       lineas.push(`${MARK_INDENT}#${idx}`);
     }
-    lineas.push(...lineasBullets(u.bullets));
-    if (u.notaLibre) lineas.push(`${MARK_DETAIL}${INDENT_MOD}${toTicketUpper(u.notaLibre)}`);
+    agregarConteoMods(conteoMods, u.bullets, count);
     idx += count;
+  }
+
+  lineas.push(...lineasModsAgregados(conteoMods));
+
+  for (const variante of variantes) {
+    const u = variante[0]!;
+    if (u.notaLibre) {
+      lineas.push(`${MARK_DETAIL}${INDENT_MOD}${toTicketUpper(u.notaLibre)}`);
+    }
   }
 
   return lineas;

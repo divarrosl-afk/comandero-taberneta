@@ -186,7 +186,35 @@ describe("ticket-kitchen", () => {
     expect(texto).toContain("2 HAMBURGUESAS ANGUS");
     expect(texto).toContain("#1");
     expect(texto).toContain("#2");
-    expect(texto).toContain(" - MUY HECHO");
-    expect(texto).toContain(" - POCO HECHO");
+    expect(texto).toContain(" - 1 MUY HECHO");
+    expect(texto).toContain(" - 1 POCO HECHO");
+  });
+
+  it("agrupa mods con cantidad cuando hay varias unidades", () => {
+    const comanda = comandaCocinaFixture({
+      entrantes: [
+        plato({
+          id: "e1",
+          nombre: "Ensalada queso fresco, tomate, lechuga, maíz y olivas negras",
+          cantidad: 2,
+          modificaciones: ["Champiñones"],
+        }),
+        plato({
+          id: "e2",
+          nombre: "Ensalada queso fresco, tomate, lechuga, maíz y olivas negras",
+          cantidad: 1,
+          modificaciones: ["Patatas fritas"],
+        }),
+      ],
+      primeros: [],
+      segundos: [],
+      bebidas: [],
+    });
+    const texto = formatKitchenTicketPlain(comanda, "cocina");
+    expect(texto).toContain("3 ENSALADAS");
+    expect(texto).toContain("#1-2");
+    expect(texto).toContain("#3");
+    expect(texto).toContain(" - 2 CHAMPIÑONES");
+    expect(texto).toContain(" - 1 PATATAS FRITAS");
   });
 });
