@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/Button";
-import { CamareroAccesosBar } from "@/components/navigation/CamareroAccesosBar";
 import { HistorialCard } from "@/components/historial/HistorialCard";
 import { ZonaCollapsibleSection } from "@/components/ui/ZonaCollapsibleSection";
 import { useAuth } from "@/contexts/AuthContext";
@@ -64,8 +63,6 @@ function HistorialContent() {
           </Button>
         </div>
       </header>
-
-      <CamareroAccesosBar mesaId={mesaFiltro} className="mb-4" />
 
       {reimpresionMsg && (
         <div

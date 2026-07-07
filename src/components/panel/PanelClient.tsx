@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/Button";
-import { CamareroAccesosBar } from "@/components/navigation/CamareroAccesosBar";
 import { PanelComandaCard } from "@/components/panel/PanelComandaCard";
 import { PanelComandaTile } from "@/components/panel/PanelComandaTile";
 import { PanelDetalleSheet } from "@/components/panel/PanelDetalleSheet";
@@ -103,12 +102,6 @@ function PanelContent() {
             </Button>
           </div>
         </header>
-
-        <CamareroAccesosBar
-          activo="pc"
-          mesaId={mesaFiltro}
-          className="mb-3"
-        />
 
         <nav className="mb-3 flex shrink-0 gap-2">
           <button

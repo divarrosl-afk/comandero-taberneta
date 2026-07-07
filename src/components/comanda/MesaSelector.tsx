@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { CamareroAccesosBar } from "@/components/navigation/CamareroAccesosBar";
 import { useMesasOperativas } from "@/hooks/useMesas";
 import { contadorTicketsMesaVisible } from "@/lib/mesas/estado-mesa";
 import { fetchOperativaData } from "@/lib/sync/operativa-fetch";
@@ -65,24 +66,22 @@ export function MesaSelector({
     );
   }
 
-  const gridClass = compact
-    ? "grid grid-cols-2 gap-2 sm:grid-cols-3"
-    : "grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4";
+  const listaClass = compact ? "space-y-2" : "space-y-2";
 
   return (
     <div className={compact ? "" : "space-y-4"}>
       {!compact && <h2 className="text-base font-bold uppercase">Mesa</h2>}
 
       {zonaFiltro ? (
-        <div className={gridClass}>
+        <div className={listaClass}>
           {mesasVisibles.map((mesa) => (
-            <MesaBotonOperativa
+            <MesaFilaSelector
               key={mesa.id}
               mesa={mesa}
               seleccionada={mesaSeleccionada === mesa.id}
               compact={compact}
               operativaRevision={operativaRevision}
-              onClick={() => onSelect(mesa.id)}
+              onSelect={() => onSelect(mesa.id)}
             />
           ))}
         </div>
@@ -95,15 +94,15 @@ export function MesaSelector({
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                 {zona.label}
               </p>
-              <div className={gridClass}>
+              <div className={listaClass}>
                 {lista.map((mesa) => (
-                  <MesaBotonOperativa
+                  <MesaFilaSelector
                     key={mesa.id}
                     mesa={mesa}
                     seleccionada={mesaSeleccionada === mesa.id}
                     compact={compact}
                     operativaRevision={operativaRevision}
-                    onClick={() => onSelect(mesa.id)}
+                    onSelect={() => onSelect(mesa.id)}
                   />
                 ))}
               </div>
@@ -115,42 +114,55 @@ export function MesaSelector({
   );
 }
 
-function MesaBotonOperativa({
+function MesaFilaSelector({
   mesa,
   seleccionada,
   compact,
   operativaRevision,
-  onClick,
+  onSelect,
 }: {
   mesa: MesaOperativa;
   seleccionada: boolean;
   compact: boolean;
   operativaRevision: number;
-  onClick: () => void;
+  onSelect: () => void;
 }) {
   void operativaRevision;
   const ticketsVisibles = contadorTicketsMesaVisible(mesa.id, mesa.estadoPanel);
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <div
       className={[
-        "relative flex flex-col items-center justify-center rounded-xl border-2 px-2 py-2 font-bold transition active:scale-95",
-        compact ? "min-h-14" : "min-h-16",
+        "flex items-stretch gap-2 rounded-xl border-2 p-2 transition",
         estiloMesaOperativa(mesa),
         seleccionada ? "ring-2 ring-primary ring-offset-2" : "",
       ].join(" ")}
     >
-      {ticketsVisibles > 0 && (
-        <span className="absolute right-1.5 top-1.5 rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] font-bold">
-          {ticketsVisibles}
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <span className={compact ? "text-sm font-bold" : "text-base font-bold"}>
+            {mesa.nombreVisible}
+          </span>
+          {ticketsVisibles > 0 && (
+            <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] font-bold">
+              {ticketsVisibles}
+            </span>
+          )}
+        </div>
+        <span className="text-[10px] font-semibold leading-tight opacity-90">
+          {labelMesaOperativa(mesa)}
         </span>
-      )}
-      <span className={compact ? "text-sm" : "text-base"}>{mesa.nombreVisible}</span>
-      <span className="mt-0.5 text-center text-[10px] font-semibold leading-tight opacity-90">
-        {labelMesaOperativa(mesa)}
-      </span>
-    </button>
+      </button>
+
+      <CamareroAccesosBar
+        mesaId={mesa.id}
+        layout="grid"
+        className="w-[8.25rem] shrink-0 sm:w-[9rem]"
+      />
+    </div>
   );
 }

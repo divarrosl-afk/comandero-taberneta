@@ -3,7 +3,6 @@
 import { useSearchParams } from "next/navigation";
 import { useMemo, Suspense, useEffect, useState } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
-import { CamareroAccesosBar } from "@/components/navigation/CamareroAccesosBar";
 import { PostresEditView } from "@/components/postres/nueva/PostresEditView";
 import { PostresEnviadaView } from "@/components/postres/nueva/PostresEnviadaView";
 import { PostresPreviewView } from "@/components/postres/nueva/PostresPreviewView";
@@ -58,11 +57,8 @@ function PostresNuevoForm() {
     setStep("enviada");
   };
 
-  const mesaId = mesaParam ?? form.mesa ?? null;
-
   return (
     <main className="mx-auto min-h-dvh max-w-lg px-4 py-4 pb-32">
-      <CamareroAccesosBar activo="post" mesaId={mesaId} className="mb-4" />
       {step === "editar" && (
         <PostresEditView
           form={form}

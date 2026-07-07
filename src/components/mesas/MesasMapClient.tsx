@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { MesaCard } from "@/components/mesas/MesaCard";
 import { Button } from "@/components/ui/Button";
-import { CamareroAccesosBar } from "@/components/navigation/CamareroAccesosBar";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useMesasOperativas } from "@/hooks/useMesas";
 import { liberarMesaOperativa } from "@/lib/mesas/liberar-mesa-operativa";
@@ -26,7 +25,7 @@ export function MesasMapClient() {
 
   return (
     <RequireAuth>
-      <main className="mx-auto min-h-dvh max-w-3xl px-4 py-4 pb-8">
+      <main className="mx-auto min-h-dvh max-w-2xl px-4 py-4 pb-8">
         <header className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <Link
@@ -44,8 +43,6 @@ export function MesasMapClient() {
             Actualizar
           </Button>
         </header>
-
-        <CamareroAccesosBar activo="mes" className="mb-4" />
 
         <div className="mb-6 flex flex-wrap gap-2 text-xs">
           {ZONAS_MESA.map((z) => (
@@ -73,7 +70,7 @@ export function MesasMapClient() {
                 <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">
                   {labelZona(zona.id)}
                 </h2>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                   {lista.map((mesa) => (
                     <MesaCard
                       key={mesa.id}

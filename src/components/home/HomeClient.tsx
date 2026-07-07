@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { RequireAuth } from "@/components/auth/RequireAuth";
-import { CamareroAccesosBar } from "@/components/navigation/CamareroAccesosBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { getActiveBackendLabel } from "@/lib/data/data-layer";
 import { isSupabaseEnvConfigured } from "@/lib/supabase/env";
@@ -159,8 +158,6 @@ export function HomeClient() {
             {sesion ? `Hola, ${sesion.nombre}` : "Web app para camareros"}
           </p>
         </header>
-
-        <CamareroAccesosBar className="mb-6" />
 
         <section className="mb-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold">Acceso rápido</h2>
