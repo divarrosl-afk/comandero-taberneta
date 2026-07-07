@@ -52,7 +52,10 @@ export function hrefCamareroAcceso(
 
   if (id === "pc") {
     params.set("tab", "cocina");
+    const query = params.toString();
+    return `${base}?${query}`;
   }
+
   if (mesaId) {
     params.set("mesa", mesaId);
   }
