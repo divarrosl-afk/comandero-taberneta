@@ -21,5 +21,5 @@ export function duplicarPlato(plato: PlatoFormItem): PlatoFormItem {
 }
 
 export function platoTieneContenido(plato: PlatoFormItem): boolean {
-  return plato.nombre.trim().length > 0;
+  return (plato.nombre ?? "").trim().length > 0;
 }

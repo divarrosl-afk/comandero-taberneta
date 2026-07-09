@@ -5,6 +5,10 @@ import {
   crearPostreVacio,
   duplicarPostre,
 } from "@/lib/postres/postre-factory";
+import {
+  idLineaVaciaPostres,
+  insertarPostreEnLista,
+} from "@/lib/comanda/insertar-form-item";
 import { normalizarListaPostreForm } from "@/lib/postres/normalize-form-item";
 import { formPostresEsValido } from "@/lib/postres/map-form";
 import {
@@ -132,33 +136,30 @@ export function usePostresForm(
     [],
   );
 
-  const addPostre = useCallback((nombre?: string) => {
-    setForm((prev) => ({
-      ...prev,
-      postres: [
-        ...prev.postres,
-        { ...crearPostreVacio(), nombre: nombre ?? "" },
-      ],
-    }));
+  const addPostre = useCallback((): string => {
+    const nuevo = crearPostreVacio();
+    let resolvedId = nuevo.id;
+    setForm((prev) => {
+      const vacioId = idLineaVaciaPostres(prev.postres);
+      if (vacioId) {
+        resolvedId = vacioId;
+        return prev;
+      }
+      return { ...prev, postres: [...prev.postres, nuevo] };
+    });
+    return resolvedId;
   }, []);
 
-  const addPostreFrecuente = useCallback((producto: ProductoCatalogo) => {
+  const addPostreFrecuente = useCallback((producto: ProductoCatalogo): string => {
+    let resolvedId = "";
     setForm((prev) => {
-      const vacio = prev.postres.find((p) => !p.nombre.trim());
-      const datos = { nombre: producto.nombre };
-      if (vacio) {
-        return {
-          ...prev,
-          postres: prev.postres.map((p) =>
-            p.id === vacio.id ? { ...p, ...datos } : p,
-          ),
-        };
-      }
-      return {
-        ...prev,
-        postres: [...prev.postres, { ...crearPostreVacio(), ...datos }],
-      };
+      const { lista, id } = insertarPostreEnLista(prev.postres, {
+        nombre: producto.nombre,
+      });
+      resolvedId = id;
+      return { ...prev, postres: lista };
     });
+    return resolvedId;
   }, []);
 
   const removePostre = useCallback((id: string) => {
@@ -199,35 +200,32 @@ export function usePostresForm(
     [],
   );
 
-  const addCafe = useCallback((nombre?: string) => {
-    setForm((prev) => ({
-      ...prev,
-      cafes: [
-        ...prev.cafes,
-        { ...crearPostreVacio(), nombre: nombre ?? "" },
-      ],
-    }));
+  const addCafe = useCallback((): string => {
+    const nuevo = crearPostreVacio();
+    let resolvedId = nuevo.id;
+    setForm((prev) => {
+      const vacioId = idLineaVaciaPostres(prev.cafes);
+      if (vacioId) {
+        resolvedId = vacioId;
+        return prev;
+      }
+      return { ...prev, cafes: [...prev.cafes, nuevo] };
+    });
+    return resolvedId;
   }, []);
 
-  const addCafeRapido = useCallback((nombre: string) => {
+  const addCafeRapido = useCallback((nombre: string): string => {
     const etiqueta = String(nombre ?? "").trim();
-    if (!etiqueta) return;
+    if (!etiqueta) return "";
+    let resolvedId = "";
     setForm((prev) => {
-      const vacio = prev.cafes.find((c) => !String(c.nombre ?? "").trim());
-      const datos = { nombre: etiqueta };
-      if (vacio) {
-        return {
-          ...prev,
-          cafes: prev.cafes.map((c) =>
-            c.id === vacio.id ? { ...c, ...datos } : c,
-          ),
-        };
-      }
-      return {
-        ...prev,
-        cafes: [...prev.cafes, { ...crearPostreVacio(), ...datos }],
-      };
+      const { lista, id } = insertarPostreEnLista(prev.cafes, {
+        nombre: etiqueta,
+      });
+      resolvedId = id;
+      return { ...prev, cafes: lista };
     });
+    return resolvedId;
   }, []);
 
   const removeCafe = useCallback((id: string) => {

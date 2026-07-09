@@ -10,37 +10,42 @@ import type { PostreFormItem } from "@/types/postres";
 interface PostreCardProps {
   postre: PostreFormItem;
   indice: number;
+  modoEditor?: boolean;
+  nombrePlaceholder?: string;
+  notaPlaceholder?: string;
   onChange: (cambios: Partial<PostreFormItem>) => void;
   onRemove: () => void;
   onDuplicate: () => void;
-  onColapsar?: () => void;
+  onCerrarEditor?: () => void;
 }
 
 export function PostreCard({
   postre,
   indice,
+  modoEditor = false,
+  nombrePlaceholder = "Nombre del postre",
+  notaPlaceholder = "Nota opcional (ej: sin nata)",
   onChange,
   onRemove,
   onDuplicate,
-  onColapsar,
+  onCerrarEditor,
 }: PostreCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [expandido, setExpandido] = useState(true);
   const tieneContenido = postreTieneContenido(postre);
 
   const resumen =
-    String(postre.nombre ?? "").trim() || `Postre ${indice + 1}`;
+    String(postre.nombre ?? "").trim() || `${nombrePlaceholder} ${indice + 1}`;
 
   const toggleExpandido = () => {
-    setExpandido((v) => {
-      if (v) {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => onColapsar?.());
-        });
-      }
-      return !v;
-    });
+    if (modoEditor) {
+      onCerrarEditor?.();
+      return;
+    }
+    setExpandido((v) => !v);
   };
+
+  const mostrarCuerpo = modoEditor || expandido;
 
   return (
     <>
@@ -52,7 +57,9 @@ export function PostreCard({
         >
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold">
-              {tieneContenido ? String(postre.nombre ?? "") : `Postre ${indice + 1}`}
+              {tieneContenido
+                ? String(postre.nombre ?? "")
+                : `${nombrePlaceholder} ${indice + 1}`}
               {(postre.cantidad ?? 1) > 1 && (
                 <span className="ml-1 text-accent">x{postre.cantidad}</span>
               )}
@@ -61,17 +68,17 @@ export function PostreCard({
               <p className="truncate text-xs text-muted">{postre.nota}</p>
             )}
           </div>
-          <span className="text-muted">{expandido ? "▲" : "▼"}</span>
+          <span className="text-muted">{mostrarCuerpo ? "▲" : "▼"}</span>
         </button>
 
-        {expandido && (
+        {mostrarCuerpo && (
           <div className="space-y-3 border-t border-border p-3">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={postre.nombre ?? ""}
                 onChange={(e) => onChange({ nombre: e.target.value })}
-                placeholder="Nombre del postre"
+                placeholder={nombrePlaceholder}
                 className="min-h-14 flex-1 rounded-xl border-2 border-border bg-card px-3 text-lg font-medium outline-none focus:border-primary"
                 autoComplete="off"
               />
@@ -85,7 +92,7 @@ export function PostreCard({
               type="text"
               value={postre.nota ?? ""}
               onChange={(e) => onChange({ nota: e.target.value })}
-              placeholder="Nota opcional (ej: sin nata)"
+              placeholder={notaPlaceholder}
               className="min-h-11 w-full rounded-xl border-2 border-border bg-card px-3 text-sm outline-none focus:border-primary"
             />
 
@@ -109,7 +116,7 @@ export function PostreCard({
 
       <ConfirmDialog
         open={confirmDelete}
-        title="¿Eliminar postre?"
+        title="¿Eliminar?"
         message={`Se eliminará "${resumen}" de la comanda.`}
         confirmLabel="Eliminar"
         onConfirm={() => {

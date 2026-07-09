@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
@@ -16,12 +16,14 @@ interface PlatoCardProps {
   conTipo?: boolean;
   enfocado?: boolean;
   inicioExpandido?: boolean;
+  modoEditor?: boolean;
+  nombrePlaceholder?: string;
   onChange: (cambios: Partial<PlatoFormItem>) => void;
   onRemove: () => void;
   onDuplicate: () => void;
   onToggleModificacion: (mod: ModificacionId) => void;
   onCycleSalsa: (salsaId: string, nombre: string) => void;
-  onColapsar?: () => void;
+  onCerrarEditor?: () => void;
 }
 
 export function PlatoCard({
@@ -30,43 +32,42 @@ export function PlatoCard({
   conTipo = false,
   enfocado = false,
   inicioExpandido = false,
+  modoEditor = false,
+  nombrePlaceholder = "Nombre del plato",
   onChange,
   onRemove,
   onDuplicate,
   onToggleModificacion,
   onCycleSalsa,
-  onColapsar,
+  onCerrarEditor,
 }: PlatoCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [expandido, setExpandido] = useState(inicioExpandido);
+  const [expandido, setExpandido] = useState(inicioExpandido || modoEditor);
   const tieneContenido = platoTieneContenido(plato);
 
-  useEffect(() => {
-    if (enfocado) setExpandido(true);
-  }, [enfocado]);
-
   const resumen =
-    plato.nombre.trim() ||
-    `Plato ${indice + 1}${plato.cantidad > 1 ? ` x${plato.cantidad}` : ""}`;
+    (plato.nombre ?? "").trim() ||
+    `${nombrePlaceholder} ${indice + 1}${plato.cantidad > 1 ? ` x${plato.cantidad}` : ""}`;
 
   const toggleExpandido = () => {
-    setExpandido((v) => {
-      if (v) {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => onColapsar?.());
-        });
-      }
-      return !v;
-    });
+    if (modoEditor) {
+      onCerrarEditor?.();
+      return;
+    }
+    setExpandido((v) => !v);
   };
+
+  const mostrarCuerpo = modoEditor || expandido;
 
   return (
     <>
       <article
         data-plato-card={plato.id}
         className={[
-          "scroll-mt-28 overflow-hidden rounded-2xl border-2 bg-background transition-shadow",
-          enfocado ? "border-primary shadow-md ring-2 ring-primary/30" : "border-border",
+          "overflow-hidden rounded-2xl border-2 bg-background transition-shadow",
+          enfocado || modoEditor
+            ? "border-primary shadow-md ring-2 ring-primary/30"
+            : "border-border",
         ].join(" ")}
       >
         <button
@@ -76,7 +77,7 @@ export function PlatoCard({
         >
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold">
-              {tieneContenido ? plato.nombre : `Plato ${indice + 1}`}
+              {tieneContenido ? plato.nombre : `${nombrePlaceholder} ${indice + 1}`}
               {plato.cantidad > 1 && (
                 <span className="ml-1 text-accent">x{plato.cantidad}</span>
               )}
@@ -87,17 +88,17 @@ export function PlatoCard({
               </p>
             )}
           </div>
-          <span className="text-muted">{expandido ? "▲" : "▼"}</span>
+          <span className="text-muted">{mostrarCuerpo ? "▲" : "▼"}</span>
         </button>
 
-        {expandido && (
+        {mostrarCuerpo && (
           <div className="space-y-4 border-t border-border p-3">
             <div className="flex gap-2">
               <input
                 type="text"
-                value={plato.nombre}
+                value={plato.nombre ?? ""}
                 onChange={(e) => onChange({ nombre: e.target.value })}
-                placeholder="Nombre del plato"
+                placeholder={nombrePlaceholder}
                 className="min-h-14 flex-1 rounded-xl border-2 border-border bg-card px-3 text-lg font-medium outline-none focus:border-primary"
                 autoComplete="off"
               />
@@ -132,12 +133,7 @@ export function PlatoCard({
             />
 
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                fullWidth
-                onClick={onDuplicate}
-              >
+              <Button variant="outline" size="sm" fullWidth onClick={onDuplicate}>
                 Duplicar
               </Button>
               <Button

@@ -157,7 +157,7 @@ export function PostresEditView({
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
             onUpdate={onUpdatePostre}
-            onAdd={onAddPostre}
+            onAddManual={onAddPostre}
             onAddFrecuente={onAddPostreFrecuente}
             onRemove={onRemovePostre}
             onDuplicate={onDuplicatePostre}
@@ -169,7 +169,7 @@ export function PostresEditView({
           <CafesSeccionPanel
             cafes={form.cafes}
             onUpdate={onUpdateCafe}
-            onAdd={onAddCafe}
+            onAddManual={onAddCafe}
             onAddRapido={onAddCafeRapido}
             onRemove={onRemoveCafe}
             onDuplicate={onDuplicateCafe}

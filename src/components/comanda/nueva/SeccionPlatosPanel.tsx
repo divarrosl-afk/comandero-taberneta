@@ -1,25 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { ProductosRapidosGrid } from "@/components/catalogo/ProductosRapidosGrid";
 import { CatalogoBuscadorRapido } from "@/components/catalogo/CatalogoBuscadorRapido";
 import { PlatoCard } from "@/components/comanda/nueva/PlatoCard";
-import { PlatoRapidoSheet } from "@/components/comanda/nueva/PlatoRapidoSheet";
 import { TicketCompacto } from "@/components/comanda/nueva/TicketCompacto";
 import { OrigenPlatosSelector } from "@/components/comanda/nueva/OrigenPlatosSelector";
-import { platoTieneContenido } from "@/lib/comanda/plato-factory";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import type { OrigenPlatos } from "@/lib/carta/carta-admin";
-import type { SeccionCatalogo } from "@/types/catalogo";
+import type { SeccionCatalogo, ProductoCatalogo } from "@/types/catalogo";
 import type {
   ModificacionId,
   PlatoFormItem,
   SeccionPlatos,
 } from "@/types/comanda";
-import type { ProductoCatalogo } from "@/types/catalogo";
 
 const SECCION_A_CATALOGO: Record<SeccionPlatos, SeccionCatalogo> = {
   entrantes: "entrantes",
@@ -34,6 +31,20 @@ const ALCANCE_COMANDA: SeccionCatalogo[] = [
   "segundos",
   "bebidas",
 ];
+
+const ETIQUETA_MANUAL: Record<SeccionPlatos, string> = {
+  entrantes: "+ Entrante",
+  primeros: "+ Primero",
+  segundos: "+ Segundo",
+  bebidas: "+ Bebida",
+};
+
+const PLACEHOLDER_NOMBRE: Record<SeccionPlatos, string> = {
+  entrantes: "Nombre del entrante",
+  primeros: "Nombre del primero",
+  segundos: "Nombre del segundo",
+  bebidas: "Nombre de la bebida",
+};
 
 function origenInicial(
   seccion: SeccionPlatos,
@@ -54,8 +65,8 @@ interface SeccionPlatosPanelProps {
   busqueda?: string;
   onBusquedaChange?: (value: string) => void;
   onUpdate: (id: string, cambios: Partial<PlatoFormItem>) => void;
-  onAdd: () => void;
-  onConfirmPlato: (plato: PlatoFormItem) => void;
+  onAddManual: () => string;
+  onConfirmDesdeCatalogo: (producto: ProductoCatalogo) => string;
   onRemove: (id: string) => void;
   onDuplicate: (id: string) => void;
   onClear: () => void;
@@ -72,8 +83,8 @@ export function SeccionPlatosPanel({
   busqueda = "",
   onBusquedaChange,
   onUpdate,
-  onAdd,
-  onConfirmPlato,
+  onAddManual,
+  onConfirmDesdeCatalogo,
   onRemove,
   onDuplicate,
   onClear,
@@ -81,34 +92,27 @@ export function SeccionPlatosPanel({
   onCycleSalsa,
 }: SeccionPlatosPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
-  const [productoRapido, setProductoRapido] = useState<ProductoCatalogo | null>(
-    null,
-  );
-  const [platoEditando, setPlatoEditando] = useState<PlatoFormItem | null>(
-    null,
-  );
-  const [ticketExpandido, setTicketExpandido] = useState(false);
+  const [activoId, setActivoId] = useState<string | null>(null);
   const { menu } = useMenuDia();
   const [origen, setOrigen] = useState<OrigenPlatos>(() =>
     origenInicial(seccion, menu?.activo ?? false),
   );
 
+  const platoActivo = useMemo(
+    () => platos.find((p) => p.id === activoId) ?? null,
+    [platos, activoId],
+  );
+
   const conSelectorOrigen =
     seccion === "entrantes" || seccion === "primeros" || seccion === "segundos";
 
-  const abrirRapido = (producto: ProductoCatalogo) => {
-    if (!producto.activo || producto.agotado) return;
-    setPlatoEditando(null);
-    setProductoRapido(producto);
+  const abrirCatalogo = (producto: ProductoCatalogo) => {
+    const id = onConfirmDesdeCatalogo(producto);
+    if (id) setActivoId(id);
   };
 
-  const abrirEdicion = (plato: PlatoFormItem) => {
-    setProductoRapido(null);
-    setPlatoEditando(plato);
-  };
-
-  const guardarEdicion = (plato: PlatoFormItem) => {
-    onUpdate(plato.id, plato);
+  const abrirManual = () => {
+    setActivoId(onAddManual());
   };
 
   return (
@@ -118,8 +122,8 @@ export function SeccionPlatosPanel({
         active={active}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onAdd}>
-              + Plato
+            <Button variant="outline" size="sm" onClick={abrirManual}>
+              {ETIQUETA_MANUAL[seccion]}
             </Button>
             <Button
               variant="ghost"
@@ -134,10 +138,34 @@ export function SeccionPlatosPanel({
       >
         <TicketCompacto
           platos={platos}
-          expandido={ticketExpandido}
-          onToggle={() => setTicketExpandido((v) => !v)}
-          onEditarPlato={abrirEdicion}
+          activoId={activoId}
+          onEditarPlato={(p) => setActivoId(p.id)}
         />
+
+        {platoActivo && (
+          <div className="mb-4">
+            <PlatoCard
+              plato={platoActivo}
+              indice={platos.findIndex((p) => p.id === platoActivo.id)}
+              conTipo={conTipo}
+              modoEditor
+              nombrePlaceholder={PLACEHOLDER_NOMBRE[seccion]}
+              onCerrarEditor={() => setActivoId(null)}
+              onChange={(cambios) => onUpdate(platoActivo.id, cambios)}
+              onRemove={() => {
+                onRemove(platoActivo.id);
+                setActivoId(null);
+              }}
+              onDuplicate={() => onDuplicate(platoActivo.id)}
+              onToggleModificacion={(mod) =>
+                onToggleModificacion(platoActivo.id, mod)
+              }
+              onCycleSalsa={(id, nombre) =>
+                onCycleSalsa(platoActivo.id, id, nombre)
+              }
+            />
+          </div>
+        )}
 
         {onBusquedaChange && (
           <CatalogoBuscadorRapido
@@ -161,52 +189,9 @@ export function SeccionPlatosPanel({
           alcanceSecciones={ALCANCE_COMANDA}
           busqueda={busqueda}
           origen={conSelectorOrigen ? origen : undefined}
-          onSelect={abrirRapido}
+          onSelect={abrirCatalogo}
         />
-
-        {ticketExpandido && (
-          <div className="mt-4 space-y-3">
-            {platos.filter(platoTieneContenido).map((plato, index) => (
-              <PlatoCard
-                key={plato.id}
-                plato={plato}
-                indice={index}
-                conTipo={conTipo}
-                inicioExpandido
-                onChange={(cambios) => onUpdate(plato.id, cambios)}
-                onRemove={() => onRemove(plato.id)}
-                onDuplicate={() => onDuplicate(plato.id)}
-                onToggleModificacion={(mod) =>
-                  onToggleModificacion(plato.id, mod)
-                }
-                onCycleSalsa={(id, nombre) => onCycleSalsa(plato.id, id, nombre)}
-              />
-            ))}
-          </div>
-        )}
       </SectionCard>
-
-      {productoRapido && (
-        <PlatoRapidoSheet
-          producto={productoRapido}
-          seccion={seccion}
-          conTipo={conTipo}
-          modo="añadir"
-          onCerrar={() => setProductoRapido(null)}
-          onConfirmar={onConfirmPlato}
-        />
-      )}
-
-      {platoEditando && (
-        <PlatoRapidoSheet
-          platoInicial={platoEditando}
-          seccion={seccion}
-          conTipo={conTipo}
-          modo="editar"
-          onCerrar={() => setPlatoEditando(null)}
-          onConfirmar={guardarEdicion}
-        />
-      )}
 
       <ConfirmDialog
         open={confirmClear}
@@ -216,7 +201,7 @@ export function SeccionPlatosPanel({
         onConfirm={() => {
           onClear();
           setConfirmClear(false);
-          setTicketExpandido(false);
+          setActivoId(null);
         }}
         onCancel={() => setConfirmClear(false)}
       />

@@ -30,7 +30,7 @@ interface ComandaEditViewProps {
   onSetComensales: ComandaFormActions["setComensales"];
   onUpdatePlato: ComandaFormActions["updatePlato"];
   onAddPlato: ComandaFormActions["addPlato"];
-  onConfirmPlato: ComandaFormActions["confirmPlato"];
+  onConfirmPlatoDesdeCatalogo: ComandaFormActions["confirmPlatoDesdeCatalogo"];
   onRemovePlato: ComandaFormActions["removePlato"];
   onDuplicatePlato: ComandaFormActions["duplicatePlato"];
   onClearSeccion: ComandaFormActions["clearSeccion"];
@@ -80,8 +80,10 @@ function panelPlatos(
       busqueda={busqueda}
       onBusquedaChange={onBusquedaChange}
       onUpdate={(id, c) => props.onUpdatePlato(seccion, id, c)}
-      onAdd={() => props.onAddPlato(seccion)}
-      onConfirmPlato={(plato) => props.onConfirmPlato(seccion, plato)}
+      onAddManual={() => props.onAddPlato(seccion)}
+      onConfirmDesdeCatalogo={(producto) =>
+        props.onConfirmPlatoDesdeCatalogo(seccion, producto)
+      }
       onRemove={(id) => props.onRemovePlato(seccion, id)}
       onDuplicate={(id) => props.onDuplicatePlato(seccion, id)}
       onClear={() => props.onClearSeccion(seccion)}
@@ -213,7 +215,7 @@ export function ComandaEditView(props: ComandaEditViewProps) {
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
             onUpdate={onUpdatePostre}
-            onAdd={onAddPostre}
+            onAddManual={onAddPostre}
             onAddFrecuente={onAddPostreFrecuente}
             onRemove={onRemovePostre}
             onDuplicate={onDuplicatePostre}
@@ -225,7 +227,7 @@ export function ComandaEditView(props: ComandaEditViewProps) {
           <CafesSeccionPanel
             cafes={form.cafes}
             onUpdate={onUpdateCafe}
-            onAdd={onAddCafe}
+            onAddManual={onAddCafe}
             onAddRapido={onAddCafeRapido}
             onRemove={onRemoveCafe}
             onDuplicate={onDuplicateCafe}

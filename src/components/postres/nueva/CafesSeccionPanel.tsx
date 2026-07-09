@@ -1,19 +1,19 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
+import { TicketPostresCompacto } from "@/components/comanda/nueva/TicketPostresCompacto";
 import { PostreCard } from "@/components/postres/nueva/PostreCard";
 import { CafesFrecuentesGrid } from "@/components/postres/nueva/CafesFrecuentesGrid";
 import type { PostreFormItem } from "@/types/postres";
-import { scrollSeccionAlInicio } from "@/lib/ui/scroll-seccion";
 
 interface CafesSeccionPanelProps {
   cafes: PostreFormItem[];
   onUpdate: (id: string, cambios: Partial<PostreFormItem>) => void;
-  onAdd: () => void;
-  onAddRapido: (nombre: string) => void;
+  onAddManual: () => string;
+  onAddRapido: (nombre: string) => string;
   onRemove: (id: string) => void;
   onDuplicate: (id: string) => void;
   onClear: () => void;
@@ -22,14 +22,19 @@ interface CafesSeccionPanelProps {
 export function CafesSeccionPanel({
   cafes,
   onUpdate,
-  onAdd,
+  onAddManual,
   onAddRapido,
   onRemove,
   onDuplicate,
   onClear,
 }: CafesSeccionPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
-  const catalogoRef = useRef<HTMLDivElement>(null);
+  const [activoId, setActivoId] = useState<string | null>(null);
+
+  const cafeActivo = useMemo(
+    () => cafes.find((c) => c.id === activoId) ?? null,
+    [cafes, activoId],
+  );
 
   return (
     <>
@@ -37,7 +42,7 @@ export function CafesSeccionPanel({
         title="Cafés e infusiones"
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onAdd}>
+            <Button variant="outline" size="sm" onClick={() => setActivoId(onAddManual())}>
               + Café
             </Button>
             <Button
@@ -51,23 +56,38 @@ export function CafesSeccionPanel({
           </div>
         }
       >
-        <div ref={catalogoRef} className="scroll-mt-28">
-        <CafesFrecuentesGrid onSelect={onAddRapido} />
-        </div>
+        <TicketPostresCompacto
+          items={cafes}
+          activoId={activoId}
+          etiqueta="Ticket cafés"
+          onEditar={(p) => setActivoId(p.id)}
+        />
 
-        <div className="mt-4 space-y-3">
-          {cafes.map((cafe, index) => (
+        {cafeActivo && (
+          <div className="mb-4">
             <PostreCard
-              key={cafe.id}
-              postre={cafe}
-              indice={index}
-              onColapsar={() => scrollSeccionAlInicio(catalogoRef.current)}
-              onChange={(cambios) => onUpdate(cafe.id, cambios)}
-              onRemove={() => onRemove(cafe.id)}
-              onDuplicate={() => onDuplicate(cafe.id)}
+              postre={cafeActivo}
+              indice={cafes.findIndex((c) => c.id === cafeActivo.id)}
+              modoEditor
+              nombrePlaceholder="Nombre del café"
+              notaPlaceholder="Nota opcional (ej: con leche)"
+              onCerrarEditor={() => setActivoId(null)}
+              onChange={(cambios) => onUpdate(cafeActivo.id, cambios)}
+              onRemove={() => {
+                onRemove(cafeActivo.id);
+                setActivoId(null);
+              }}
+              onDuplicate={() => onDuplicate(cafeActivo.id)}
             />
-          ))}
-        </div>
+          </div>
+        )}
+
+        <CafesFrecuentesGrid
+          onSelect={(nombre) => {
+            const id = onAddRapido(nombre);
+            if (id) setActivoId(id);
+          }}
+        />
       </SectionCard>
 
       <ConfirmDialog
@@ -78,6 +98,7 @@ export function CafesSeccionPanel({
         onConfirm={() => {
           onClear();
           setConfirmClear(false);
+          setActivoId(null);
         }}
         onCancel={() => setConfirmClear(false)}
       />

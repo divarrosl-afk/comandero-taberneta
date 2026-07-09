@@ -124,7 +124,7 @@ function ComandaNuevaForm() {
           onSetComensales={formActions.setComensales}
           onUpdatePlato={formActions.updatePlato}
           onAddPlato={formActions.addPlato}
-          onConfirmPlato={formActions.confirmPlato}
+          onConfirmPlatoDesdeCatalogo={formActions.confirmPlatoDesdeCatalogo}
           onRemovePlato={formActions.removePlato}
           onDuplicatePlato={formActions.duplicatePlato}
           onClearSeccion={formActions.clearSeccion}

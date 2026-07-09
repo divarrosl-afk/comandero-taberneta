@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { crearPlatoVacio, duplicarPlato } from "@/lib/comanda/plato-factory";
+import {
+  idLineaVaciaPlatos,
+  idLineaVaciaPostres,
+  insertarPlatoEnLista,
+  insertarPostreEnLista,
+} from "@/lib/comanda/insertar-form-item";
 import { formEsValido } from "@/lib/comanda/map-form";
 import {
   borradorTieneDatos,
@@ -65,17 +71,6 @@ function estadoConMesa(
   const base = estadoConCamarero(camareroFijo);
   if (mesaInicial) return { ...base, mesa: mesaInicial };
   return base;
-}
-
-function insertarPlato(
-  lista: PlatoFormItem[],
-  plato: PlatoFormItem,
-): PlatoFormItem[] {
-  const vacio = lista.find((p) => !p.nombre.trim());
-  if (vacio) {
-    return lista.map((p) => (p.id === vacio.id ? { ...plato, id: vacio.id } : p));
-  }
-  return [...lista, plato];
 }
 
 export function useComandaForm(
@@ -147,19 +142,47 @@ export function useComandaForm(
     [],
   );
 
-  const addPlato = useCallback((seccion: SeccionPlatos) => {
-    setForm((prev) => ({
-      ...prev,
-      [seccion]: [...prev[seccion], crearPlatoVacio()],
-    }));
+  const addPlato = useCallback((seccion: SeccionPlatos): string => {
+    const nuevo = crearPlatoVacio();
+    let resolvedId = nuevo.id;
+    setForm((prev) => {
+      const vacioId = idLineaVaciaPlatos(prev[seccion]);
+      if (vacioId) {
+        resolvedId = vacioId;
+        return prev;
+      }
+      return { ...prev, [seccion]: [...prev[seccion], nuevo] };
+    });
+    return resolvedId;
   }, []);
 
-  const confirmPlato = useCallback((seccion: SeccionPlatos, plato: PlatoFormItem) => {
-    setForm((prev) => ({
-      ...prev,
-      [seccion]: insertarPlato(prev[seccion], plato),
-    }));
-  }, []);
+  const confirmPlato = useCallback(
+    (seccion: SeccionPlatos, plato: PlatoFormItem): string => {
+      let resolvedId = plato.id;
+      setForm((prev) => {
+        const { lista, id } = insertarPlatoEnLista(prev[seccion], plato);
+        resolvedId = id;
+        return { ...prev, [seccion]: lista };
+      });
+      return resolvedId;
+    },
+    [],
+  );
+
+  const confirmPlatoDesdeCatalogo = useCallback(
+    (seccion: SeccionPlatos, producto: ProductoCatalogo): string => {
+      if (!producto.activo || producto.agotado) return "";
+
+      const platoData = platoFieldsFromProducto(producto, { seccion, menu });
+      const plato: PlatoFormItem = {
+        ...crearPlatoVacio(),
+        ...platoData,
+        nombre: producto.nombre,
+      };
+      return confirmPlato(seccion, plato);
+    },
+    [confirmPlato, menu],
+  );
 
   const removePlato = useCallback((seccion: SeccionPlatos, id: string) => {
     setForm((prev) => {
@@ -208,41 +231,6 @@ export function useComandaForm(
       }));
     },
     [],
-  );
-
-  const addPlatoFromCatalog = useCallback(
-    (seccion: SeccionPlatos, producto: ProductoCatalogo): string | null => {
-      if (!producto.activo || producto.agotado) return null;
-
-      const platoData = platoFieldsFromProducto(producto, {
-        seccion,
-        menu,
-      });
-
-      let platoId: string | null = null;
-
-      setForm((prev) => {
-        const vacio = prev[seccion].find((p) => !p.nombre.trim());
-        if (vacio) {
-          platoId = vacio.id;
-          return {
-            ...prev,
-            [seccion]: prev[seccion].map((p) =>
-              p.id === vacio.id ? { ...p, ...platoData } : p,
-            ),
-          };
-        }
-        const nuevo = { ...crearPlatoVacio(), ...platoData };
-        platoId = nuevo.id;
-        return {
-          ...prev,
-          [seccion]: [...prev[seccion], nuevo],
-        };
-      });
-
-      return platoId;
-    },
-    [menu],
   );
 
   const cycleSalsa = useCallback(
@@ -317,30 +305,30 @@ export function useComandaForm(
     [],
   );
 
-  const addPostre = useCallback(() => {
-    setForm((prev) => ({
-      ...prev,
-      postres: [...prev.postres, crearPostreVacio()],
-    }));
+  const addPostre = useCallback((): string => {
+    const nuevo = crearPostreVacio();
+    let resolvedId = nuevo.id;
+    setForm((prev) => {
+      const vacioId = idLineaVaciaPostres(prev.postres);
+      if (vacioId) {
+        resolvedId = vacioId;
+        return prev;
+      }
+      return { ...prev, postres: [...prev.postres, nuevo] };
+    });
+    return resolvedId;
   }, []);
 
-  const addPostreFrecuente = useCallback((producto: ProductoCatalogo) => {
+  const addPostreFrecuente = useCallback((producto: ProductoCatalogo): string => {
+    let resolvedId = "";
     setForm((prev) => {
-      const vacio = prev.postres.find((p) => !p.nombre.trim());
-      const datos = { nombre: producto.nombre };
-      if (vacio) {
-        return {
-          ...prev,
-          postres: prev.postres.map((p) =>
-            p.id === vacio.id ? { ...p, ...datos } : p,
-          ),
-        };
-      }
-      return {
-        ...prev,
-        postres: [...prev.postres, { ...crearPostreVacio(), ...datos }],
-      };
+      const { lista, id } = insertarPostreEnLista(prev.postres, {
+        nombre: producto.nombre,
+      });
+      resolvedId = id;
+      return { ...prev, postres: lista };
     });
+    return resolvedId;
   }, []);
 
   const removePostre = useCallback((id: string) => {
@@ -380,30 +368,28 @@ export function useComandaForm(
     [],
   );
 
-  const addCafe = useCallback(() => {
-    setForm((prev) => ({
-      ...prev,
-      cafes: [...prev.cafes, crearPostreVacio()],
-    }));
+  const addCafe = useCallback((): string => {
+    const nuevo = crearPostreVacio();
+    let resolvedId = nuevo.id;
+    setForm((prev) => {
+      const vacioId = idLineaVaciaPostres(prev.cafes);
+      if (vacioId) {
+        resolvedId = vacioId;
+        return prev;
+      }
+      return { ...prev, cafes: [...prev.cafes, nuevo] };
+    });
+    return resolvedId;
   }, []);
 
-  const addCafeRapido = useCallback((nombre: string) => {
+  const addCafeRapido = useCallback((nombre: string): string => {
+    let resolvedId = "";
     setForm((prev) => {
-      const vacio = prev.cafes.find((c) => !c.nombre.trim());
-      const datos = { nombre };
-      if (vacio) {
-        return {
-          ...prev,
-          cafes: prev.cafes.map((c) =>
-            c.id === vacio.id ? { ...c, ...datos } : c,
-          ),
-        };
-      }
-      return {
-        ...prev,
-        cafes: [...prev.cafes, { ...crearPostreVacio(), ...datos }],
-      };
+      const { lista, id } = insertarPostreEnLista(prev.cafes, { nombre });
+      resolvedId = id;
+      return { ...prev, cafes: lista };
     });
+    return resolvedId;
   }, []);
 
   const removeCafe = useCallback((id: string) => {
@@ -500,7 +486,7 @@ export function useComandaForm(
     updatePlato,
     addPlato,
     confirmPlato,
-    addPlatoFromCatalog,
+    confirmPlatoDesdeCatalogo,
     removePlato,
     duplicatePlato,
     clearSeccion,

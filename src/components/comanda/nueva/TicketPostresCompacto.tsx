@@ -1,31 +1,35 @@
 "use client";
 
-import { platoTieneContenido } from "@/lib/comanda/plato-factory";
-import type { PlatoFormItem } from "@/types/comanda";
+import { postreTieneContenido } from "@/lib/postres/postre-factory";
+import type { PostreFormItem } from "@/types/postres";
 
-interface TicketCompactoProps {
-  platos: PlatoFormItem[];
+interface TicketPostresCompactoProps {
+  items: PostreFormItem[];
   activoId?: string | null;
-  onEditarPlato: (plato: PlatoFormItem) => void;
+  etiqueta?: string;
+  onEditar: (item: PostreFormItem) => void;
 }
 
-export function TicketCompacto({
-  platos,
+export function TicketPostresCompacto({
+  items,
   activoId,
-  onEditarPlato,
-}: TicketCompactoProps) {
-  const items = platos.filter(platoTieneContenido);
-  if (items.length === 0) return null;
+  etiqueta = "Ticket",
+  onEditar,
+}: TicketPostresCompactoProps) {
+  const lineas = items.filter(postreTieneContenido);
+  if (lineas.length === 0) return null;
 
   return (
     <div className="mb-3 rounded-xl border-2 border-primary/20 bg-primary/5 p-2">
-      <p className="mb-2 text-sm font-bold text-primary">Ticket ({items.length})</p>
+      <p className="mb-2 text-sm font-bold text-primary">
+        {etiqueta} ({lineas.length})
+      </p>
       <div className="flex flex-wrap gap-1.5">
-        {items.map((p) => (
+        {lineas.map((p) => (
           <button
             key={p.id}
             type="button"
-            onClick={() => onEditarPlato(p)}
+            onClick={() => onEditar(p)}
             className={[
               "rounded-lg border px-2 py-1 text-xs font-semibold shadow-sm transition active:scale-95",
               p.id === activoId
@@ -34,10 +38,7 @@ export function TicketCompacto({
             ].join(" ")}
           >
             {p.nombre}
-            {p.cantidad > 1 ? ` x${p.cantidad}` : ""}
-            {(p.modificaciones?.length ?? 0) > 0 && (
-              <span className="ml-1 opacity-80">+{p.modificaciones.length}</span>
-            )}
+            {(p.cantidad ?? 1) > 1 ? ` x${p.cantidad}` : ""}
           </button>
         ))}
       </div>
