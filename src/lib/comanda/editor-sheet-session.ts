@@ -41,7 +41,7 @@ export function platoBaseEditor(
     menu: MenuDiaConfig | null;
   },
 ): PlatoFormItem {
-  if (opts.modo === "nuevo" && opts.producto) {
+  if (modo === "nuevo" && opts.producto) {
     return platoBaseDesdeProducto(opts.producto, opts.seccion, opts.menu);
   }
   if (opts.plato) return { ...opts.plato };
