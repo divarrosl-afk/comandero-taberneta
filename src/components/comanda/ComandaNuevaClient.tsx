@@ -6,11 +6,14 @@ import { useMemo, Suspense, useEffect, useState } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { ComandaEditView } from "@/components/comanda/nueva/ComandaEditView";
 import { ComandaEnviadaView } from "@/components/comanda/nueva/ComandaEnviadaView";
-import { PostresEnviadaView } from "@/components/postres/nueva/PostresEnviadaView";
 import { ComandaPreviewView } from "@/components/comanda/nueva/ComandaPreviewView";
 import { useAuth } from "@/contexts/AuthContext";
 import { useComandaForm } from "@/hooks/useComandaForm";
-import { formToComanda, formToComandaPostres } from "@/lib/comanda/map-form";
+import {
+  formToComanda,
+  formToComandaPanel,
+  formToComandaPostres,
+} from "@/lib/comanda/map-form";
 import { notificarComandaEnviada, marcarMesaOcupada } from "@/lib/mesas/estado-mesa";
 import { limpiarBorrador } from "@/lib/storage/borrador-comanda";
 import { guardarComanda, type PersistResult } from "@/lib/comandas/comandas-service";
@@ -37,8 +40,12 @@ function ComandaNuevaForm() {
   const [envio, setEnvio] = useState<PersistResult<ComandaCocina> | null>(null);
   const [envioPostres, setEnvioPostres] =
     useState<PersistResult<ComandaPostres> | null>(null);
+  const [comandaImpresion, setComandaImpresion] = useState<ComandaCocina | null>(
+    null,
+  );
 
-  const comanda = useMemo(() => formToComanda(form), [form]);
+  const comandaTicket = useMemo(() => formToComanda(form), [form]);
+  const comandaPanel = useMemo(() => formToComandaPanel(form), [form]);
   const comandaPostres = useMemo(() => formToComandaPostres(form), [form]);
 
   useEffect(() => {
@@ -46,14 +53,18 @@ function ComandaNuevaForm() {
   }, [mesaParam]);
 
   const handleEnviar = async () => {
-    if (!comanda && !comandaPostres) return;
+    if (!comandaTicket) return;
 
     const username = sesion?.username ?? form.camareroId;
     let synced = true;
     const avisos: string[] = [];
 
-    if (comanda) {
-      const resultado = await guardarComanda(comanda, { camareroUsername: username });
+    setComandaImpresion(comandaTicket);
+
+    if (comandaPanel) {
+      const resultado = await guardarComanda(comandaPanel, {
+        camareroUsername: username,
+      });
       setEnvio(resultado);
       if (!resultado.synced) {
         synced = false;
@@ -84,7 +95,7 @@ function ComandaNuevaForm() {
       setSyncAviso(null);
     }
 
-    const mesaId = comanda?.mesa ?? comandaPostres?.mesa;
+    const mesaId = comandaTicket.mesa;
     if (mesaId) notificarComandaEnviada(mesaId);
     limpiarBorrador();
     setStep("enviada");
@@ -93,8 +104,8 @@ function ComandaNuevaForm() {
   const reintentarSync = async () => {
     const username = sesion?.username ?? form.camareroId;
     let ok = true;
-    if (comanda) {
-      const r = await guardarComanda(comanda, { camareroUsername: username });
+    if (comandaPanel) {
+      const r = await guardarComanda(comandaPanel, { camareroUsername: username });
       setEnvio(r);
       if (!r.synced) ok = false;
     }
@@ -113,6 +124,11 @@ function ComandaNuevaForm() {
     return ok;
   };
 
+  const handleNueva = () => {
+    setComandaImpresion(null);
+    reset();
+  };
+
   return (
     <main className="mx-auto min-h-dvh max-w-lg px-4 py-4 pb-32">
       {step === "editar" && (
@@ -124,12 +140,10 @@ function ComandaNuevaForm() {
           onSetComensales={formActions.setComensales}
           onUpdatePlato={formActions.updatePlato}
           onAddPlato={formActions.addPlato}
-          onConfirmPlatoDesdeCatalogo={formActions.confirmPlatoDesdeCatalogo}
+          onConfirmPlato={formActions.confirmPlato}
           onRemovePlato={formActions.removePlato}
           onDuplicatePlato={formActions.duplicatePlato}
           onClearSeccion={formActions.clearSeccion}
-          onToggleModificacion={formActions.toggleModificacion}
-          onCycleSalsa={formActions.cycleSalsa}
           onSetExtraCantidad={formActions.setExtraCantidad}
           onUpdatePostre={formActions.updatePostre}
           onAddPostre={formActions.addPostre}
@@ -152,31 +166,20 @@ function ComandaNuevaForm() {
         />
       )}
 
-      {step === "preview" && (comanda || comandaPostres) && (
+      {step === "preview" && comandaTicket && (
         <ComandaPreviewView
-          comanda={comanda}
-          comandaPostres={comandaPostres}
+          comanda={comandaTicket}
           onEdit={() => setStep("editar")}
           onSend={handleEnviar}
         />
       )}
 
-      {step === "enviada" && envio?.data && (
+      {step === "enviada" && comandaImpresion && (
         <ComandaEnviadaView
-          comanda={envio.data}
-          comandaPostres={envioPostres?.data ?? null}
+          comanda={comandaImpresion}
+          imprimirPostresSeparado={false}
           synced={!syncAviso}
-          onNueva={reset}
-          syncAviso={syncAviso}
-          onReintentarSync={reintentarSync}
-        />
-      )}
-
-      {step === "enviada" && !envio?.data && envioPostres?.data && (
-        <PostresEnviadaView
-          comanda={envioPostres.data}
-          synced={!syncAviso}
-          onNueva={reset}
+          onNueva={handleNueva}
           syncAviso={syncAviso}
           onReintentarSync={reintentarSync}
         />

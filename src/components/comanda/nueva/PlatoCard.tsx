@@ -21,7 +21,8 @@ interface PlatoCardProps {
   onChange: (cambios: Partial<PlatoFormItem>) => void;
   onRemove: () => void;
   onDuplicate: () => void;
-  onToggleModificacion: (mod: ModificacionId) => void;
+  onTapModificacion: (mod: ModificacionId) => void;
+  onSetModificacionCantidad: (mod: ModificacionId, cantidad: number) => void;
   onCycleSalsa: (salsaId: string, nombre: string) => void;
   onCerrarEditor?: () => void;
 }
@@ -37,7 +38,8 @@ export function PlatoCard({
   onChange,
   onRemove,
   onDuplicate,
-  onToggleModificacion,
+  onTapModificacion,
+  onSetModificacionCantidad,
   onCycleSalsa,
   onCerrarEditor,
 }: PlatoCardProps) {
@@ -119,7 +121,8 @@ export function PlatoCard({
 
             <ModificacionesChips
               seleccionadas={plato.modificaciones}
-              onToggle={onToggleModificacion}
+              onTap={onTapModificacion}
+              onSetCantidad={onSetModificacionCantidad}
             />
 
             <SalsasSelector salsas={plato.salsas} onCycle={onCycleSalsa} />

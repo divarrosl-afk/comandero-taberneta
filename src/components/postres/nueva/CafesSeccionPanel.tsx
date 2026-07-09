@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { TicketPostresCompacto } from "@/components/comanda/nueva/TicketPostresCompacto";
-import { PostreCard } from "@/components/postres/nueva/PostreCard";
+import { PostreEditorSheet } from "@/components/postres/nueva/PostreEditorSheet";
 import { CafesFrecuentesGrid } from "@/components/postres/nueva/CafesFrecuentesGrid";
 import type { PostreFormItem } from "@/types/postres";
 
@@ -63,25 +63,6 @@ export function CafesSeccionPanel({
           onEditar={(p) => setActivoId(p.id)}
         />
 
-        {cafeActivo && (
-          <div className="mb-4">
-            <PostreCard
-              postre={cafeActivo}
-              indice={cafes.findIndex((c) => c.id === cafeActivo.id)}
-              modoEditor
-              nombrePlaceholder="Nombre del café"
-              notaPlaceholder="Nota opcional (ej: con leche)"
-              onCerrarEditor={() => setActivoId(null)}
-              onChange={(cambios) => onUpdate(cafeActivo.id, cambios)}
-              onRemove={() => {
-                onRemove(cafeActivo.id);
-                setActivoId(null);
-              }}
-              onDuplicate={() => onDuplicate(cafeActivo.id)}
-            />
-          </div>
-        )}
-
         <CafesFrecuentesGrid
           onSelect={(nombre) => {
             const id = onAddRapido(nombre);
@@ -89,6 +70,23 @@ export function CafesSeccionPanel({
           }}
         />
       </SectionCard>
+
+      {cafeActivo && (
+        <PostreEditorSheet
+          open
+          titulo={cafeActivo.nombre.trim() || "Café"}
+          postre={cafeActivo}
+          nombrePlaceholder="Nombre del café"
+          notaPlaceholder="Nota opcional (ej: con leche)"
+          onClose={() => setActivoId(null)}
+          onAceptar={(cambios) => onUpdate(cafeActivo.id, cambios)}
+          onDuplicate={() => onDuplicate(cafeActivo.id)}
+          onRemove={() => {
+            onRemove(cafeActivo.id);
+            setActivoId(null);
+          }}
+        />
+      )}
 
       <ConfirmDialog
         open={confirmClear}

@@ -157,9 +157,106 @@ describe("ticket-kitchen", () => {
     expect(texto).toContain("ENTRANTES");
   });
 
+  it("ticket completo incluye postres tras segundos y cafés en bebidas", () => {
+    const comanda = comandaEjemplo();
+    comanda.postres = [{ id: "d1", nombre: "Cruasant", cantidad: 1 }];
+    comanda.bebidas.push(
+      plato({ id: "c1", nombre: "Té negro", cantidad: 1 }),
+    );
+
+    const texto = formatKitchenTicketPlain(comanda, "completo", {
+      nombreMesa: "12",
+    });
+
+    const idxSegundos = texto.indexOf("SEGUNDOS");
+    const idxPostres = texto.indexOf("POSTRES");
+    const idxBebidas = texto.indexOf("BEBIDAS");
+    expect(idxSegundos).toBeGreaterThan(-1);
+    expect(idxPostres).toBeGreaterThan(idxSegundos);
+    expect(idxBebidas).toBeGreaterThan(idxPostres);
+    expect(texto).toContain("CRUASANT");
+    expect(texto).toContain("TÉ NEGRO");
+  });
+
   it("ticket barra reducido eliminado", () => {
     const comanda = comandaCocinaFixture({ bebidas: [], extras: [], observaciones: [] });
     expect(comandaToTicketBarra(comanda)).toBeNull();
+  });
+
+  it("formatea torradas con siglas TORRA DESAYUNO DE y TORRA CARTA DE", () => {
+    const comanda = comandaCocinaFixture({
+      entrantes: [
+        plato({
+          id: "t1",
+          nombre: "TORRA CARTA DE Escalivada, atún, anchoas y olivas",
+          tipo: "carta",
+        }),
+        plato({
+          id: "t2",
+          nombre: "TORRA DESAYUNO DE Butifarra con queso, cebolla y pimiento verde",
+          tipo: "carta",
+        }),
+      ],
+      primeros: [],
+      segundos: [],
+      bebidas: [],
+    });
+    const texto = formatKitchenTicketPlain(comanda, "cocina");
+    expect(texto).toContain(
+      "(C) TORRA CARTA DE ESCALIVADA, ATÚN, ANCHOAS Y OLIVAS",
+    );
+    expect(texto).toContain(
+      "(C) TORRA DESAYUNO DE BUTIFARRA CON QUESO, CEBOLLA Y PIMIENTO VERDE",
+    );
+    expect(texto).not.toContain("(GRANDE)");
+    expect(texto).not.toContain("(DESAYUNO)");
+  });
+
+  it("normaliza torradas legacy en ticket", () => {
+    const comanda = comandaCocinaFixture({
+      entrantes: [
+        plato({
+          id: "tl1",
+          nombre: "Torrada Escalivada, atún, anchoas y olivas (grande)",
+          tipo: "carta",
+        }),
+      ],
+      primeros: [],
+      segundos: [],
+      bebidas: [],
+    });
+    const texto = formatKitchenTicketPlain(comanda, "cocina");
+    expect(texto).toContain(
+      "(C) TORRA CARTA DE ESCALIVADA, ATÚN, ANCHOAS Y OLIVAS",
+    );
+  });
+
+  it("formatea bocadillos en línea con siglas BOC y mods con +", () => {
+    const comanda = comandaCocinaFixture({
+      entrantes: [
+        plato({
+          id: "b1",
+          nombre: "1/2 BOC Bacon",
+          tipo: "carta",
+          modificaciones: ["QUESO", "CEBOLLA FRITA", "PIM VERDE"],
+        }),
+        plato({
+          id: "b2",
+          nombre: "BOC Lomo",
+          tipo: "carta",
+          modificaciones: ["QUESO"],
+        }),
+      ],
+      primeros: [],
+      segundos: [],
+      bebidas: [],
+    });
+    const texto = formatKitchenTicketPlain(comanda, "cocina");
+    expect(texto).toContain(
+      "(C) 1/2 BOC BACON + QUESO + CEBOLLA FRITA + PIM VERDE",
+    );
+    expect(texto).toContain("(C) BOC LOMO + QUESO");
+    expect(texto).not.toContain(" - QUESO");
   });
 
   it("platos repetidos con mods distintas agregan cantidad por mod", () => {

@@ -9,7 +9,26 @@ export interface CatalogoItem<T extends string> {
   id: T;
   label: string;
   labelCorto?: string;
+  /** Etiqueta en ticket de cocina (mayúsculas). */
+  labelTicket?: string;
 }
+
+/** Modificaciones de un solo toque (activar/desactivar). */
+export const MODS_TOGGLE = new Set<ModificacionId>([
+  "sin_cebolla",
+  "sin_tomate",
+  "sin_queso",
+  "sin_gluten",
+  "sin_lactosa",
+  "sin_salsa",
+  "poco_hecho",
+  "al_punto",
+  "muy_hecho",
+  "compartir",
+  "para_llevar",
+  "urgente",
+  "ninos",
+]);
 
 export const MODIFICACIONES: CatalogoItem<ModificacionId>[] = [
   { id: "champis", label: "Champiñones", labelCorto: "Champis" },
@@ -30,8 +49,6 @@ export const MODIFICACIONES: CatalogoItem<ModificacionId>[] = [
   { id: "limon", label: "Limón", labelCorto: "Limón" },
   { id: "plato_vacio", label: "Plato vacío", labelCorto: "Plato vacío" },
   { id: "queso", label: "Queso", labelCorto: "Queso" },
-  { id: "salsa_romesco", label: "Salsa romesco", labelCorto: "Romesco" },
-  { id: "salsa_roquefort_mod", label: "Salsa roquefort", labelCorto: "Roquefort" },
   { id: "servilletas", label: "Servilletas", labelCorto: "Servilletas" },
   { id: "sin_cebolla", label: "Sin cebolla", labelCorto: "S/cebolla" },
   { id: "sin_tomate", label: "Sin tomate", labelCorto: "S/tomate" },
@@ -49,12 +66,10 @@ export const MODIFICACIONES: CatalogoItem<ModificacionId>[] = [
 ];
 
 export const SALSAS: CatalogoItem<SalsaId>[] = [
-  { id: "alioli", label: "Alioli" },
-  { id: "mayonesa", label: "Mayonesa", labelCorto: "Mayo" },
-  { id: "ketchup", label: "Ketchup" },
-  { id: "salsa_brava", label: "Salsa brava", labelCorto: "Brava" },
-  { id: "salsa_pimienta", label: "Salsa pimienta", labelCorto: "Pimienta" },
+  { id: "salsa_romesco", label: "Salsa romesco", labelCorto: "Romesco" },
   { id: "salsa_roquefort", label: "Salsa roquefort", labelCorto: "Roquefort" },
+  { id: "salsa_pimienta", label: "Salsa pimienta", labelCorto: "Pimienta" },
+  { id: "salsa_champis", label: "Salsa champis", labelCorto: "Champis" },
 ];
 
 export const EXTRAS_MESA: CatalogoItem<ExtraMesaId>[] = [
@@ -102,6 +117,20 @@ export const OBSERVACIONES_RAPIDAS = [
 
 export function getModificacionLabel(id: ModificacionId): string {
   return MODIFICACIONES.find((m) => m.id === id)?.label ?? id;
+}
+
+export function getModificacionTicketLabel(id: ModificacionId): string {
+  const item = MODIFICACIONES.find((m) => m.id === id);
+  if (!item) return id.toUpperCase();
+  if (item.labelTicket) return item.labelTicket;
+  if (item.id.startsWith("sin_")) {
+    return item.label.toLocaleUpperCase("es-ES");
+  }
+  return (item.labelCorto ?? item.label).toLocaleUpperCase("es-ES");
+}
+
+export function esModToggle(id: ModificacionId): boolean {
+  return MODS_TOGGLE.has(id);
 }
 
 export function getSalsaLabel(id: SalsaId): string {

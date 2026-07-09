@@ -1,4 +1,7 @@
 import type { ComandaCocina, PlatoComanda, TipoPlato } from "@/types/comanda";
+import type { PostreItem } from "@/types/postres";
+import { getEstadoXCafeLabel } from "@/data/postres-catalogo";
+import { normalizarNombreTorrada } from "@/lib/carta/torradas-grid";
 import { getCodigoMesaComanda, isUuid } from "@/lib/mesas/resolve-mesa";
 
 export { isUuid } from "@/lib/mesas/resolve-mesa";
@@ -141,6 +144,57 @@ function prefijoTipo(tipo?: TipoPlato): string {
   return "";
 }
 
+const BOCADILLO_LEGACY_MEDIO = /^bocadillo\s+(.+?)\s*\(medio\)$/i;
+const BOCADILLO_LEGACY_GRANDE = /^bocadillo\s+(.+?)\s*\(grande\)$/i;
+
+export function esNombreBocadillo(nombre: string): boolean {
+  const norm = normalizeKey(nombre);
+  return (
+    norm.startsWith("boc ") ||
+    norm.startsWith("1/2 boc ") ||
+    BOCADILLO_LEGACY_MEDIO.test(nombre.trim()) ||
+    BOCADILLO_LEGACY_GRANDE.test(nombre.trim())
+  );
+}
+
+function normalizarNombreBocadillo(nombre: string): string {
+  const trimmed = nombre.trim();
+  const medio = trimmed.match(BOCADILLO_LEGACY_MEDIO);
+  if (medio) return `1/2 BOC ${medio[1]!.trim()}`;
+  const grande = trimmed.match(BOCADILLO_LEGACY_GRANDE);
+  if (grande) return `BOC ${grande[1]!.trim()}`;
+  return trimmed;
+}
+
+function prefijoTipoBocadillo(tipo?: TipoPlato): string {
+  return prefijoTipo(tipo ?? "carta");
+}
+
+function formatearModTicket(bullet: string): string {
+  const match = bullet.match(/^(.+?)\s+x(\d+)$/i);
+  if (match) return `${match[1]!.trim()} x${match[2]}`;
+  return bullet.trim();
+}
+
+function lineaBocadillo(
+  cantidad: number,
+  nombre: string,
+  tipo: TipoPlato | undefined,
+  bullets: string[],
+): string {
+  const base = toTicketUpper(normalizarNombreBocadillo(nombre));
+  const mods = bullets.map(formatearModTicket);
+  const cuerpo =
+    mods.length > 0
+      ? `${prefijoTipoBocadillo(tipo)}${base} + ${mods.join(" + ")}`
+      : `${prefijoTipoBocadillo(tipo)}${base}`;
+
+  if (cantidad > 1) {
+    return `${MARK_DISH}${cantidad} ${cuerpo}`;
+  }
+  return `${MARK_DISH}${cuerpo}`;
+}
+
 interface UnidadPlato {
   nombre: string;
   tipo?: TipoPlato;
@@ -213,15 +267,23 @@ function agruparUnidades(unidades: UnidadPlato[]): GrupoImpresion[] {
   return [...map.values()];
 }
 
+function normalizarNombrePlatoTicket(nombre: string): string {
+  const torrada = normalizarNombreTorrada(nombre);
+  if (torrada) return torrada;
+  if (esNombreBocadillo(nombre)) return normalizarNombreBocadillo(nombre);
+  return nombre;
+}
+
 function lineaPlatoCantidad(
   cantidad: number,
   nombre: string,
   tipo?: TipoPlato,
 ): string {
+  const etiqueta = toTicketUpper(normalizarNombrePlatoTicket(nombre));
   if (cantidad > 1) {
-    return `${MARK_DISH}${cantidad} ${pluralizarNombre(nombre, cantidad)}`;
+    return `${MARK_DISH}${cantidad} ${pluralizarNombre(etiqueta, cantidad)}`;
   }
-  return `${MARK_DISH}${prefijoTipo(tipo)}${toTicketUpper(nombre)}`;
+  return `${MARK_DISH}${prefijoTipo(tipo)}${etiqueta}`;
 }
 
 function lineasSuplemento(tipo: TipoPlato | undefined, suplemento?: number): string[] {
@@ -262,6 +324,7 @@ function lineasGrupo(grupo: GrupoImpresion): string[] {
   const lineas: string[] = [];
   const { unidades, nombre, tipo, suplemento } = grupo;
   const total = unidades.length;
+  const esBocadillo = esNombreBocadillo(nombre);
 
   const firmas = new Map<string, UnidadPlato[]>();
   for (const u of unidades) {
@@ -277,6 +340,34 @@ function lineasGrupo(grupo: GrupoImpresion): string[] {
 
   if (algunaUrgente) {
     lineas.push(`${MARK_URGENT}>>> URGENTE <<<`);
+  }
+
+  if (esBocadillo) {
+    if (todasIguales) {
+      const u = variantes[0]![0]!;
+      lineas.push(lineaBocadillo(total, nombre, tipo, u.bullets));
+      lineas.push(...lineasSuplemento(tipo, suplemento));
+      if (u.notaLibre) {
+        for (const parte of u.notaLibre.split(/\s*[·•]\s*/)) {
+          const t = parte.trim();
+          if (t) lineas.push(`${MARK_DETAIL}${INDENT_MOD}${toTicketUpper(t)}`);
+        }
+      }
+      return lineas;
+    }
+
+    for (const variante of variantes) {
+      const u = variante[0]!;
+      lineas.push(lineaBocadillo(variante.length, nombre, tipo, u.bullets));
+    }
+    lineas.push(...lineasSuplemento(tipo, suplemento));
+    for (const variante of variantes) {
+      const u = variante[0]!;
+      if (u.notaLibre) {
+        lineas.push(`${MARK_DETAIL}${INDENT_MOD}${toTicketUpper(u.notaLibre)}`);
+      }
+    }
+    return lineas;
   }
 
   lineas.push(lineaPlatoCantidad(total, nombre, tipo));
@@ -350,6 +441,49 @@ function lineasExtras(
     lineas.push(...lineasGrupo(grupo));
     lineas.push("");
   }
+  return lineas;
+}
+
+function lineasPostres(postres: PostreItem[], width: number): string[] {
+  if (!postres.length) return [];
+
+  const platos: PlatoComanda[] = postres.map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    cantidad: p.cantidad,
+    modificaciones: [],
+    salsas: [],
+    notaLibre: p.nota,
+    estado: "pendiente",
+  }));
+
+  return lineasSeccion("POSTRES", platos, width);
+}
+
+function lineasEstadoXCafe(estado: NonNullable<ComandaCocina["estadoXCafe"]>): string[] {
+  return [
+    `${MARK_DETAIL}${INDENT_MOD}X: ${getEstadoXCafeLabel(estado).toUpperCase()}`,
+  ];
+}
+
+function lineasBebidas(
+  comanda: ComandaCocina,
+  width: number,
+): string[] {
+  if (!comanda.bebidas.length && !comanda.estadoXCafe) return [];
+
+  const lineas: string[] = [`${MARK_SECTION}${sectionHeader("BEBIDAS", width)}`, ""];
+
+  if (comanda.estadoXCafe) {
+    lineas.push(...lineasEstadoXCafe(comanda.estadoXCafe));
+  }
+
+  const grupos = agruparUnidades(comanda.bebidas.flatMap(expandirPlato));
+  for (const grupo of grupos) {
+    lineas.push(...lineasGrupo(grupo));
+    lineas.push("");
+  }
+
   return lineas;
 }
 
@@ -445,6 +579,7 @@ export function formatKitchenTicket(
     lineas.push(...lineasSeccion("SEGUNDOS", comanda.segundos, width));
 
     if (destino === "completo") {
+      lineas.push(...lineasPostres(comanda.postres ?? [], width));
       lineas.push(...lineasExtras(comanda.extras, width));
     } else {
       const extrasCocina = comanda.extras.filter((e) => !BARRA_EXTRA_RE.test(e.nombre));
@@ -453,7 +588,11 @@ export function formatKitchenTicket(
   }
 
   if (incluirBarra || destino === "cocina" || destino === "completo") {
-    lineas.push(...lineasSeccion("BEBIDAS", comanda.bebidas, width));
+    if (destino === "completo") {
+      lineas.push(...lineasBebidas(comanda, width));
+    } else {
+      lineas.push(...lineasSeccion("BEBIDAS", comanda.bebidas, width));
+    }
 
     if (destino === "barra") {
       const extrasBarra = comanda.extras.filter((e) => BARRA_EXTRA_RE.test(e.nombre));

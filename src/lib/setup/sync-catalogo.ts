@@ -1,5 +1,10 @@
 import { crearCatalogoDefault } from "@/data/catalogo-default";
-import { claveProductoCatalogo } from "@/lib/catalogo/catalogo-clave";
+import { claveProductoCatalogo, normalizarNombreCatalogo } from "@/lib/catalogo/catalogo-clave";
+import {
+  claveEmparejarCatalogo,
+  idsProductosCatalogoObsoletos,
+  legaciesPorClaveCanonica,
+} from "@/lib/catalogo/catalogo-legacy";
 import { createId } from "@/lib/id/create-id";
 import { productoToRow, rowToProducto, type DbProducto } from "@/lib/supabase/mappers";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -8,6 +13,7 @@ import type { ProductoCatalogo } from "@/types/catalogo";
 export type SyncCatalogoResult = {
   inserted: number;
   updated: number;
+  deleted: number;
   total: number;
 };
 
@@ -25,6 +31,7 @@ function fusionarConExistente(
     precioCarta: existente.precioCarta ?? defecto.precioCarta,
     precioMenu: existente.precioMenu ?? defecto.precioMenu,
     notasInternas: existente.notasInternas ?? defecto.notasInternas,
+    nombreCorto: undefined,
   };
 }
 
@@ -37,6 +44,7 @@ function necesitaActualizacion(
     fusionado.cartaServicio !== existente.cartaServicio ||
     fusionado.orden !== existente.orden ||
     fusionado.nombre !== existente.nombre ||
+    fusionado.nombreCorto !== existente.nombreCorto ||
     JSON.stringify(fusionado.usosComanda ?? []) !==
       JSON.stringify(existente.usosComanda ?? [])
   );
@@ -80,33 +88,55 @@ export function prepararSyncCatalogo(
   return { aSubir, inserted, updated };
 }
 
-/** Fusiona catálogo guardado con defaults (nuevos productos sin borrar personalizados). */
+/** Fusiona catálogo guardado con defaults, eliminando legacy duplicado. */
 export function mergeCatalogoCompleto(
   existentes: ProductoCatalogo[],
   defectos: ProductoCatalogo[],
   clavesExcluidas: ReadonlySet<string> = new Set(),
 ): ProductoCatalogo[] {
-  const porClave = new Map<string, ProductoCatalogo>();
-  for (const producto of existentes) {
-    porClave.set(claveProductoCatalogo(producto), producto);
-  }
+  const nombresDefecto = new Set(
+    defectos.map((d) => normalizarNombreCatalogo(d.nombre)),
+  );
+  const idsObsoletos = new Set(
+    idsProductosCatalogoObsoletos(existentes, defectos),
+  );
+  const legacies = legaciesPorClaveCanonica(existentes, defectos);
+  const defectosPorEmparejar = new Map(
+    defectos.map((d) => [claveEmparejarCatalogo(d, nombresDefecto), d]),
+  );
 
-  const resultado = [...existentes];
+  const personalizados = existentes.filter((p) => {
+    if (idsObsoletos.has(p.id)) return false;
+    const emparejar = claveEmparejarCatalogo(p, nombresDefecto);
+    return !defectosPorEmparejar.has(emparejar);
+  });
+
+  const resultado: ProductoCatalogo[] = [...personalizados];
 
   for (const defecto of defectos) {
     const clave = claveProductoCatalogo(defecto);
+    const emparejar = claveEmparejarCatalogo(defecto, nombresDefecto);
     if (clavesExcluidas.has(clave)) continue;
 
-    const existente = porClave.get(clave);
+    const existente = existentes.find(
+      (p) =>
+        !idsObsoletos.has(p.id) &&
+        claveEmparejarCatalogo(p, nombresDefecto) === emparejar,
+    );
+    const legacyGrupo = legacies.get(emparejar) ?? [];
+
+    let fusionado = defecto;
     if (existente) {
-      const fusionado = fusionarConExistente(defecto, existente);
-      const idx = resultado.findIndex((p) => p.id === existente.id);
-      if (idx >= 0) resultado[idx] = fusionado;
-    } else {
-      const nuevo = { ...defecto, id: createId() };
-      resultado.push(nuevo);
-      porClave.set(clave, nuevo);
+      fusionado = fusionarConExistente(defecto, existente);
     }
+    for (const leg of legacyGrupo) {
+      fusionado = fusionarConExistente(fusionado, leg);
+    }
+
+    resultado.push({
+      ...fusionado,
+      id: existente?.id ?? legacyGrupo[0]?.id ?? createId(),
+    });
   }
 
   return resultado;
@@ -145,14 +175,34 @@ export async function syncCatalogoConDefaults(
     ),
   );
   const defectos = crearCatalogoDefault();
+
+  const idsObsoletos = idsProductosCatalogoObsoletos(existentes, defectos);
+  let deleted = 0;
+
+  if (idsObsoletos.length > 0) {
+    const { error: deleteError } = await admin
+      .from("productos")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("restaurante_id", restauranteId)
+      .in("id", idsObsoletos);
+    if (deleteError) throw new Error(`Catálogo cleanup: ${deleteError.message}`);
+    deleted = idsObsoletos.length;
+  }
+
+  const existentesLimpios = existentes.filter((p) => !idsObsoletos.includes(p.id));
   const { aSubir, inserted, updated } = prepararSyncCatalogo(
     defectos,
-    existentes,
+    existentesLimpios,
     clavesExcluidas,
   );
 
   if (aSubir.length === 0) {
-    return { inserted: 0, updated: 0, total: existentes.length };
+    return {
+      inserted: 0,
+      updated: 0,
+      deleted,
+      total: existentesLimpios.length,
+    };
   }
 
   const rows = aSubir.map((p) => productoToRow(p, restauranteId));
@@ -170,6 +220,7 @@ export async function syncCatalogoConDefaults(
   return {
     inserted,
     updated,
-    total: count ?? existentes.length + inserted,
+    deleted,
+    total: count ?? existentesLimpios.length + inserted,
   };
 }

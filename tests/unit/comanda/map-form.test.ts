@@ -4,6 +4,7 @@ import {
   formTieneContenido,
   formTieneContenidoCocina,
   formToComanda,
+  formToComandaPanel,
   formToComandaPostres,
 } from "@/lib/comanda/map-form";
 import { crearPlatoVacio } from "@/lib/comanda/plato-factory";
@@ -53,30 +54,32 @@ describe("formEsValido — pedidos parciales", () => {
       extras: [{ id: "pan", nombre: "Pan", cantidad: 1 }],
     });
     expect(formEsValido(form)).toBe(true);
-    expect(formToComanda(form)?.extras).toHaveLength(1);
+    expect(formToComandaPanel(form)?.extras).toHaveLength(1);
   });
 
   it("acepta solo observaciones", () => {
     const form = formBase({ observaciones: ["Mesa al fondo"] });
     expect(formEsValido(form)).toBe(true);
-    expect(formToComanda(form)?.observaciones).toEqual(["Mesa al fondo"]);
+    expect(formToComandaPanel(form)?.observaciones).toEqual(["Mesa al fondo"]);
   });
 
-  it("acepta solo postres", () => {
+  it("acepta solo postres en ticket completo", () => {
     const form = formBase({
       postres: [{ ...crearPostreVacio(), nombre: "Flan" }],
     });
     expect(formEsValido(form)).toBe(true);
     expect(formTieneContenidoCocina(form)).toBe(false);
-    expect(formToComanda(form)).toBeNull();
+    expect(formToComandaPanel(form)).toBeNull();
+    expect(formToComanda(form)?.postres).toHaveLength(1);
     expect(formToComandaPostres(form)?.postres).toHaveLength(1);
   });
 
-  it("acepta solo cafés", () => {
+  it("acepta solo cafés en ticket completo (bebidas)", () => {
     const form = formBase({
       cafes: [{ ...crearPostreVacio(), nombre: "Cortado" }],
     });
     expect(formEsValido(form)).toBe(true);
+    expect(formToComanda(form)?.bebidas).toHaveLength(1);
     expect(formToComandaPostres(form)?.cafes).toHaveLength(1);
   });
 
@@ -88,13 +91,20 @@ describe("formEsValido — pedidos parciales", () => {
     expect(formToComanda(form)?.comensales).toBe(4);
   });
 
-  it("detecta contenido mixto cocina + postres", () => {
+  it("ticket completo une postres y cafés; panel los separa", () => {
     const form = formBase({
       bebidas: [{ ...crearPlatoVacio(), nombre: "Cerveza" }],
       postres: [{ ...crearPostreVacio(), nombre: "Tarta" }],
+      cafes: [{ ...crearPostreVacio(), nombre: "Té negro" }],
     });
     expect(formTieneContenido(form)).toBe(true);
-    expect(formToComanda(form)).not.toBeNull();
-    expect(formToComandaPostres(form)).not.toBeNull();
+    const ticket = formToComanda(form)!;
+    expect(ticket.postres).toHaveLength(1);
+    expect(ticket.bebidas.map((b) => b.nombre)).toEqual(["Cerveza", "Té negro"]);
+
+    const panel = formToComandaPanel(form)!;
+    expect(panel.bebidas).toHaveLength(1);
+    expect(panel.postres).toBeUndefined();
+    expect(formToComandaPostres(form)?.cafes).toHaveLength(1);
   });
 });

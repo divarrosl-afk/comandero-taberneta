@@ -5,7 +5,7 @@ import {
   agruparProductosPorCategoria,
   filtrarProductosComanda,
 } from "@/lib/carta/carta-admin";
-import { CATEGORIAS_CARTA } from "@/types/catalogo";
+import { CATEGORIAS_CARTA, nombreBoton } from "@/types/catalogo";
 
 describe("carta almuerzo oficial", () => {
   const ordenFuente = Object.keys(CARTAS_RESTAURANTE.cartaAlmuerzo);
@@ -20,8 +20,21 @@ describe("carta almuerzo oficial", () => {
     const productos = crearCatalogoDefault();
     const alm = productos.filter((p) => p.cartaServicio === "almuerzo");
 
-    expect(alm.some((p) => p.nombre.includes("(medio)"))).toBe(true);
-    expect(alm.some((p) => p.nombre.includes("(desayuno)"))).toBe(true);
+    expect(alm.some((p) => p.nombre.startsWith("1/2 BOC "))).toBe(true);
+    expect(alm.some((p) => p.nombre.startsWith("BOC "))).toBe(true);
+    expect(alm.some((p) => p.nombre.startsWith("TORRA DESAYUNO DE "))).toBe(true);
+    expect(alm.some((p) => p.nombre.startsWith("TORRA CARTA DE "))).toBe(true);
+
+    const medioLomo = alm.find((p) => p.nombre === "1/2 BOC Lomo");
+    const bocLomo = alm.find((p) => p.nombre === "BOC Lomo");
+    expect(medioLomo).toBeDefined();
+    expect(bocLomo).toBeDefined();
+    expect(nombreBoton(medioLomo!)).toBe("1/2 BOC Lomo");
+    expect(nombreBoton(bocLomo!)).toBe("BOC Lomo");
+
+    const frios = alm.filter((p) => p.categoriaCarta === "bocadillosFrios");
+    expect(frios.some((p) => p.nombre === "1/2 BOC Jamón del país")).toBe(true);
+    expect(frios.some((p) => p.nombre === "BOC Jamón del país")).toBe(true);
     expect(alm.some((p) => p.nombre === "Patatas bravas")).toBe(true);
     expect(alm.some((p) => p.nombre === "Jalapeños")).toBe(true);
     expect(

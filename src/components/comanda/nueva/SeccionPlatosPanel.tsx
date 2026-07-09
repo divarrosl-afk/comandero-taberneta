@@ -6,17 +6,13 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { ProductosRapidosGrid } from "@/components/catalogo/ProductosRapidosGrid";
 import { CatalogoBuscadorRapido } from "@/components/catalogo/CatalogoBuscadorRapido";
-import { PlatoCard } from "@/components/comanda/nueva/PlatoCard";
+import { PlatoEditorSheet } from "@/components/comanda/nueva/PlatoEditorSheet";
 import { TicketCompacto } from "@/components/comanda/nueva/TicketCompacto";
 import { OrigenPlatosSelector } from "@/components/comanda/nueva/OrigenPlatosSelector";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import type { OrigenPlatos } from "@/lib/carta/carta-admin";
 import type { SeccionCatalogo, ProductoCatalogo } from "@/types/catalogo";
-import type {
-  ModificacionId,
-  PlatoFormItem,
-  SeccionPlatos,
-} from "@/types/comanda";
+import type { PlatoFormItem, SeccionPlatos } from "@/types/comanda";
 
 const SECCION_A_CATALOGO: Record<SeccionPlatos, SeccionCatalogo> = {
   entrantes: "entrantes",
@@ -56,6 +52,11 @@ function origenInicial(
   return "carta-almuerzo";
 }
 
+type EditorState =
+  | { modo: "nuevo"; producto: ProductoCatalogo }
+  | { modo: "editar"; platoId: string }
+  | null;
+
 interface SeccionPlatosPanelProps {
   titulo: string;
   seccion: SeccionPlatos;
@@ -66,12 +67,10 @@ interface SeccionPlatosPanelProps {
   onBusquedaChange?: (value: string) => void;
   onUpdate: (id: string, cambios: Partial<PlatoFormItem>) => void;
   onAddManual: () => string;
-  onConfirmDesdeCatalogo: (producto: ProductoCatalogo) => string;
+  onConfirmPlato: (plato: PlatoFormItem) => string;
   onRemove: (id: string) => void;
   onDuplicate: (id: string) => void;
   onClear: () => void;
-  onToggleModificacion: (platoId: string, mod: ModificacionId) => void;
-  onCycleSalsa: (platoId: string, salsaId: string, nombre: string) => void;
 }
 
 export function SeccionPlatosPanel({
@@ -84,36 +83,39 @@ export function SeccionPlatosPanel({
   onBusquedaChange,
   onUpdate,
   onAddManual,
-  onConfirmDesdeCatalogo,
+  onConfirmPlato,
   onRemove,
   onDuplicate,
   onClear,
-  onToggleModificacion,
-  onCycleSalsa,
 }: SeccionPlatosPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
-  const [activoId, setActivoId] = useState<string | null>(null);
+  const [editor, setEditor] = useState<EditorState>(null);
   const { menu } = useMenuDia();
   const [origen, setOrigen] = useState<OrigenPlatos>(() =>
     origenInicial(seccion, menu?.activo ?? false),
   );
 
-  const platoActivo = useMemo(
-    () => platos.find((p) => p.id === activoId) ?? null,
-    [platos, activoId],
-  );
+  const platoEditando = useMemo(() => {
+    if (editor?.modo !== "editar") return null;
+    return platos.find((p) => p.id === editor.platoId) ?? null;
+  }, [editor, platos]);
+
+  const activoId = editor?.modo === "editar" ? editor.platoId : null;
 
   const conSelectorOrigen =
     seccion === "entrantes" || seccion === "primeros" || seccion === "segundos";
 
   const abrirCatalogo = (producto: ProductoCatalogo) => {
-    const id = onConfirmDesdeCatalogo(producto);
-    if (id) setActivoId(id);
+    if (!producto.activo || producto.agotado) return;
+    setEditor({ modo: "nuevo", producto });
   };
 
   const abrirManual = () => {
-    setActivoId(onAddManual());
+    const id = onAddManual();
+    setEditor({ modo: "editar", platoId: id });
   };
+
+  const cerrarEditor = () => setEditor(null);
 
   return (
     <>
@@ -139,33 +141,8 @@ export function SeccionPlatosPanel({
         <TicketCompacto
           platos={platos}
           activoId={activoId}
-          onEditarPlato={(p) => setActivoId(p.id)}
+          onEditarPlato={(p) => setEditor({ modo: "editar", platoId: p.id })}
         />
-
-        {platoActivo && (
-          <div className="mb-4">
-            <PlatoCard
-              plato={platoActivo}
-              indice={platos.findIndex((p) => p.id === platoActivo.id)}
-              conTipo={conTipo}
-              modoEditor
-              nombrePlaceholder={PLACEHOLDER_NOMBRE[seccion]}
-              onCerrarEditor={() => setActivoId(null)}
-              onChange={(cambios) => onUpdate(platoActivo.id, cambios)}
-              onRemove={() => {
-                onRemove(platoActivo.id);
-                setActivoId(null);
-              }}
-              onDuplicate={() => onDuplicate(platoActivo.id)}
-              onToggleModificacion={(mod) =>
-                onToggleModificacion(platoActivo.id, mod)
-              }
-              onCycleSalsa={(id, nombre) =>
-                onCycleSalsa(platoActivo.id, id, nombre)
-              }
-            />
-          </div>
-        )}
 
         {onBusquedaChange && (
           <CatalogoBuscadorRapido
@@ -193,6 +170,41 @@ export function SeccionPlatosPanel({
         />
       </SectionCard>
 
+      {editor?.modo === "nuevo" && (
+        <PlatoEditorSheet
+          open
+          modo="nuevo"
+          producto={editor.producto}
+          seccion={seccion}
+          conTipo={conTipo}
+          nombrePlaceholder={PLACEHOLDER_NOMBRE[seccion]}
+          onClose={cerrarEditor}
+          onAceptarNuevo={(plato) => {
+            onConfirmPlato(plato);
+          }}
+          onAceptarEditar={() => {}}
+        />
+      )}
+
+      {editor?.modo === "editar" && platoEditando && (
+        <PlatoEditorSheet
+          open
+          modo="editar"
+          plato={platoEditando}
+          seccion={seccion}
+          conTipo={conTipo}
+          nombrePlaceholder={PLACEHOLDER_NOMBRE[seccion]}
+          onClose={cerrarEditor}
+          onAceptarNuevo={() => {}}
+          onAceptarEditar={(cambios) => onUpdate(platoEditando.id, cambios)}
+          onDuplicate={() => onDuplicate(platoEditando.id)}
+          onRemove={() => {
+            onRemove(platoEditando.id);
+            cerrarEditor();
+          }}
+        />
+      )}
+
       <ConfirmDialog
         open={confirmClear}
         title={`¿Limpiar ${titulo.toLowerCase()}?`}
@@ -201,7 +213,7 @@ export function SeccionPlatosPanel({
         onConfirm={() => {
           onClear();
           setConfirmClear(false);
-          setActivoId(null);
+          cerrarEditor();
         }}
         onCancel={() => setConfirmClear(false)}
       />

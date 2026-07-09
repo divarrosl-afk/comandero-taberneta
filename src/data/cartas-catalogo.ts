@@ -1,4 +1,9 @@
 import { CARTAS_RESTAURANTE, type ItemCarta } from "@/data/cartas-restaurante";
+import {
+  formatoTorradaCarta,
+  formatoTorradaDesayuno,
+  rellenoTorrada,
+} from "@/lib/carta/torradas-grid";
 import { crearProductosCafesCatalogo } from "@/data/cafes-catalogo";
 import { createId } from "@/lib/id/create-id";
 import type {
@@ -82,6 +87,24 @@ function descripcionItem(
   return partes.length > 0 ? partes.join(" · ") : undefined;
 }
 
+function nombreItemCatalogo(
+  item: ItemCarta,
+  meta: { categoriaCarta: CategoriaCarta },
+  prefijo: string,
+): string {
+  if (
+    meta.categoriaCarta.startsWith("bocadillo") ||
+    meta.categoriaCarta === "platosCombinados"
+  ) {
+    return `${prefijo} ${item.nombre}`.trim();
+  }
+  if (meta.categoriaCarta === "hamburguesas") {
+    if (/^hamburguesa\b/i.test(item.nombre)) return item.nombre;
+    return `Hamburguesa ${item.nombre}`;
+  }
+  return item.nombre;
+}
+
 function crearProducto(
   nombre: string,
   precio: number,
@@ -143,23 +166,32 @@ function expandirItem(
   };
 
   if (item.medio !== undefined && item.grande !== undefined) {
+    const esBocadillo = meta.categoriaCarta.startsWith("bocadillo");
+    if (esBocadillo) {
+      push(`1/2 BOC ${item.nombre}`, item.medio);
+      push(`BOC ${item.nombre}`, item.grande);
+      return result;
+    }
     push(`${prefijo} ${item.nombre} (medio)`, item.medio, `${item.nombre} medio`);
     push(`${prefijo} ${item.nombre} (grande)`, item.grande, item.nombre);
     return result;
   }
 
   if (item.desayuno !== undefined && item.grande !== undefined) {
+    const esTorrada = meta.categoriaCarta === "torradas";
+    if (esTorrada) {
+      const relleno = rellenoTorrada(item.nombre);
+      push(formatoTorradaDesayuno(relleno), item.desayuno);
+      push(formatoTorradaCarta(relleno), item.grande);
+      return result;
+    }
     push(`Torrada ${item.nombre} (desayuno)`, item.desayuno);
     push(`Torrada ${item.nombre} (grande)`, item.grande, item.nombre);
     return result;
   }
 
   if (item.precio !== undefined) {
-    const nombre =
-      meta.categoriaCarta.startsWith("bocadillo") ||
-      meta.categoriaCarta === "platosCombinados"
-        ? `${prefijo} ${item.nombre}`.trim()
-        : item.nombre;
+    const nombre = nombreItemCatalogo(item, meta, prefijo);
     push(nombre, item.precio);
   }
 
@@ -261,6 +293,7 @@ export function crearCatalogoCartas(): ProductoCatalogo[] {
       bocadillosCalientes: "Bocadillo",
       bocadillosFrios: "Bocadillo",
       platosCombinados: "Combinado",
+      hamburguesas: "Hamburguesa",
     },
   );
 

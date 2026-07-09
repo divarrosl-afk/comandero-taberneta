@@ -24,6 +24,7 @@ import type {
   SeccionPlatos,
 } from "@/types/comanda";
 import { platoFieldsFromProducto } from "@/lib/carta/plato-from-producto";
+import { esModToggle } from "@/data/comanda-catalogo";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import type { ProductoCatalogo } from "@/types/catalogo";
 import {
@@ -220,17 +221,89 @@ export function useComandaForm(
         ...prev,
         [seccion]: prev[seccion].map((p) => {
           if (p.id !== platoId) return p;
-          const tiene = p.modificaciones.includes(mod);
+          const tiene = p.modificaciones.some((m) => m.id === mod);
+          if (tiene) {
+            return {
+              ...p,
+              modificaciones: p.modificaciones.filter((m) => m.id !== mod),
+            };
+          }
           return {
             ...p,
-            modificaciones: tiene
-              ? p.modificaciones.filter((m) => m !== mod)
-              : [...p.modificaciones, mod],
+            modificaciones: [...p.modificaciones, { id: mod, cantidad: 1 }],
           };
         }),
       }));
     },
     [],
+  );
+
+  const cycleModificacion = useCallback(
+    (seccion: SeccionPlatos, platoId: string, mod: ModificacionId) => {
+      setForm((prev) => ({
+        ...prev,
+        [seccion]: prev[seccion].map((p) => {
+          if (p.id !== platoId) return p;
+
+          const existente = p.modificaciones.find((m) => m.id === mod);
+          if (!existente) {
+            return {
+              ...p,
+              modificaciones: [...p.modificaciones, { id: mod, cantidad: 1 }],
+            };
+          }
+
+          if (existente.cantidad < 3) {
+            return {
+              ...p,
+              modificaciones: p.modificaciones.map((m) =>
+                m.id === mod ? { ...m, cantidad: m.cantidad + 1 } : m,
+              ),
+            };
+          }
+
+          return p;
+        }),
+      }));
+    },
+    [],
+  );
+
+  const setModificacionCantidad = useCallback(
+    (
+      seccion: SeccionPlatos,
+      platoId: string,
+      mod: ModificacionId,
+      cantidad: number,
+    ) => {
+      setForm((prev) => ({
+        ...prev,
+        [seccion]: prev[seccion].map((p) => {
+          if (p.id !== platoId) return p;
+
+          const resto = p.modificaciones.filter((m) => m.id !== mod);
+          if (cantidad <= 0) {
+            return { ...p, modificaciones: resto };
+          }
+          return {
+            ...p,
+            modificaciones: [...resto, { id: mod, cantidad }],
+          };
+        }),
+      }));
+    },
+    [],
+  );
+
+  const tapModificacion = useCallback(
+    (seccion: SeccionPlatos, platoId: string, mod: ModificacionId) => {
+      if (esModToggle(mod)) {
+        toggleModificacion(seccion, platoId, mod);
+      } else {
+        cycleModificacion(seccion, platoId, mod);
+      }
+    },
+    [toggleModificacion, cycleModificacion],
   );
 
   const cycleSalsa = useCallback(
@@ -491,6 +564,9 @@ export function useComandaForm(
     duplicatePlato,
     clearSeccion,
     toggleModificacion,
+    cycleModificacion,
+    setModificacionCantidad,
+    tapModificacion,
     cycleSalsa,
     cycleExtra,
     setExtraCantidad,

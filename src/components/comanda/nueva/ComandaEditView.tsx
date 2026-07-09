@@ -15,6 +15,7 @@ import { PostresSeccionPanel } from "@/components/postres/nueva/PostresSeccionPa
 import { ComensalesRapido } from "@/components/comanda/nueva/ComensalesRapido";
 import type { useComandaForm } from "@/hooks/useComandaForm";
 import {
+  formTieneContenido,
   formTieneContenidoCocina,
   formTienePostresOCafes,
 } from "@/lib/comanda/map-form";
@@ -30,12 +31,10 @@ interface ComandaEditViewProps {
   onSetComensales: ComandaFormActions["setComensales"];
   onUpdatePlato: ComandaFormActions["updatePlato"];
   onAddPlato: ComandaFormActions["addPlato"];
-  onConfirmPlatoDesdeCatalogo: ComandaFormActions["confirmPlatoDesdeCatalogo"];
+  onConfirmPlato: ComandaFormActions["confirmPlato"];
   onRemovePlato: ComandaFormActions["removePlato"];
   onDuplicatePlato: ComandaFormActions["duplicatePlato"];
   onClearSeccion: ComandaFormActions["clearSeccion"];
-  onToggleModificacion: ComandaFormActions["toggleModificacion"];
-  onCycleSalsa: ComandaFormActions["cycleSalsa"];
   onSetExtraCantidad: ComandaFormActions["setExtraCantidad"];
   onUpdatePostre: ComandaFormActions["updatePostre"];
   onAddPostre: ComandaFormActions["addPostre"];
@@ -81,16 +80,10 @@ function panelPlatos(
       onBusquedaChange={onBusquedaChange}
       onUpdate={(id, c) => props.onUpdatePlato(seccion, id, c)}
       onAddManual={() => props.onAddPlato(seccion)}
-      onConfirmDesdeCatalogo={(producto) =>
-        props.onConfirmPlatoDesdeCatalogo(seccion, producto)
-      }
+      onConfirmPlato={(plato) => props.onConfirmPlato(seccion, plato)}
       onRemove={(id) => props.onRemovePlato(seccion, id)}
       onDuplicate={(id) => props.onDuplicatePlato(seccion, id)}
       onClear={() => props.onClearSeccion(seccion)}
-      onToggleModificacion={(id, mod) =>
-        props.onToggleModificacion(seccion, id, mod)
-      }
-      onCycleSalsa={(id, sid, nom) => props.onCycleSalsa(seccion, id, sid, nom)}
     />
   );
 }
@@ -152,9 +145,9 @@ export function ComandaEditView(props: ComandaEditViewProps) {
           ← Inicio
         </Link>
         <h1 className="text-2xl font-bold text-primary">Nueva comanda</h1>
-        {enviaCocina && enviaPostres && (
+        {formTieneContenido(form) && (
           <p className="mt-1 text-xs text-muted">
-            Se enviarán ticket cocina y ticket postres
+            Se imprimirán 2 copias del ticket completo (cocina, postres y barra)
           </p>
         )}
       </header>

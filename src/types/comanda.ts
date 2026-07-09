@@ -1,6 +1,6 @@
 import type { EstadoPanel } from "@/types/panel";
 
-import type { EstadoCafeX, PostreFormItem } from "@/types/postres";
+import type { EstadoCafeX, PostreFormItem, PostreItem } from "@/types/postres";
 
 export type TipoServicio = "menu" | "carta" | "mixto";
 
@@ -39,7 +39,6 @@ export type ModificacionId =
   | "patatas_bravas"
   | "plato_vacio"
   | "queso"
-  | "salsa_romesco"
   | "salsa_roquefort_mod"
   | "servilletas"
   | "sin_cebolla"
@@ -57,12 +56,14 @@ export type ModificacionId =
   | "ninos";
 
 export type SalsaId =
+  | "salsa_romesco"
+  | "salsa_roquefort"
+  | "salsa_pimienta"
+  | "salsa_champis"
   | "alioli"
   | "mayonesa"
   | "ketchup"
-  | "salsa_brava"
-  | "salsa_pimienta"
-  | "salsa_roquefort";
+  | "salsa_brava";
 
 export type ExtraMesaId =
   | "cuenta_efectivo"
@@ -87,6 +88,11 @@ export interface SalsaCantidad {
   id: string;
   nombre: string;
   cantidad: 1 | 2 | 3;
+}
+
+export interface ModificacionCantidad {
+  id: ModificacionId;
+  cantidad: number;
 }
 
 export interface ExtraMesaItem {
@@ -119,6 +125,10 @@ export interface ComandaCocina {
   primeros: PlatoComanda[];
   segundos: PlatoComanda[];
   bebidas: PlatoComanda[];
+  /** Postres incluidos en ticket completo (nueva comanda). */
+  postres?: PostreItem[];
+  /** Marca X en sección bebidas del ticket completo. */
+  estadoXCafe?: EstadoCafeX | null;
   extras: { nombre: string; cantidad: number }[];
   observaciones: string[];
   comensales?: number;
@@ -139,7 +149,7 @@ export interface PlatoFormItem {
   cantidad: number;
   tipoSeleccion?: TipoPlatoSeleccion;
   suplemento?: number;
-  modificaciones: ModificacionId[];
+  modificaciones: ModificacionCantidad[];
   salsas: SalsaCantidad[];
   notaLibre?: string;
 }
