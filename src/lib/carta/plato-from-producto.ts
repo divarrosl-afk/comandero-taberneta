@@ -1,4 +1,5 @@
 import { productoEnMenuHoy } from "@/lib/carta/format-producto";
+import { parseNombreTorrada } from "@/lib/carta/torradas-grid";
 import type { ProductoCatalogo } from "@/types/catalogo";
 import type { MenuDiaConfig } from "@/types/menu-dia";
 import type { PlatoFormItem, SeccionPlatos } from "@/types/comanda";
@@ -15,6 +16,10 @@ export function platoFieldsFromProducto(
   };
 
   if (producto.categoriaCarta?.startsWith("bocadillo")) {
+    fields.tipoSeleccion = "carta";
+  }
+
+  if (producto.categoriaCarta === "torradas" && parseNombreTorrada(producto.nombre)) {
     fields.tipoSeleccion = "carta";
   }
 

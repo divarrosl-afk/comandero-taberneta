@@ -162,6 +162,54 @@ describe("ticket-kitchen", () => {
     expect(comandaToTicketBarra(comanda)).toBeNull();
   });
 
+  it("formatea torradas con siglas TORRA DESAYUNO DE y TORRA CARTA DE", () => {
+    const comanda = comandaCocinaFixture({
+      entrantes: [
+        plato({
+          id: "t1",
+          nombre: "TORRA CARTA DE Escalivada, atún, anchoas y olivas",
+          tipo: "carta",
+        }),
+        plato({
+          id: "t2",
+          nombre: "TORRA DESAYUNO DE Butifarra con queso, cebolla y pimiento verde",
+          tipo: "carta",
+        }),
+      ],
+      primeros: [],
+      segundos: [],
+      bebidas: [],
+    });
+    const texto = formatKitchenTicketPlain(comanda, "cocina");
+    expect(texto).toContain(
+      "(C) TORRA CARTA DE ESCALIVADA, ATÚN, ANCHOAS Y OLIVAS",
+    );
+    expect(texto).toContain(
+      "(C) TORRA DESAYUNO DE BUTIFARRA CON QUESO, CEBOLLA Y PIMIENTO VERDE",
+    );
+    expect(texto).not.toContain("(GRANDE)");
+    expect(texto).not.toContain("(DESAYUNO)");
+  });
+
+  it("normaliza torradas legacy en ticket", () => {
+    const comanda = comandaCocinaFixture({
+      entrantes: [
+        plato({
+          id: "tl1",
+          nombre: "Torrada Escalivada, atún, anchoas y olivas (grande)",
+          tipo: "carta",
+        }),
+      ],
+      primeros: [],
+      segundos: [],
+      bebidas: [],
+    });
+    const texto = formatKitchenTicketPlain(comanda, "cocina");
+    expect(texto).toContain(
+      "(C) TORRA CARTA DE ESCALIVADA, ATÚN, ANCHOAS Y OLIVAS",
+    );
+  });
+
   it("formatea bocadillos en línea con siglas BOC y mods con +", () => {
     const comanda = comandaCocinaFixture({
       entrantes: [

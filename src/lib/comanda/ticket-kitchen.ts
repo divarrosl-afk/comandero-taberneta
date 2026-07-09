@@ -1,4 +1,5 @@
 import type { ComandaCocina, PlatoComanda, TipoPlato } from "@/types/comanda";
+import { normalizarNombreTorrada } from "@/lib/carta/torradas-grid";
 import { getCodigoMesaComanda, isUuid } from "@/lib/mesas/resolve-mesa";
 
 export { isUuid } from "@/lib/mesas/resolve-mesa";
@@ -264,15 +265,23 @@ function agruparUnidades(unidades: UnidadPlato[]): GrupoImpresion[] {
   return [...map.values()];
 }
 
+function normalizarNombrePlatoTicket(nombre: string): string {
+  const torrada = normalizarNombreTorrada(nombre);
+  if (torrada) return torrada;
+  if (esNombreBocadillo(nombre)) return normalizarNombreBocadillo(nombre);
+  return nombre;
+}
+
 function lineaPlatoCantidad(
   cantidad: number,
   nombre: string,
   tipo?: TipoPlato,
 ): string {
+  const etiqueta = toTicketUpper(normalizarNombrePlatoTicket(nombre));
   if (cantidad > 1) {
-    return `${MARK_DISH}${cantidad} ${pluralizarNombre(nombre, cantidad)}`;
+    return `${MARK_DISH}${cantidad} ${pluralizarNombre(etiqueta, cantidad)}`;
   }
-  return `${MARK_DISH}${prefijoTipo(tipo)}${toTicketUpper(nombre)}`;
+  return `${MARK_DISH}${prefijoTipo(tipo)}${etiqueta}`;
 }
 
 function lineasSuplemento(tipo: TipoPlato | undefined, suplemento?: number): string[] {

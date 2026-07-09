@@ -1,4 +1,9 @@
 import { CARTAS_RESTAURANTE, type ItemCarta } from "@/data/cartas-restaurante";
+import {
+  formatoTorradaCarta,
+  formatoTorradaDesayuno,
+  rellenoTorrada,
+} from "@/lib/carta/torradas-grid";
 import { crearProductosCafesCatalogo } from "@/data/cafes-catalogo";
 import { createId } from "@/lib/id/create-id";
 import type {
@@ -155,6 +160,13 @@ function expandirItem(
   }
 
   if (item.desayuno !== undefined && item.grande !== undefined) {
+    const esTorrada = meta.categoriaCarta === "torradas";
+    if (esTorrada) {
+      const relleno = rellenoTorrada(item.nombre);
+      push(formatoTorradaDesayuno(relleno), item.desayuno, "Desayuno");
+      push(formatoTorradaCarta(relleno), item.grande, relleno);
+      return result;
+    }
     push(`Torrada ${item.nombre} (desayuno)`, item.desayuno);
     push(`Torrada ${item.nombre} (grande)`, item.grande, item.nombre);
     return result;

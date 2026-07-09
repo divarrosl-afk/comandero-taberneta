@@ -11,6 +11,10 @@ import {
   listaSonBocadillos,
 } from "@/lib/carta/bocadillos-grid";
 import {
+  agruparTorradas,
+  listaUsaGridTorradas,
+} from "@/lib/carta/torradas-grid";
+import {
   agruparProductosPorCategoria,
   origenACartaServicio,
   type OrigenPlatos,
@@ -218,6 +222,99 @@ function GridBocadillos({
   );
 }
 
+function GridTorradas({
+  lista,
+  menu,
+  seccionPlatos,
+  seccion,
+  modoBusqueda,
+  ventasPorId,
+  onSelect,
+  onInfo,
+}: {
+  lista: ProductoCatalogo[];
+  menu: ReturnType<typeof useMenuDia>["menu"];
+  seccionPlatos?: SeccionPlatos;
+  seccion: SeccionCatalogo;
+  modoBusqueda?: boolean;
+  ventasPorId: Map<string, number>;
+  onSelect: (producto: ProductoCatalogo) => void;
+  onInfo: (producto: ProductoCatalogo) => void;
+}) {
+  const filas = useMemo(() => agruparTorradas(lista), [lista]);
+  if (filas.length === 0) return null;
+
+  const renderCelda = (
+    producto: ProductoCatalogo | undefined,
+    etiqueta: "Desayuno" | "Carta",
+  ) => {
+    if (!producto) {
+      return (
+        <div
+          className="min-h-[4.25rem] rounded-2xl border-2 border-dashed border-border/60 bg-stone-50"
+          aria-hidden="true"
+        />
+      );
+    }
+
+    const enMenu = productoEnMenuHoy(
+      producto,
+      menu,
+      seccionPlatos as "primeros" | "segundos",
+    );
+    const ventas = ventasPorId.get(producto.id) ?? 0;
+
+    return (
+      <PlatoBoton
+        producto={producto}
+        badge={
+          modoBusqueda
+            ? producto.categoriaCarta
+              ? labelCategoriaCarta(
+                  producto.cartaServicio ?? "almuerzo",
+                  producto.categoriaCarta,
+                )
+              : labelSeccion(producto.seccion)
+            : ventas > 0
+              ? `🔥 ${ventas}`
+              : undefined
+        }
+        subtitulo={subtituloProducto(
+          producto,
+          enMenu,
+          menu?.precioMenu,
+          modoBusqueda,
+        )}
+        onSelect={() => !producto.agotado && onSelect(producto)}
+        onInfo={() => onInfo(producto)}
+        etiqueta={etiqueta}
+      />
+    );
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 px-1">
+        <p className="text-center text-xs font-bold uppercase tracking-wide text-accent">
+          Desayuno
+        </p>
+        <p className="text-center text-xs font-bold uppercase tracking-wide text-accent">
+          Carta
+        </p>
+      </div>
+      {filas.map((fila) => (
+        <div key={fila.relleno} className="space-y-1">
+          <p className="px-1 text-xs font-semibold text-foreground">{fila.relleno}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {renderCelda(fila.desayuno, "Desayuno")}
+            {renderCelda(fila.carta, "Carta")}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function GridProductos({
   lista,
   menu,
@@ -242,6 +339,21 @@ function GridProductos({
   if (listaSonBocadillos(lista)) {
     return (
       <GridBocadillos
+        lista={lista}
+        menu={menu}
+        seccionPlatos={seccionPlatos}
+        seccion={seccion}
+        modoBusqueda={modoBusqueda}
+        ventasPorId={ventasPorId}
+        onSelect={onSelect}
+        onInfo={onInfo}
+      />
+    );
+  }
+
+  if (listaUsaGridTorradas(lista)) {
+    return (
+      <GridTorradas
         lista={lista}
         menu={menu}
         seccionPlatos={seccionPlatos}
@@ -457,7 +569,9 @@ function SelectorPorCategorias({
           count={
             listaSonBocadillos(grupo.productos)
               ? agruparBocadillos(grupo.productos).length
-              : grupo.productos.length
+              : listaUsaGridTorradas(grupo.productos)
+                ? agruparTorradas(grupo.productos).length
+                : grupo.productos.length
           }
           abierta={abiertas.has(grupo.id)}
           onToggle={() => toggle(grupo.id)}
@@ -586,6 +700,27 @@ export function CartaMenuSelector({
             </p>
           )}
           <GridBocadillos
+            lista={lista}
+            menu={menu}
+            seccionPlatos={seccionPlatos}
+            seccion={seccion}
+            ventasPorId={ventasPorId}
+            onSelect={onSelect}
+            onInfo={setFicha}
+          />
+        </div>
+      );
+    }
+
+    if (listaUsaGridTorradas(lista)) {
+      return (
+        <div className="space-y-4">
+          {tituloBloque && (
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+              {tituloBloque}
+            </p>
+          )}
+          <GridTorradas
             lista={lista}
             menu={menu}
             seccionPlatos={seccionPlatos}

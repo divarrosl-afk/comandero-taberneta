@@ -22,7 +22,8 @@ describe("carta almuerzo oficial", () => {
 
     expect(alm.some((p) => p.nombre.startsWith("1/2 BOC "))).toBe(true);
     expect(alm.some((p) => p.nombre.startsWith("BOC "))).toBe(true);
-    expect(alm.some((p) => p.nombre.includes("(desayuno)"))).toBe(true);
+    expect(alm.some((p) => p.nombre.startsWith("TORRA DESAYUNO DE "))).toBe(true);
+    expect(alm.some((p) => p.nombre.startsWith("TORRA CARTA DE "))).toBe(true);
     expect(alm.some((p) => p.nombre === "Patatas bravas")).toBe(true);
     expect(alm.some((p) => p.nombre === "Jalapeños")).toBe(true);
     expect(
