@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { ComandaEditorSheet } from "@/components/comanda/nueva/ComandaEditorSheet";
+import {
+  claveSesionPostreEditor,
+  postreBaseEditor,
+} from "@/lib/comanda/editor-sheet-session";
 import type { PostreFormItem } from "@/types/postres";
 
 interface PostreEditorSheetProps {
@@ -29,15 +33,26 @@ export function PostreEditorSheet({
   onRemove,
   onDuplicate,
 }: PostreEditorSheetProps) {
+  const sesionRef = useRef<string | null>(null);
   const [nombre, setNombre] = useState(postre.nombre);
   const [cantidad, setCantidad] = useState(postre.cantidad);
   const [nota, setNota] = useState(postre.nota ?? "");
 
+  const sessionKey = claveSesionPostreEditor(postre.id);
+
   useEffect(() => {
-    setNombre(postre.nombre);
-    setCantidad(postre.cantidad);
-    setNota(postre.nota ?? "");
-  }, [postre]);
+    if (!open) {
+      sesionRef.current = null;
+      return;
+    }
+    if (!sessionKey || sesionRef.current === sessionKey) return;
+
+    sesionRef.current = sessionKey;
+    const base = postreBaseEditor(postre);
+    setNombre(base.nombre);
+    setCantidad(base.cantidad);
+    setNota(base.nota ?? "");
+  }, [open, sessionKey, postre]);
 
   const aceptar = () => {
     onAceptar({

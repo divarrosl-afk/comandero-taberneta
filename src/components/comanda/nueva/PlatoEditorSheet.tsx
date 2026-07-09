@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { ComandaEditorSheet } from "@/components/comanda/nueva/ComandaEditorSheet";
@@ -11,7 +11,10 @@ import {
   setModificacionCantidadEnLista,
   tapModificacionEnLista,
 } from "@/lib/comanda/modificaciones";
-import { platoFieldsFromProducto } from "@/lib/carta/plato-from-producto";
+import {
+  claveSesionPlatoEditor,
+  platoBaseEditor,
+} from "@/lib/comanda/editor-sheet-session";
 import { crearPlatoVacio } from "@/lib/comanda/plato-factory";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import { nombreBoton, type ProductoCatalogo } from "@/types/catalogo";
@@ -37,19 +40,6 @@ interface PlatoEditorSheetProps {
   onDuplicate?: () => void;
 }
 
-function platoDesdeProducto(
-  producto: ProductoCatalogo,
-  seccion: SeccionPlatos,
-  menu: ReturnType<typeof useMenuDia>["menu"],
-): PlatoFormItem {
-  const base = platoFieldsFromProducto(producto, { seccion, menu });
-  return {
-    ...crearPlatoVacio(),
-    ...base,
-    nombre: producto.nombre,
-  };
-}
-
 export function PlatoEditorSheet({
   open,
   modo,
@@ -65,31 +55,38 @@ export function PlatoEditorSheet({
   onDuplicate,
 }: PlatoEditorSheetProps) {
   const { menu } = useMenuDia();
-  const origen = useMemo(() => {
-    if (modo === "nuevo" && producto) {
-      return platoDesdeProducto(producto, seccion, menu);
-    }
-    if (plato) return { ...plato };
-    return crearPlatoVacio();
-  }, [modo, producto, plato, seccion, menu]);
+  const baseRef = useRef<PlatoFormItem>(crearPlatoVacio());
+  const sesionRef = useRef<string | null>(null);
 
-  const [nombre, setNombre] = useState(origen.nombre);
-  const [cantidad, setCantidad] = useState(origen.cantidad);
-  const [tipoSeleccion, setTipoSeleccion] = useState(origen.tipoSeleccion);
-  const [suplemento, setSuplemento] = useState(origen.suplemento);
-  const [modificaciones, setModificaciones] = useState(origen.modificaciones);
-  const [salsas, setSalsas] = useState<SalsaCantidad[]>(origen.salsas);
-  const [notaLibre, setNotaLibre] = useState(origen.notaLibre ?? "");
+  const [nombre, setNombre] = useState("");
+  const [cantidad, setCantidad] = useState(1);
+  const [tipoSeleccion, setTipoSeleccion] = useState<PlatoFormItem["tipoSeleccion"]>();
+  const [suplemento, setSuplemento] = useState<PlatoFormItem["suplemento"]>();
+  const [modificaciones, setModificaciones] = useState<PlatoFormItem["modificaciones"]>([]);
+  const [salsas, setSalsas] = useState<SalsaCantidad[]>([]);
+  const [notaLibre, setNotaLibre] = useState("");
+
+  const sessionKey = claveSesionPlatoEditor(modo, producto?.id, plato?.id);
 
   useEffect(() => {
-    setNombre(origen.nombre);
-    setCantidad(origen.cantidad);
-    setTipoSeleccion(origen.tipoSeleccion);
-    setSuplemento(origen.suplemento);
-    setModificaciones(origen.modificaciones);
-    setSalsas(origen.salsas);
-    setNotaLibre(origen.notaLibre ?? "");
-  }, [origen]);
+    if (!open) {
+      sesionRef.current = null;
+      return;
+    }
+    if (!sessionKey || sesionRef.current === sessionKey) return;
+
+    sesionRef.current = sessionKey;
+    const base = platoBaseEditor(modo, { producto, plato, seccion, menu });
+    baseRef.current = base;
+
+    setNombre(base.nombre);
+    setCantidad(base.cantidad);
+    setTipoSeleccion(base.tipoSeleccion);
+    setSuplemento(base.suplemento);
+    setModificaciones(base.modificaciones);
+    setSalsas(base.salsas);
+    setNotaLibre(base.notaLibre ?? "");
+  }, [open, sessionKey, modo, producto, plato, seccion, menu]);
 
   const titulo =
     modo === "nuevo" && producto
@@ -124,7 +121,7 @@ export function PlatoEditorSheet({
   };
 
   const construirPlato = (): PlatoFormItem => ({
-    ...origen,
+    ...baseRef.current,
     nombre: nombre.trim(),
     cantidad,
     tipoSeleccion,
