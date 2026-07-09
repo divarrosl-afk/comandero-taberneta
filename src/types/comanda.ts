@@ -1,6 +1,6 @@
 import type { EstadoPanel } from "@/types/panel";
 
-import type { EstadoCafeX, PostreFormItem } from "@/types/postres";
+import type { EstadoCafeX, PostreFormItem, PostreItem } from "@/types/postres";
 
 export type TipoServicio = "menu" | "carta" | "mixto";
 
@@ -124,6 +124,10 @@ export interface ComandaCocina {
   primeros: PlatoComanda[];
   segundos: PlatoComanda[];
   bebidas: PlatoComanda[];
+  /** Postres incluidos en ticket completo (nueva comanda). */
+  postres?: PostreItem[];
+  /** Marca X en sección bebidas del ticket completo. */
+  estadoXCafe?: EstadoCafeX | null;
   extras: { nombre: string; cantidad: number }[];
   observaciones: string[];
   comensales?: number;

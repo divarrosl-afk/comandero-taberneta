@@ -16,6 +16,7 @@ import { PostresTicketPreview } from "@/components/postres/nueva/PostresTicketPr
 interface ComandaEnviadaViewProps {
   comanda: ComandaCocina;
   comandaPostres?: ComandaPostres | null;
+  imprimirPostresSeparado?: boolean;
   onNueva: () => void;
   synced: boolean;
   syncAviso?: string | null;
@@ -25,6 +26,7 @@ interface ComandaEnviadaViewProps {
 export function ComandaEnviadaView({
   comanda,
   comandaPostres,
+  imprimirPostresSeparado = true,
   onNueva,
   synced,
   syncAviso,
@@ -62,7 +64,7 @@ export function ComandaEnviadaView({
         let summary = batch.allOk ? batch.summary : PRINT_MESSAGES.printFailGuardado;
         let error = !batch.allOk;
 
-        if (comandaPostres && puedeImprimir) {
+        if (imprimirPostresSeparado && comandaPostres && puedeImprimir) {
           const batchPostres = await imprimirComandaPostres(comandaPostres);
           if (!batchPostres.allOk) {
             error = true;
@@ -89,7 +91,7 @@ export function ComandaEnviadaView({
     return () => {
       cancelled = true;
     };
-  }, [comanda, comandaPostres, puedeImprimir]);
+  }, [comanda, comandaPostres, imprimirPostresSeparado, puedeImprimir]);
 
   const handleReintentar = async () => {
     if (!onReintentarSync) return;
@@ -151,7 +153,7 @@ export function ComandaEnviadaView({
 
       <ComandaTicketPreview comanda={comanda} />
 
-      {comandaPostres && (
+      {imprimirPostresSeparado && comandaPostres && (
         <div className="mt-6">
           <PostresTicketPreview comanda={comandaPostres} />
         </div>

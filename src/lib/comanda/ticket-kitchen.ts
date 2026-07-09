@@ -1,4 +1,6 @@
 import type { ComandaCocina, PlatoComanda, TipoPlato } from "@/types/comanda";
+import type { PostreItem } from "@/types/postres";
+import { getEstadoXCafeLabel } from "@/data/postres-catalogo";
 import { normalizarNombreTorrada } from "@/lib/carta/torradas-grid";
 import { getCodigoMesaComanda, isUuid } from "@/lib/mesas/resolve-mesa";
 
@@ -442,6 +444,49 @@ function lineasExtras(
   return lineas;
 }
 
+function lineasPostres(postres: PostreItem[], width: number): string[] {
+  if (!postres.length) return [];
+
+  const platos: PlatoComanda[] = postres.map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    cantidad: p.cantidad,
+    modificaciones: [],
+    salsas: [],
+    notaLibre: p.nota,
+    estado: "pendiente",
+  }));
+
+  return lineasSeccion("POSTRES", platos, width);
+}
+
+function lineasEstadoXCafe(estado: NonNullable<ComandaCocina["estadoXCafe"]>): string[] {
+  return [
+    `${MARK_DETAIL}${INDENT_MOD}X: ${getEstadoXCafeLabel(estado).toUpperCase()}`,
+  ];
+}
+
+function lineasBebidas(
+  comanda: ComandaCocina,
+  width: number,
+): string[] {
+  if (!comanda.bebidas.length && !comanda.estadoXCafe) return [];
+
+  const lineas: string[] = [`${MARK_SECTION}${sectionHeader("BEBIDAS", width)}`, ""];
+
+  if (comanda.estadoXCafe) {
+    lineas.push(...lineasEstadoXCafe(comanda.estadoXCafe));
+  }
+
+  const grupos = agruparUnidades(comanda.bebidas.flatMap(expandirPlato));
+  for (const grupo of grupos) {
+    lineas.push(...lineasGrupo(grupo));
+    lineas.push("");
+  }
+
+  return lineas;
+}
+
 function lineasObservaciones(observaciones: string[]): string[] {
   if (!observaciones.length) return [];
   const lineas = [`${MARK_SECTION}${sectionHeader("OBSERVACIONES", TICKET_WIDTH_80MM)}`, ""];
@@ -534,6 +579,7 @@ export function formatKitchenTicket(
     lineas.push(...lineasSeccion("SEGUNDOS", comanda.segundos, width));
 
     if (destino === "completo") {
+      lineas.push(...lineasPostres(comanda.postres ?? [], width));
       lineas.push(...lineasExtras(comanda.extras, width));
     } else {
       const extrasCocina = comanda.extras.filter((e) => !BARRA_EXTRA_RE.test(e.nombre));
@@ -542,7 +588,11 @@ export function formatKitchenTicket(
   }
 
   if (incluirBarra || destino === "cocina" || destino === "completo") {
-    lineas.push(...lineasSeccion("BEBIDAS", comanda.bebidas, width));
+    if (destino === "completo") {
+      lineas.push(...lineasBebidas(comanda, width));
+    } else {
+      lineas.push(...lineasSeccion("BEBIDAS", comanda.bebidas, width));
+    }
 
     if (destino === "barra") {
       const extrasBarra = comanda.extras.filter((e) => BARRA_EXTRA_RE.test(e.nombre));

@@ -51,6 +51,29 @@ function mapPlatoConTipo(item: PlatoFormItem): PlatoComanda {
   };
 }
 
+function mapPostresItems(items: ComandaFormState["postres"]) {
+  return items
+    .filter(postreTieneContenido)
+    .map((p) => ({
+      id: p.id,
+      nombre: p.nombre.trim(),
+      cantidad: p.cantidad,
+      nota: p.nota?.trim() || undefined,
+    }));
+}
+
+function mapCafesComoBebidas(items: ComandaFormState["cafes"]): PlatoComanda[] {
+  return items.filter(postreTieneContenido).map((c) => ({
+    id: c.id,
+    nombre: c.nombre.trim(),
+    cantidad: c.cantidad,
+    modificaciones: [],
+    salsas: [],
+    notaLibre: c.nota?.trim() || undefined,
+    estado: "pendiente" as const,
+  }));
+}
+
 function inferirTipoServicio(form: ComandaFormState): TipoServicio {
   const platos = [...form.primeros, ...form.segundos];
   const tipos = platos
@@ -68,17 +91,6 @@ function inferirTipoServicio(form: ComandaFormState): TipoServicio {
   if (tieneMenu) return "menu";
   if (tieneCarta) return "carta";
   return "mixto";
-}
-
-function mapPostresItems(items: ComandaFormState["postres"]) {
-  return items
-    .filter(postreTieneContenido)
-    .map((p) => ({
-      id: p.id,
-      nombre: p.nombre.trim(),
-      cantidad: p.cantidad,
-      nota: p.nota?.trim() || undefined,
-    }));
 }
 
 export function formTienePlatos(form: ComandaFormState): boolean {
@@ -120,7 +132,45 @@ export function formEsValido(form: ComandaFormState): boolean {
   return form.mesa !== null && formTieneContenido(form);
 }
 
+/** Ticket completo de nueva comanda: cocina + postres + cafés (barra). */
 export function formToComanda(form: ComandaFormState): ComandaCocina | null {
+  if (!form.mesa || !formTieneContenido(form)) return null;
+
+  const postres = mapPostresItems(form.postres);
+  const cafes = mapCafesComoBebidas(form.cafes);
+  const bebidas = [
+    ...form.bebidas.filter(platoTieneContenido).map(mapPlatoBase),
+    ...cafes,
+  ];
+
+  return {
+    id: generarIdComanda(),
+    mesa: form.mesa,
+    mesaCodigo: getMesaCodigo(form.mesa),
+    camarero: CAMARERO_EQUIPO,
+    tipoServicio: inferirTipoServicio(form),
+    entrantes: form.entrantes.filter(platoTieneContenido).map(mapPlatoBase),
+    primeros: form.primeros.filter(platoTieneContenido).map(mapPlatoConTipo),
+    segundos: form.segundos.filter(platoTieneContenido).map(mapPlatoConTipo),
+    bebidas,
+    postres: postres.length > 0 ? postres : undefined,
+    estadoXCafe: form.estadoXCafe,
+    extras: form.extras
+      .filter((e) => e.cantidad > 0)
+      .map((e) => ({
+        nombre: e.nombre || getExtraLabel(e.id as ExtraMesaId),
+        cantidad: e.cantidad,
+      })),
+    observaciones: form.observaciones.map((o) => o.trim()).filter(Boolean),
+    comensales: form.comensales && form.comensales > 0 ? form.comensales : undefined,
+    creadaEn: new Date().toISOString(),
+    enviada: true,
+    estadoPanel: "sentados",
+  };
+}
+
+/** Cocina/barra en panel — sin postres ni cafés (van al panel postres). */
+export function formToComandaPanel(form: ComandaFormState): ComandaCocina | null {
   if (!form.mesa || !formTieneContenidoCocina(form)) return null;
 
   return {
@@ -147,6 +197,7 @@ export function formToComanda(form: ComandaFormState): ComandaCocina | null {
   };
 }
 
+/** Solo comandero postres: ticket independiente de postres y cafés. */
 export function formToComandaPostres(form: ComandaFormState): ComandaPostres | null {
   if (!form.mesa || !formTienePostresOCafes(form)) return null;
 

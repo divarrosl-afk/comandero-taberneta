@@ -157,6 +157,27 @@ describe("ticket-kitchen", () => {
     expect(texto).toContain("ENTRANTES");
   });
 
+  it("ticket completo incluye postres tras segundos y cafés en bebidas", () => {
+    const comanda = comandaEjemplo();
+    comanda.postres = [{ id: "d1", nombre: "Cruasant", cantidad: 1 }];
+    comanda.bebidas.push(
+      plato({ id: "c1", nombre: "Té negro", cantidad: 1 }),
+    );
+
+    const texto = formatKitchenTicketPlain(comanda, "completo", {
+      nombreMesa: "12",
+    });
+
+    const idxSegundos = texto.indexOf("SEGUNDOS");
+    const idxPostres = texto.indexOf("POSTRES");
+    const idxBebidas = texto.indexOf("BEBIDAS");
+    expect(idxSegundos).toBeGreaterThan(-1);
+    expect(idxPostres).toBeGreaterThan(idxSegundos);
+    expect(idxBebidas).toBeGreaterThan(idxPostres);
+    expect(texto).toContain("CRUASANT");
+    expect(texto).toContain("TÉ NEGRO");
+  });
+
   it("ticket barra reducido eliminado", () => {
     const comanda = comandaCocinaFixture({ bebidas: [], extras: [], observaciones: [] });
     expect(comandaToTicketBarra(comanda)).toBeNull();
