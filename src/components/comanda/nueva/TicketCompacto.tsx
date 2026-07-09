@@ -1,6 +1,7 @@
 "use client";
 
 import { platoTieneContenido } from "@/lib/comanda/plato-factory";
+import { totalModificaciones } from "@/lib/comanda/modificaciones";
 import type { PlatoFormItem } from "@/types/comanda";
 
 interface TicketCompactoProps {
@@ -37,7 +38,7 @@ export function TicketCompacto({
             {p.cantidad > 1 ? ` x${p.cantidad}` : ""}
             {(p.modificaciones?.length ?? 0) > 0 && (
               <span className="ml-1 opacity-80">
-                +{p.modificaciones.reduce((n, m) => n + m.cantidad, 0)}
+                +{totalModificaciones(p.modificaciones)}
               </span>
             )}
           </button>

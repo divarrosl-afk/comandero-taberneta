@@ -87,6 +87,24 @@ function descripcionItem(
   return partes.length > 0 ? partes.join(" · ") : undefined;
 }
 
+function nombreItemCatalogo(
+  item: ItemCarta,
+  meta: { categoriaCarta: CategoriaCarta },
+  prefijo: string,
+): string {
+  if (
+    meta.categoriaCarta.startsWith("bocadillo") ||
+    meta.categoriaCarta === "platosCombinados"
+  ) {
+    return `${prefijo} ${item.nombre}`.trim();
+  }
+  if (meta.categoriaCarta === "hamburguesas") {
+    if (/^hamburguesa\b/i.test(item.nombre)) return item.nombre;
+    return `Hamburguesa ${item.nombre}`;
+  }
+  return item.nombre;
+}
+
 function crearProducto(
   nombre: string,
   precio: number,
@@ -173,11 +191,7 @@ function expandirItem(
   }
 
   if (item.precio !== undefined) {
-    const nombre =
-      meta.categoriaCarta.startsWith("bocadillo") ||
-      meta.categoriaCarta === "platosCombinados"
-        ? `${prefijo} ${item.nombre}`.trim()
-        : item.nombre;
+    const nombre = nombreItemCatalogo(item, meta, prefijo);
     push(nombre, item.precio);
   }
 
@@ -279,6 +293,7 @@ export function crearCatalogoCartas(): ProductoCatalogo[] {
       bocadillosCalientes: "Bocadillo",
       bocadillosFrios: "Bocadillo",
       platosCombinados: "Combinado",
+      hamburguesas: "Hamburguesa",
     },
   );
 

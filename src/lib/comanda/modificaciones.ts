@@ -33,3 +33,7 @@ export function cantidadModificacion(
 ): number {
   return mods.find((m) => m.id === id)?.cantidad ?? 0;
 }
+
+export function totalModificaciones(mods: unknown): number {
+  return normalizarModificaciones(mods).reduce((n, m) => n + m.cantidad, 0);
+}

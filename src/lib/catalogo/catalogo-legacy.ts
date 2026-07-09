@@ -66,6 +66,14 @@ export function resolverNombreCanonico(
     if (nombresDefecto.has(normalizarNombreCatalogo(desayuno))) return desayuno;
   }
 
+  if (producto.categoriaCarta === "hamburguesas") {
+    if (/^hamburguesa\b/i.test(nombre)) return nombre;
+    const conPrefijo = `Hamburguesa ${nombre}`;
+    if (nombresDefecto.has(normalizarNombreCatalogo(conPrefijo))) {
+      return conPrefijo;
+    }
+  }
+
   return nombre;
 }
 

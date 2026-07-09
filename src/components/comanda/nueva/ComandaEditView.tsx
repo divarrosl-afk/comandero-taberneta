@@ -30,13 +30,10 @@ interface ComandaEditViewProps {
   onSetComensales: ComandaFormActions["setComensales"];
   onUpdatePlato: ComandaFormActions["updatePlato"];
   onAddPlato: ComandaFormActions["addPlato"];
-  onConfirmPlatoDesdeCatalogo: ComandaFormActions["confirmPlatoDesdeCatalogo"];
+  onConfirmPlato: ComandaFormActions["confirmPlato"];
   onRemovePlato: ComandaFormActions["removePlato"];
   onDuplicatePlato: ComandaFormActions["duplicatePlato"];
   onClearSeccion: ComandaFormActions["clearSeccion"];
-  onTapModificacion: ComandaFormActions["tapModificacion"];
-  onSetModificacionCantidad: ComandaFormActions["setModificacionCantidad"];
-  onCycleSalsa: ComandaFormActions["cycleSalsa"];
   onSetExtraCantidad: ComandaFormActions["setExtraCantidad"];
   onUpdatePostre: ComandaFormActions["updatePostre"];
   onAddPostre: ComandaFormActions["addPostre"];
@@ -82,19 +79,10 @@ function panelPlatos(
       onBusquedaChange={onBusquedaChange}
       onUpdate={(id, c) => props.onUpdatePlato(seccion, id, c)}
       onAddManual={() => props.onAddPlato(seccion)}
-      onConfirmDesdeCatalogo={(producto) =>
-        props.onConfirmPlatoDesdeCatalogo(seccion, producto)
-      }
+      onConfirmPlato={(plato) => props.onConfirmPlato(seccion, plato)}
       onRemove={(id) => props.onRemovePlato(seccion, id)}
       onDuplicate={(id) => props.onDuplicatePlato(seccion, id)}
       onClear={() => props.onClearSeccion(seccion)}
-      onTapModificacion={(id, mod) =>
-        props.onTapModificacion(seccion, id, mod)
-      }
-      onSetModificacionCantidad={(id, mod, cantidad) =>
-        props.onSetModificacionCantidad(seccion, id, mod, cantidad)
-      }
-      onCycleSalsa={(id, sid, nom) => props.onCycleSalsa(seccion, id, sid, nom)}
     />
   );
 }

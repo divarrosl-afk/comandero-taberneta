@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { TicketPostresCompacto } from "@/components/comanda/nueva/TicketPostresCompacto";
-import { PostreCard } from "@/components/postres/nueva/PostreCard";
+import { PostreEditorSheet } from "@/components/postres/nueva/PostreEditorSheet";
 import { PostresFrecuentesGrid } from "@/components/postres/nueva/PostresFrecuentesGrid";
 import { CatalogoBuscadorRapido } from "@/components/catalogo/CatalogoBuscadorRapido";
 import type { ProductoCatalogo } from "@/types/catalogo";
@@ -69,24 +69,6 @@ export function PostresSeccionPanel({
           onEditar={(p) => setActivoId(p.id)}
         />
 
-        {postreActivo && (
-          <div className="mb-4">
-            <PostreCard
-              postre={postreActivo}
-              indice={postres.findIndex((p) => p.id === postreActivo.id)}
-              modoEditor
-              nombrePlaceholder="Nombre del postre"
-              onCerrarEditor={() => setActivoId(null)}
-              onChange={(cambios) => onUpdate(postreActivo.id, cambios)}
-              onRemove={() => {
-                onRemove(postreActivo.id);
-                setActivoId(null);
-              }}
-              onDuplicate={() => onDuplicate(postreActivo.id)}
-            />
-          </div>
-        )}
-
         {onBusquedaChange && (
           <CatalogoBuscadorRapido
             value={busqueda}
@@ -104,6 +86,23 @@ export function PostresSeccionPanel({
           }}
         />
       </SectionCard>
+
+      {postreActivo && (
+        <PostreEditorSheet
+          open
+          titulo={postreActivo.nombre.trim() || "Postre"}
+          postre={postreActivo}
+          nombrePlaceholder="Nombre del postre"
+          notaPlaceholder="Nota opcional (ej: sin nata)"
+          onClose={() => setActivoId(null)}
+          onAceptar={(cambios) => onUpdate(postreActivo.id, cambios)}
+          onDuplicate={() => onDuplicate(postreActivo.id)}
+          onRemove={() => {
+            onRemove(postreActivo.id);
+            setActivoId(null);
+          }}
+        />
+      )}
 
       <ConfirmDialog
         open={confirmClear}

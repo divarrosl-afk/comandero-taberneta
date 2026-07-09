@@ -70,6 +70,12 @@ describe("catalogo legacy", () => {
         nombres,
       ),
     ).toBe("TORRA CARTA DE Escalivada y queso de cabra");
+    expect(
+      resolverNombreCanonico(
+        { nombre: "Ca la Ingrid", categoriaCarta: "hamburguesas" },
+        nombres,
+      ),
+    ).toBe("Hamburguesa Ca la Ingrid");
   });
 
   it("detecta productos legacy obsoletos", () => {

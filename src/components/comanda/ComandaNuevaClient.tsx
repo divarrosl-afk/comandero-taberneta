@@ -124,13 +124,10 @@ function ComandaNuevaForm() {
           onSetComensales={formActions.setComensales}
           onUpdatePlato={formActions.updatePlato}
           onAddPlato={formActions.addPlato}
-          onConfirmPlatoDesdeCatalogo={formActions.confirmPlatoDesdeCatalogo}
+          onConfirmPlato={formActions.confirmPlato}
           onRemovePlato={formActions.removePlato}
           onDuplicatePlato={formActions.duplicatePlato}
           onClearSeccion={formActions.clearSeccion}
-          onTapModificacion={formActions.tapModificacion}
-          onSetModificacionCantidad={formActions.setModificacionCantidad}
-          onCycleSalsa={formActions.cycleSalsa}
           onSetExtraCantidad={formActions.setExtraCantidad}
           onUpdatePostre={formActions.updatePostre}
           onAddPostre={formActions.addPostre}
