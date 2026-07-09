@@ -23,6 +23,7 @@ export function reformatMenuPdfTexto(texto: string): string {
     .replace(/\s*PRIMEROS\s*/i, "\nPRIMEROS\n")
     .replace(/\s*SEGUNDOS\s*/i, "\nSEGUNDOS\n")
     .replace(/\s*\(\+(\d+(?:[.,]\d+)?)\s*€\)/gi, "\n(+$1 €)")
+    .replace(/\.\s+([A-ZÁÉÍÓÚÑ])/gu, ".\n$1")
     .replace(/([a-záéíóúñ])\s+([A-ZÁÉ])/g, "$1\n$2")
     .replace(/\s+(EL PRECIO INCLUYE)/i, "\n$1")
     .replace(/\s+(\d+[.,]\d+\s*€)/g, "\n$1")
@@ -35,11 +36,15 @@ function parseNumero(raw: string): number {
   return Number(raw.replace(",", "."));
 }
 
+function limpiarNombrePlato(nombre: string): string {
+  return nombre.trim().replace(/\.$/, "");
+}
+
 function extraerSuplemento(texto: string): { nombre: string; suplemento?: number } {
   const match = texto.match(SUPLEMENTO_RE);
-  if (!match) return { nombre: texto.trim() };
+  if (!match) return { nombre: limpiarNombrePlato(texto) };
   const suplemento = parseNumero(match[1]);
-  const nombre = texto.replace(SUPLEMENTO_RE, "").trim();
+  const nombre = limpiarNombrePlato(texto.replace(SUPLEMENTO_RE, ""));
   return { nombre, suplemento };
 }
 
@@ -57,10 +62,15 @@ function pareceNombrePlatoSimple(nombre: string): boolean {
   return nombre.trim().length <= 30;
 }
 
-/** Separa platos distintos que el PDF pegó en una sola línea (p. ej. Churrasco Salchichas). */
+/** Separa platos distintos que el PDF pegó en una sola línea. */
 function splitNombrePlatos(nombre: string): string[] {
   const t = nombre.trim();
   if (!t) return [];
+
+  const porPunto = t.split(/\.\s+(?=[A-ZÁÉÍÓÚÑ])/u);
+  if (porPunto.length > 1) {
+    return porPunto.flatMap((parte) => splitNombrePlatos(parte.trim()));
+  }
 
   const yMatch = t.match(/^(.+?)\s+y\s+(.+)$/i);
   if (yMatch) {
