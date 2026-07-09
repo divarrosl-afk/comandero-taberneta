@@ -57,6 +57,58 @@ Entrecot de ternera (250gr) a la brasa con guarnición
     expect(parsed.segundos[1].suplemento).toBe(10);
     expect(parsed.segundos[2].suplemento).toBe(14);
   });
+
+  it("separa Churrasco y Salchichas con suplemento (+3 €)", () => {
+    const casos = [
+      {
+        texto: `SEGUNDOS
+Churrasco (+3 €) Salchichas
+14,00 €`,
+        churrasco: 3,
+      },
+      {
+        texto: `SEGUNDOS
+Churrasco Salchichas (+3 €)
+14,00 €`,
+        churrasco: 3,
+      },
+      {
+        texto: `SEGUNDOS
+Churrasco y salchichas
+14,00 €`,
+        churrasco: undefined,
+      },
+      {
+        texto: `SEGUNDOS
+Churrasco
+(+3 €)
+Salchichas
+14,00 €`,
+        churrasco: 3,
+      },
+      {
+        texto: `SEGUNDOS
+Churrasco
+(+3 €) Salchichas
+14,00 €`,
+        churrasco: 3,
+      },
+    ];
+
+    for (const { texto, churrasco } of casos) {
+      const parsed = parseMenuDiaTexto(texto);
+      expect(parsed.segundos).toHaveLength(2);
+      expect(parsed.segundos[0].nombre).toMatch(/^Churrasco$/i);
+      expect(parsed.segundos[1].nombre).toMatch(/^Salchichas$/i);
+      if (churrasco !== undefined) {
+        expect(parsed.segundos[0].suplemento).toBe(churrasco);
+        expect(parsed.segundos[1].suplemento).toBeUndefined();
+      } else {
+        expect(parsed.segundos[0].suplemento).toBeUndefined();
+        expect(parsed.segundos[1].suplemento).toBeUndefined();
+      }
+    }
+  });
 });
 
 describe("match-catalogo", () => {

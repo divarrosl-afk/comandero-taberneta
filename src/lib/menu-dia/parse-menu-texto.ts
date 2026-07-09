@@ -12,6 +12,7 @@ export interface MenuDiaParseado {
 }
 
 const SUPLEMENTO_RE = /\(\+\s*(\d+(?:[.,]\d+)?)\s*€\s*\)/i;
+const SOLO_SUPLEMENTO_RE = /^\(\+\s*(\d+(?:[.,]\d+)?)\s*€\s*\)$/i;
 const FECHA_RE = /Fecha:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i;
 const PRECIO_MENU_RE = /^(\d+(?:[.,]\d+)?)\s*€/;
 
@@ -42,6 +43,96 @@ function extraerSuplemento(texto: string): { nombre: string; suplemento?: number
   return { nombre, suplemento };
 }
 
+function esSoloSuplemento(linea: string): boolean {
+  return SOLO_SUPLEMENTO_RE.test(linea.trim());
+}
+
+function nombreEsCorto(nombre: string): boolean {
+  const t = nombre.trim();
+  return t.length > 0 && t.length <= 15 && !/\s/.test(t);
+}
+
+function pareceNombrePlatoSimple(nombre: string): boolean {
+  if (/\b(de|con|al|del|la|el|los|las)\b/i.test(nombre)) return false;
+  return nombre.trim().length <= 30;
+}
+
+/** Separa platos distintos que el PDF pegó en una sola línea (p. ej. Churrasco Salchichas). */
+function splitNombrePlatos(nombre: string): string[] {
+  const t = nombre.trim();
+  if (!t) return [];
+
+  const yMatch = t.match(/^(.+?)\s+y\s+(.+)$/i);
+  if (yMatch) {
+    const izq = yMatch[1].trim();
+    const der = yMatch[2].trim();
+    if (pareceNombrePlatoSimple(izq) && pareceNombrePlatoSimple(der)) {
+      const derFmt =
+        der.charAt(0).toLocaleUpperCase("es") + der.slice(1);
+      return [izq, derFmt];
+    }
+  }
+
+  const dosPalabras = t.match(
+    /^([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)$/u,
+  );
+  if (dosPalabras) {
+    return [dosPalabras[1], dosPalabras[2]];
+  }
+
+  return [t];
+}
+
+function expandirLineaPlato(linea: string): string[] {
+  const t = linea.trim();
+  if (!t) return [];
+  if (esSoloSuplemento(t)) return [t];
+
+  const inicioSup = t.match(/^\(\+\s*(\d+(?:[.,]\d+)?)\s*€\s*\)\s*(.+)$/i);
+  if (inicioSup) {
+    return [`(+${inicioSup[1]} €)`, ...expandirLineaPlato(inicioSup[2])];
+  }
+
+  const medio = t.match(/^(.+?)\s*\(\+\s*(\d+(?:[.,]\d+)?)\s*€\s*\)\s+(.+)$/i);
+  if (medio) {
+    const izq = splitNombrePlatos(medio[1].trim());
+    const der = splitNombrePlatos(medio[3].trim());
+    const sup = parseNumero(medio[2]);
+    const out: string[] = [];
+
+    if (izq.length === 1) {
+      out.push(`${izq[0]} (+${sup} €)`);
+    } else {
+      out.push(...izq.slice(0, -1));
+      out.push(`${izq[izq.length - 1]} (+${sup} €)`);
+    }
+    out.push(...der);
+    return out;
+  }
+
+  if (SUPLEMENTO_RE.test(t)) {
+    const { nombre, suplemento } = extraerSuplemento(t);
+    if (nombre && suplemento !== undefined) {
+      const partes = splitNombrePlatos(nombre);
+      if (partes.length > 1) {
+        return [`${partes[0]} (+${suplemento} €)`, ...partes.slice(1)];
+      }
+    }
+  }
+
+  const partes = splitNombrePlatos(t);
+  if (partes.length > 1) return partes;
+  return [t];
+}
+
+function expandirLineasPlatos(lineas: string[]): string[] {
+  const out: string[] = [];
+  for (const linea of lineas) {
+    out.push(...expandirLineaPlato(linea));
+  }
+  return out;
+}
+
 function esLineaIgnorada(linea: string): boolean {
   const t = linea.trim();
   if (!t) return true;
@@ -55,12 +146,16 @@ function esLineaIgnorada(linea: string): boolean {
   if (/^Tel[eé]fono/i.test(t)) return true;
   if (PRECIO_MENU_RE.test(t)) return true;
   if (/^--/.test(t)) return true;
-  if (/^\(\+\s*\d+(?:[.,]\d+)?\s*€\s*\)$/i.test(t)) return true;
   return false;
 }
 
 function esContinuacion(linea: string, acumulado: string): boolean {
   const t = linea.trim();
+  const prev = acumulado.trim();
+  if (nombreEsCorto(prev) && /^[a-záéíóúñ]/u.test(t)) {
+    const primera = t.split(/\s+/)[0] ?? "";
+    if (nombreEsCorto(primera) || primera.length <= 15) return false;
+  }
   if (/^\(\+\s*\d+/.test(t)) return true;
   if (/^[a-z(]/.test(t)) return true;
   if (/\b(y|de|con|al|la|el|del)\s*$/i.test(acumulado.trim())) return true;
@@ -71,19 +166,36 @@ function esContinuacion(linea: string, acumulado: string): boolean {
 function parsearPlatos(lineas: string[]): PlatoMenuParseado[] {
   const platos: PlatoMenuParseado[] = [];
   let acumulado = "";
+  let suplementoPendiente: number | undefined;
 
   const flush = () => {
     const limpio = acumulado.trim();
     if (!limpio) return;
     const { nombre, suplemento } = extraerSuplemento(limpio);
-    if (nombre) platos.push({ nombre, suplemento });
+    const sup = suplemento ?? suplementoPendiente;
+    suplementoPendiente = undefined;
+    if (nombre) platos.push({ nombre, suplemento: sup });
     acumulado = "";
   };
 
-  for (const linea of lineas) {
+  for (const linea of expandirLineasPlatos(lineas)) {
     if (esLineaIgnorada(linea)) continue;
 
     const trimmed = linea.trim();
+
+    if (esSoloSuplemento(trimmed)) {
+      const sup = parseNumero(trimmed.match(SOLO_SUPLEMENTO_RE)![1]);
+      if (acumulado) flush();
+
+      const anterior = platos[platos.length - 1];
+      if (anterior && !anterior.suplemento && nombreEsCorto(anterior.nombre)) {
+        anterior.suplemento = sup;
+      } else {
+        suplementoPendiente = sup;
+      }
+      continue;
+    }
+
     if (/^\(\+\s*\d+/.test(trimmed)) {
       if (acumulado) flush();
       acumulado = trimmed;
@@ -92,19 +204,19 @@ function parsearPlatos(lineas: string[]): PlatoMenuParseado[] {
     }
 
     if (!acumulado) {
-      acumulado = linea.trim();
+      acumulado = trimmed;
       if (SUPLEMENTO_RE.test(acumulado)) flush();
       continue;
     }
 
     if (esContinuacion(linea, acumulado)) {
-      acumulado = `${acumulado} ${linea.trim()}`;
+      acumulado = `${acumulado} ${trimmed}`;
       if (SUPLEMENTO_RE.test(acumulado)) flush();
       continue;
     }
 
     flush();
-    acumulado = linea.trim();
+    acumulado = trimmed;
     if (SUPLEMENTO_RE.test(acumulado)) flush();
   }
 
