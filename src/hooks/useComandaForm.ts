@@ -36,6 +36,7 @@ const estadoInicial: ComandaFormState = {
   postres: [crearPostreVacio()],
   cafes: [crearPostreVacio()],
   estadoXCafe: null,
+  comensales: null,
   extras: [],
   observaciones: [""],
 };
@@ -124,6 +125,10 @@ export function useComandaForm(
 
   const setMesa = useCallback((mesa: string) => {
     setForm((prev) => ({ ...prev, mesa }));
+  }, []);
+
+  const setComensales = useCallback((comensales: number | null) => {
+    setForm((prev) => ({ ...prev, comensales }));
   }, []);
 
   const setCamarero = useCallback((camareroId: string) => {
@@ -490,6 +495,7 @@ export function useComandaForm(
     step,
     setStep,
     setMesa,
+    setComensales,
     setCamarero,
     updatePlato,
     addPlato,

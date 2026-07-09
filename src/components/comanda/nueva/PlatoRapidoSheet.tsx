@@ -18,47 +18,69 @@ import type {
 } from "@/types/comanda";
 
 interface PlatoRapidoSheetProps {
-  producto: ProductoCatalogo;
+  producto?: ProductoCatalogo;
+  platoInicial?: PlatoFormItem;
   seccion: SeccionPlatos;
   conTipo?: boolean;
+  modo?: "añadir" | "editar";
   onCerrar: () => void;
   onConfirmar: (plato: PlatoFormItem) => void;
 }
 
 export function PlatoRapidoSheet({
   producto,
+  platoInicial,
   seccion,
   conTipo = false,
+  modo = "añadir",
   onCerrar,
   onConfirmar,
 }: PlatoRapidoSheetProps) {
   const { menu } = useMenuDia();
-  const base = useMemo(
-    () =>
-      platoFieldsFromProducto(producto, {
-        seccion,
-        menu,
-      }),
-    [producto, seccion, menu],
-  );
+  const base = useMemo(() => {
+    if (producto) {
+      return platoFieldsFromProducto(producto, { seccion, menu });
+    }
+    return {};
+  }, [producto, seccion, menu]);
 
-  const [cantidad, setCantidad] = useState(1);
+  const titulo =
+    producto?.nombre ?? platoInicial?.nombre ?? "Plato";
+
+  const [cantidad, setCantidad] = useState(platoInicial?.cantidad ?? 1);
   const [tipoSeleccion, setTipoSeleccion] = useState(
-    base.tipoSeleccion,
+    platoInicial?.tipoSeleccion ?? base.tipoSeleccion,
   );
-  const [suplemento, setSuplemento] = useState(base.suplemento);
-  const [modificaciones, setModificaciones] = useState<ModificacionId[]>([]);
-  const [salsas, setSalsas] = useState<SalsaCantidad[]>([]);
-  const [notaLibre, setNotaLibre] = useState("");
+  const [suplemento, setSuplemento] = useState(
+    platoInicial?.suplemento ?? base.suplemento,
+  );
+  const [modificaciones, setModificaciones] = useState<ModificacionId[]>(
+    platoInicial?.modificaciones ?? [],
+  );
+  const [salsas, setSalsas] = useState<SalsaCantidad[]>(
+    platoInicial?.salsas ?? [],
+  );
+  const [notaLibre, setNotaLibre] = useState(platoInicial?.notaLibre ?? "");
+
+  const resetKey = producto?.id ?? platoInicial?.id ?? "nuevo";
 
   useEffect(() => {
+    if (modo === "editar" && platoInicial) {
+      setCantidad(platoInicial.cantidad);
+      setTipoSeleccion(platoInicial.tipoSeleccion ?? base.tipoSeleccion);
+      setSuplemento(platoInicial.suplemento ?? base.suplemento);
+      setModificaciones(platoInicial.modificaciones);
+      setSalsas(platoInicial.salsas);
+      setNotaLibre(platoInicial.notaLibre ?? "");
+      return;
+    }
     setCantidad(1);
     setTipoSeleccion(base.tipoSeleccion);
     setSuplemento(base.suplemento);
     setModificaciones([]);
     setSalsas([]);
     setNotaLibre("");
-  }, [producto.id, base.tipoSeleccion, base.suplemento]);
+  }, [resetKey, modo, platoInicial, base.tipoSeleccion, base.suplemento]);
 
   const toggleMod = (mod: ModificacionId) => {
     setModificaciones((prev) =>
@@ -84,10 +106,11 @@ export function PlatoRapidoSheet({
   };
 
   const confirmar = () => {
+    const nombre = producto?.nombre ?? platoInicial?.nombre ?? "";
     const plato: PlatoFormItem = {
-      ...crearPlatoVacio(),
+      ...(platoInicial ?? crearPlatoVacio()),
       ...base,
-      nombre: producto.nombre,
+      nombre,
       cantidad,
       tipoSeleccion,
       suplemento,
@@ -100,6 +123,7 @@ export function PlatoRapidoSheet({
   };
 
   const esBebida = seccion === "bebidas";
+  const esEditar = modo === "editar";
 
   return (
     <div
@@ -120,10 +144,12 @@ export function PlatoRapidoSheet({
                 id="plato-rapido-titulo"
                 className="truncate text-lg font-bold text-primary"
               >
-                {nombreBoton(producto)}
+                {producto ? nombreBoton(producto) : titulo}
               </h2>
               <p className="text-xs text-muted">
-                Toca modificaciones si hace falta · luego Añadir
+                {esEditar
+                  ? "Edita y guarda los cambios"
+                  : "Toca modificaciones si hace falta · luego Añadir"}
               </p>
             </div>
             <button
@@ -173,7 +199,7 @@ export function PlatoRapidoSheet({
 
         <div className="shrink-0 border-t border-border p-3">
           <Button fullWidth size="lg" onClick={confirmar}>
-            Añadir a comanda
+            {esEditar ? "Guardar cambios" : "Añadir a comanda"}
           </Button>
         </div>
       </div>

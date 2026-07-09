@@ -15,6 +15,7 @@ interface PlatoCardProps {
   indice: number;
   conTipo?: boolean;
   enfocado?: boolean;
+  inicioExpandido?: boolean;
   onChange: (cambios: Partial<PlatoFormItem>) => void;
   onRemove: () => void;
   onDuplicate: () => void;
@@ -28,6 +29,7 @@ export function PlatoCard({
   indice,
   conTipo = false,
   enfocado = false,
+  inicioExpandido = false,
   onChange,
   onRemove,
   onDuplicate,
@@ -36,7 +38,7 @@ export function PlatoCard({
   onColapsar,
 }: PlatoCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [expandido, setExpandido] = useState(false);
+  const [expandido, setExpandido] = useState(inicioExpandido);
   const tieneContenido = platoTieneContenido(plato);
 
   useEffect(() => {

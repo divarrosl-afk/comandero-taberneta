@@ -21,6 +21,7 @@ function formBase(overrides: Partial<ComandaFormState> = {}): ComandaFormState {
     postres: [crearPostreVacio()],
     cafes: [crearPostreVacio()],
     estadoXCafe: null,
+    comensales: null,
     extras: [],
     observaciones: [""],
     ...overrides,
@@ -77,6 +78,14 @@ describe("formEsValido — pedidos parciales", () => {
     });
     expect(formEsValido(form)).toBe(true);
     expect(formToComandaPostres(form)?.cafes).toHaveLength(1);
+  });
+
+  it("incluye comensales en formToComanda", () => {
+    const form = formBase({
+      bebidas: [{ ...crearPlatoVacio(), nombre: "Agua" }],
+      comensales: 4,
+    });
+    expect(formToComanda(form)?.comensales).toBe(4);
   });
 
   it("detecta contenido mixto cocina + postres", () => {

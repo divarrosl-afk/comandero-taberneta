@@ -121,6 +121,7 @@ function ComandaNuevaForm() {
           borradorRecuperado={borradorRecuperado}
           esValido={esValido}
           onSetMesa={formActions.setMesa}
+          onSetComensales={formActions.setComensales}
           onUpdatePlato={formActions.updatePlato}
           onAddPlato={formActions.addPlato}
           onConfirmPlato={formActions.confirmPlato}

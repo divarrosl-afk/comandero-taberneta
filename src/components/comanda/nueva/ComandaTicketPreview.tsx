@@ -45,7 +45,10 @@ interface ComandaTicketPreviewProps {
 
 export function ComandaTicketPreview({ comanda }: ComandaTicketPreviewProps) {
   const codigoMesa = getCodigoMesaComanda(comanda);
-  const texto = comandaToTexto(comanda, { nombreMesa: codigoMesa });
+  const texto = comandaToTexto(comanda, {
+    nombreMesa: codigoMesa,
+    comensales: comanda.comensales,
+  });
   const lineas = ticketBodyLines(texto, codigoMesa);
 
   return (

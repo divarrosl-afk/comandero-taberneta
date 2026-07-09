@@ -136,6 +136,7 @@ export function formToComanda(form: ComandaFormState): ComandaCocina | null {
         cantidad: e.cantidad,
       })),
     observaciones: form.observaciones.map((o) => o.trim()).filter(Boolean),
+    comensales: form.comensales && form.comensales > 0 ? form.comensales : undefined,
     creadaEn: new Date().toISOString(),
     enviada: true,
     estadoPanel: "sentados",

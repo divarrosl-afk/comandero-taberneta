@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { BottomBar } from "@/components/ui/BottomBar";
 import { MesaSelector } from "@/components/comanda/MesaSelector";
@@ -12,6 +12,7 @@ import { SeccionPlatosPanel } from "@/components/comanda/nueva/SeccionPlatosPane
 import { SectionTabs, type TabComanda } from "@/components/comanda/nueva/SectionTabs";
 import { CafesSeccionPanel } from "@/components/postres/nueva/CafesSeccionPanel";
 import { PostresSeccionPanel } from "@/components/postres/nueva/PostresSeccionPanel";
+import { ComensalesRapido } from "@/components/comanda/nueva/ComensalesRapido";
 import type { useComandaForm } from "@/hooks/useComandaForm";
 import {
   formTieneContenidoCocina,
@@ -26,6 +27,7 @@ interface ComandaEditViewProps {
   borradorRecuperado: boolean;
   esValido: boolean;
   onSetMesa: ComandaFormActions["setMesa"];
+  onSetComensales: ComandaFormActions["setComensales"];
   onUpdatePlato: ComandaFormActions["updatePlato"];
   onAddPlato: ComandaFormActions["addPlato"];
   onConfirmPlato: ComandaFormActions["confirmPlato"];
@@ -97,6 +99,7 @@ export function ComandaEditView(props: ComandaEditViewProps) {
     borradorRecuperado,
     esValido,
     onSetMesa,
+    onSetComensales,
     onSetExtraCantidad,
     onSetObservacion,
     onAddObservacion,
@@ -120,9 +123,22 @@ export function ComandaEditView(props: ComandaEditViewProps) {
 
   const [tab, setTab] = useState<TabComanda>("mesa");
   const [busqueda, setBusqueda] = useState("");
+  const mesaPrevia = useRef<string | null>(form.mesa);
+
+  useEffect(() => {
+    if (form.mesa && !mesaPrevia.current) {
+      setTab("entrantes");
+    }
+    mesaPrevia.current = form.mesa;
+  }, [form.mesa]);
 
   const enviaCocina = formTieneContenidoCocina(form);
   const enviaPostres = formTienePostresOCafes(form);
+
+  const handleSetMesa = (mesaId: string) => {
+    onSetMesa(mesaId);
+    setTab("entrantes");
+  };
 
   return (
     <>
@@ -156,7 +172,11 @@ export function ComandaEditView(props: ComandaEditViewProps) {
         </div>
       )}
 
-      <CabeceraComanda mesa={form.mesa} />
+      <CabeceraComanda
+        mesa={form.mesa}
+        comensales={form.comensales}
+        onComensales={onSetComensales}
+      />
       <SectionTabs
         active={tab}
         onChange={(t) => {
@@ -167,7 +187,15 @@ export function ComandaEditView(props: ComandaEditViewProps) {
 
       <div className="mt-4 space-y-4 pb-4">
         {tab === "mesa" && (
-          <MesaSelector mesaSeleccionada={form.mesa} onSelect={onSetMesa} />
+          <div className="space-y-4">
+            <MesaSelector mesaSeleccionada={form.mesa} onSelect={handleSetMesa} />
+            {form.mesa && (
+              <ComensalesRapido
+                value={form.comensales}
+                onChange={onSetComensales}
+              />
+            )}
+          </div>
         )}
 
         {tab === "entrantes" &&

@@ -10,6 +10,7 @@ import { PlatoCard } from "@/components/comanda/nueva/PlatoCard";
 import { PlatoRapidoSheet } from "@/components/comanda/nueva/PlatoRapidoSheet";
 import { TicketCompacto } from "@/components/comanda/nueva/TicketCompacto";
 import { OrigenPlatosSelector } from "@/components/comanda/nueva/OrigenPlatosSelector";
+import { platoTieneContenido } from "@/lib/comanda/plato-factory";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import type { OrigenPlatos } from "@/lib/carta/carta-admin";
 import type { SeccionCatalogo } from "@/types/catalogo";
@@ -83,6 +84,9 @@ export function SeccionPlatosPanel({
   const [productoRapido, setProductoRapido] = useState<ProductoCatalogo | null>(
     null,
   );
+  const [platoEditando, setPlatoEditando] = useState<PlatoFormItem | null>(
+    null,
+  );
   const [ticketExpandido, setTicketExpandido] = useState(false);
   const { menu } = useMenuDia();
   const [origen, setOrigen] = useState<OrigenPlatos>(() =>
@@ -94,7 +98,17 @@ export function SeccionPlatosPanel({
 
   const abrirRapido = (producto: ProductoCatalogo) => {
     if (!producto.activo || producto.agotado) return;
+    setPlatoEditando(null);
     setProductoRapido(producto);
+  };
+
+  const abrirEdicion = (plato: PlatoFormItem) => {
+    setProductoRapido(null);
+    setPlatoEditando(plato);
+  };
+
+  const guardarEdicion = (plato: PlatoFormItem) => {
+    onUpdate(plato.id, plato);
   };
 
   return (
@@ -122,6 +136,7 @@ export function SeccionPlatosPanel({
           platos={platos}
           expandido={ticketExpandido}
           onToggle={() => setTicketExpandido((v) => !v)}
+          onEditarPlato={abrirEdicion}
         />
 
         {onBusquedaChange && (
@@ -151,12 +166,13 @@ export function SeccionPlatosPanel({
 
         {ticketExpandido && (
           <div className="mt-4 space-y-3">
-            {platos.map((plato, index) => (
+            {platos.filter(platoTieneContenido).map((plato, index) => (
               <PlatoCard
                 key={plato.id}
                 plato={plato}
                 indice={index}
                 conTipo={conTipo}
+                inicioExpandido
                 onChange={(cambios) => onUpdate(plato.id, cambios)}
                 onRemove={() => onRemove(plato.id)}
                 onDuplicate={() => onDuplicate(plato.id)}
@@ -175,8 +191,20 @@ export function SeccionPlatosPanel({
           producto={productoRapido}
           seccion={seccion}
           conTipo={conTipo}
+          modo="añadir"
           onCerrar={() => setProductoRapido(null)}
           onConfirmar={onConfirmPlato}
+        />
+      )}
+
+      {platoEditando && (
+        <PlatoRapidoSheet
+          platoInicial={platoEditando}
+          seccion={seccion}
+          conTipo={conTipo}
+          modo="editar"
+          onCerrar={() => setPlatoEditando(null)}
+          onConfirmar={guardarEdicion}
         />
       )}
 

@@ -18,6 +18,7 @@ export function normalizarBorrador(
     postres: form.postres?.length ? form.postres : [crearPostreVacio()],
     cafes: form.cafes?.length ? form.cafes : [crearPostreVacio()],
     estadoXCafe: form.estadoXCafe ?? null,
+    comensales: form.comensales ?? null,
     entrantes: form.entrantes?.length ? form.entrantes : [crearPlatoVacio()],
     primeros: form.primeros?.length ? form.primeros : [crearPlatoVacio()],
     segundos: form.segundos?.length ? form.segundos : [crearPlatoVacio()],

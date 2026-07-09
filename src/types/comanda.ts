@@ -121,6 +121,7 @@ export interface ComandaCocina {
   bebidas: PlatoComanda[];
   extras: { nombre: string; cantidad: number }[];
   observaciones: string[];
+  comensales?: number;
   creadaEn: string;
   enviada: boolean;
   estadoPanel: EstadoPanel;
@@ -153,6 +154,7 @@ export interface ComandaFormState {
   postres: PostreFormItem[];
   cafes: PostreFormItem[];
   estadoXCafe: EstadoCafeX | null;
+  comensales: number | null;
   extras: ExtraMesaItem[];
   observaciones: string[];
 }

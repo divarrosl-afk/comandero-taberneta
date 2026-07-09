@@ -10,8 +10,15 @@ import type { ComandaPostres } from "@/types/postres";
 
 const COPIAS_TICKET_COMPLETO = 2;
 
-function ticketOptionsForComanda(comanda: { mesa: string; mesaCodigo?: string }) {
-  return { nombreMesa: getCodigoMesaComanda(comanda) };
+function ticketOptionsForComanda(comanda: {
+  mesa: string;
+  mesaCodigo?: string;
+  comensales?: number;
+}) {
+  return {
+    nombreMesa: getCodigoMesaComanda(comanda),
+    comensales: comanda.comensales,
+  };
 }
 
 function buildSummary(results: Awaited<ReturnType<typeof printTicket>>[]): string {
