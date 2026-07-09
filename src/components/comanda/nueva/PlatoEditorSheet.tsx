@@ -7,6 +7,10 @@ import { ComandaEditorSheet } from "@/components/comanda/nueva/ComandaEditorShee
 import { ModificacionesChips } from "@/components/comanda/nueva/ModificacionesChips";
 import { SalsasSelector } from "@/components/comanda/nueva/SalsasSelector";
 import { TipoPlatoBar } from "@/components/comanda/nueva/TipoPlatoBar";
+import {
+  setModificacionCantidadEnLista,
+  tapModificacionEnLista,
+} from "@/lib/comanda/modificaciones";
 import { platoFieldsFromProducto } from "@/lib/carta/plato-from-producto";
 import { crearPlatoVacio } from "@/lib/comanda/plato-factory";
 import { useMenuDia } from "@/hooks/useMenuDia";
@@ -95,19 +99,11 @@ export function PlatoEditorSheet({
   const esBebida = seccion === "bebidas";
 
   const tapModificacion = (mod: ModificacionId) => {
-    setModificaciones((prev) => {
-      const tiene = prev.some((m) => m.id === mod);
-      if (tiene) return prev.filter((m) => m.id !== mod);
-      return [...prev, { id: mod, cantidad: 1 }];
-    });
+    setModificaciones((prev) => tapModificacionEnLista(prev, mod));
   };
 
   const setModificacionCantidad = (mod: ModificacionId, qty: number) => {
-    setModificaciones((prev) => {
-      const resto = prev.filter((m) => m.id !== mod);
-      if (qty <= 0) return resto;
-      return [...resto, { id: mod, cantidad: qty }];
-    });
+    setModificaciones((prev) => setModificacionCantidadEnLista(prev, mod, qty));
   };
 
   const cycleSalsa = (salsaId: string, salsaNombre: string) => {

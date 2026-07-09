@@ -39,7 +39,6 @@ export type ModificacionId =
   | "patatas_bravas"
   | "plato_vacio"
   | "queso"
-  | "salsa_romesco"
   | "salsa_roquefort_mod"
   | "servilletas"
   | "sin_cebolla"
@@ -57,12 +56,14 @@ export type ModificacionId =
   | "ninos";
 
 export type SalsaId =
+  | "salsa_romesco"
+  | "salsa_roquefort"
+  | "salsa_pimienta"
+  | "salsa_champis"
   | "alioli"
   | "mayonesa"
   | "ketchup"
-  | "salsa_brava"
-  | "salsa_pimienta"
-  | "salsa_roquefort";
+  | "salsa_brava";
 
 export type ExtraMesaId =
   | "cuenta_efectivo"

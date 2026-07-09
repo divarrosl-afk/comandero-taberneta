@@ -49,8 +49,6 @@ export const MODIFICACIONES: CatalogoItem<ModificacionId>[] = [
   { id: "limon", label: "Limón", labelCorto: "Limón" },
   { id: "plato_vacio", label: "Plato vacío", labelCorto: "Plato vacío" },
   { id: "queso", label: "Queso", labelCorto: "Queso" },
-  { id: "salsa_romesco", label: "Salsa romesco", labelCorto: "Romesco" },
-  { id: "salsa_roquefort_mod", label: "Salsa roquefort", labelCorto: "Roquefort" },
   { id: "servilletas", label: "Servilletas", labelCorto: "Servilletas" },
   { id: "sin_cebolla", label: "Sin cebolla", labelCorto: "S/cebolla" },
   { id: "sin_tomate", label: "Sin tomate", labelCorto: "S/tomate" },
@@ -68,12 +66,10 @@ export const MODIFICACIONES: CatalogoItem<ModificacionId>[] = [
 ];
 
 export const SALSAS: CatalogoItem<SalsaId>[] = [
-  { id: "alioli", label: "Alioli" },
-  { id: "mayonesa", label: "Mayonesa", labelCorto: "Mayo" },
-  { id: "ketchup", label: "Ketchup" },
-  { id: "salsa_brava", label: "Salsa brava", labelCorto: "Brava" },
-  { id: "salsa_pimienta", label: "Salsa pimienta", labelCorto: "Pimienta" },
+  { id: "salsa_romesco", label: "Salsa romesco", labelCorto: "Romesco" },
   { id: "salsa_roquefort", label: "Salsa roquefort", labelCorto: "Roquefort" },
+  { id: "salsa_pimienta", label: "Salsa pimienta", labelCorto: "Pimienta" },
+  { id: "salsa_champis", label: "Salsa champis", labelCorto: "Champis" },
 ];
 
 export const EXTRAS_MESA: CatalogoItem<ExtraMesaId>[] = [

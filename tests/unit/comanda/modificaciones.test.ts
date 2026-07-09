@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   cantidadModificacion,
   normalizarModificaciones,
+  tapModificacionEnLista,
 } from "@/lib/comanda/modificaciones";
 
 describe("modificaciones", () => {
@@ -19,5 +20,26 @@ describe("modificaciones", () => {
     ];
     expect(cantidadModificacion(mods, "huevo")).toBe(2);
     expect(cantidadModificacion(mods, "mong")).toBe(0);
+  });
+
+  it("cicla cantidad x1 → x2 → x3 en toques", () => {
+    let mods = tapModificacionEnLista([], "huevo");
+    expect(mods).toEqual([{ id: "huevo", cantidad: 1 }]);
+
+    mods = tapModificacionEnLista(mods, "huevo");
+    expect(mods).toEqual([{ id: "huevo", cantidad: 2 }]);
+
+    mods = tapModificacionEnLista(mods, "huevo");
+    expect(mods).toEqual([{ id: "huevo", cantidad: 3 }]);
+
+    mods = tapModificacionEnLista(mods, "huevo");
+    expect(mods).toEqual([{ id: "huevo", cantidad: 3 }]);
+  });
+
+  it("toggle mods activan y desactivan", () => {
+    let mods = tapModificacionEnLista([], "urgente");
+    expect(mods).toEqual([{ id: "urgente", cantidad: 1 }]);
+    mods = tapModificacionEnLista(mods, "urgente");
+    expect(mods).toEqual([]);
   });
 });
