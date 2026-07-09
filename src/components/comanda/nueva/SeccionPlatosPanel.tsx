@@ -1,12 +1,14 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { ProductosRapidosGrid } from "@/components/catalogo/ProductosRapidosGrid";
 import { CatalogoBuscadorRapido } from "@/components/catalogo/CatalogoBuscadorRapido";
 import { PlatoCard } from "@/components/comanda/nueva/PlatoCard";
+import { PlatoRapidoSheet } from "@/components/comanda/nueva/PlatoRapidoSheet";
+import { TicketCompacto } from "@/components/comanda/nueva/TicketCompacto";
 import { OrigenPlatosSelector } from "@/components/comanda/nueva/OrigenPlatosSelector";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import type { OrigenPlatos } from "@/lib/carta/carta-admin";
@@ -17,7 +19,6 @@ import type {
   SeccionPlatos,
 } from "@/types/comanda";
 import type { ProductoCatalogo } from "@/types/catalogo";
-import { scrollSeccionAlInicio } from "@/lib/ui/scroll-seccion";
 
 const SECCION_A_CATALOGO: Record<SeccionPlatos, SeccionCatalogo> = {
   entrantes: "entrantes",
@@ -50,11 +51,10 @@ interface SeccionPlatosPanelProps {
   conTipo?: boolean;
   active?: boolean;
   busqueda?: string;
-  platoEnfocadoId?: string;
   onBusquedaChange?: (value: string) => void;
   onUpdate: (id: string, cambios: Partial<PlatoFormItem>) => void;
   onAdd: () => void;
-  onSelectCatalogo: (producto: ProductoCatalogo) => void;
+  onConfirmPlato: (plato: PlatoFormItem) => void;
   onRemove: (id: string) => void;
   onDuplicate: (id: string) => void;
   onClear: () => void;
@@ -69,11 +69,10 @@ export function SeccionPlatosPanel({
   conTipo = false,
   active = false,
   busqueda = "",
-  platoEnfocadoId,
   onBusquedaChange,
   onUpdate,
   onAdd,
-  onSelectCatalogo,
+  onConfirmPlato,
   onRemove,
   onDuplicate,
   onClear,
@@ -81,32 +80,25 @@ export function SeccionPlatosPanel({
   onCycleSalsa,
 }: SeccionPlatosPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
+  const [productoRapido, setProductoRapido] = useState<ProductoCatalogo | null>(
+    null,
+  );
+  const [ticketExpandido, setTicketExpandido] = useState(false);
   const { menu } = useMenuDia();
   const [origen, setOrigen] = useState<OrigenPlatos>(() =>
     origenInicial(seccion, menu?.activo ?? false),
   );
-  const panelRef = useRef<HTMLDivElement>(null);
-  const catalogoRef = useRef<HTMLDivElement>(null);
-  const origenInicializado = useRef(false);
-
-  useLayoutEffect(() => {
-    if (!origenInicializado.current) {
-      origenInicializado.current = true;
-      return;
-    }
-    scrollSeccionAlInicio(panelRef.current);
-  }, [origen]);
 
   const conSelectorOrigen =
     seccion === "entrantes" || seccion === "primeros" || seccion === "segundos";
 
+  const abrirRapido = (producto: ProductoCatalogo) => {
+    if (!producto.activo || producto.agotado) return;
+    setProductoRapido(producto);
+  };
+
   return (
     <>
-      <div
-        ref={panelRef}
-        data-seccion-panel={seccion}
-        className="scroll-mt-28"
-      >
       <SectionCard
         title={titulo}
         active={active}
@@ -126,6 +118,12 @@ export function SeccionPlatosPanel({
           </div>
         }
       >
+        <TicketCompacto
+          platos={platos}
+          expandido={ticketExpandido}
+          onToggle={() => setTicketExpandido((v) => !v)}
+        />
+
         {onBusquedaChange && (
           <CatalogoBuscadorRapido
             value={busqueda}
@@ -134,7 +132,6 @@ export function SeccionPlatosPanel({
           />
         )}
 
-        <div ref={catalogoRef} className="scroll-mt-28">
         {conSelectorOrigen && (
           <OrigenPlatosSelector
             value={origen}
@@ -149,31 +146,39 @@ export function SeccionPlatosPanel({
           alcanceSecciones={ALCANCE_COMANDA}
           busqueda={busqueda}
           origen={conSelectorOrigen ? origen : undefined}
-          onSelect={onSelectCatalogo}
+          onSelect={abrirRapido}
         />
-        </div>
 
-        <div className="mt-4 space-y-3">
-          {platos.map((plato, index) => (
-            <PlatoCard
-              key={plato.id}
-              plato={plato}
-              indice={index}
-              conTipo={conTipo}
-              enfocado={plato.id === platoEnfocadoId}
-              onColapsar={() => scrollSeccionAlInicio(catalogoRef.current)}
-              onChange={(cambios) => onUpdate(plato.id, cambios)}
-              onRemove={() => onRemove(plato.id)}
-              onDuplicate={() => onDuplicate(plato.id)}
-              onToggleModificacion={(mod) =>
-                onToggleModificacion(plato.id, mod)
-              }
-              onCycleSalsa={(id, nombre) => onCycleSalsa(plato.id, id, nombre)}
-            />
-          ))}
-        </div>
+        {ticketExpandido && (
+          <div className="mt-4 space-y-3">
+            {platos.map((plato, index) => (
+              <PlatoCard
+                key={plato.id}
+                plato={plato}
+                indice={index}
+                conTipo={conTipo}
+                onChange={(cambios) => onUpdate(plato.id, cambios)}
+                onRemove={() => onRemove(plato.id)}
+                onDuplicate={() => onDuplicate(plato.id)}
+                onToggleModificacion={(mod) =>
+                  onToggleModificacion(plato.id, mod)
+                }
+                onCycleSalsa={(id, nombre) => onCycleSalsa(plato.id, id, nombre)}
+              />
+            ))}
+          </div>
+        )}
       </SectionCard>
-      </div>
+
+      {productoRapido && (
+        <PlatoRapidoSheet
+          producto={productoRapido}
+          seccion={seccion}
+          conTipo={conTipo}
+          onCerrar={() => setProductoRapido(null)}
+          onConfirmar={onConfirmPlato}
+        />
+      )}
 
       <ConfirmDialog
         open={confirmClear}
@@ -183,6 +188,7 @@ export function SeccionPlatosPanel({
         onConfirm={() => {
           onClear();
           setConfirmClear(false);
+          setTicketExpandido(false);
         }}
         onCancel={() => setConfirmClear(false)}
       />

@@ -5,6 +5,8 @@ import type { SeccionPlatos } from "@/types/comanda";
 export type TabComanda =
   | "mesa"
   | SeccionPlatos
+  | "postres"
+  | "cafes"
   | "extras"
   | "observaciones";
 
@@ -14,6 +16,8 @@ const TABS: { id: TabComanda; label: string }[] = [
   { id: "primeros", label: "1º" },
   { id: "segundos", label: "2º" },
   { id: "bebidas", label: "Beb." },
+  { id: "postres", label: "Post." },
+  { id: "cafes", label: "Café" },
   { id: "extras", label: "Extras" },
   { id: "observaciones", label: "Obs." },
 ];
@@ -33,7 +37,7 @@ export function SectionTabs({ active, onChange }: SectionTabsProps) {
             type="button"
             onClick={() => onChange(tab.id)}
             className={[
-              "shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-95",
+              "shrink-0 rounded-xl px-3 py-2.5 text-sm font-bold transition active:scale-95",
               active === tab.id
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-card text-foreground hover:bg-border/40",

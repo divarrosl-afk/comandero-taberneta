@@ -1,19 +1,28 @@
 import type { ComandaFormState } from "@/types/comanda";
+import { crearPostreVacio } from "@/lib/postres/postre-factory";
 import { crearPlatoVacio } from "@/lib/comanda/plato-factory";
 
 const BORRADOR_KEY = "comandero-taberneta:borrador";
 
 export function normalizarBorrador(
-  form: Partial<ComandaFormState>,
+  form: ComandaFormState & { mesa?: string | number | null },
 ): ComandaFormState {
+  const mesa =
+    form.mesa !== null && form.mesa !== undefined
+      ? String(form.mesa)
+      : null;
+
   return {
-    mesa: form.mesa ?? null,
-    camareroId: form.camareroId ?? null,
+    ...form,
+    mesa,
+    postres: form.postres?.length ? form.postres : [crearPostreVacio()],
+    cafes: form.cafes?.length ? form.cafes : [crearPostreVacio()],
+    estadoXCafe: form.estadoXCafe ?? null,
     entrantes: form.entrantes?.length ? form.entrantes : [crearPlatoVacio()],
     primeros: form.primeros?.length ? form.primeros : [crearPlatoVacio()],
     segundos: form.segundos?.length ? form.segundos : [crearPlatoVacio()],
     bebidas: form.bebidas?.length ? form.bebidas : [crearPlatoVacio()],
-    extras: Array.isArray(form.extras) ? form.extras : [],
+    extras: form.extras ?? [],
     observaciones: form.observaciones?.length ? form.observaciones : [""],
   };
 }
@@ -29,13 +38,10 @@ export function cargarBorrador(): ComandaFormState | null {
   try {
     const raw = localStorage.getItem(BORRADOR_KEY);
     if (!raw) return null;
-    const form = normalizarBorrador(
-      JSON.parse(raw) as ComandaFormState & { mesa?: string | number | null },
-    );
-    if (form.mesa !== null && form.mesa !== undefined && typeof form.mesa === "number") {
-      form.mesa = String(form.mesa);
-    }
-    return form;
+    const form = JSON.parse(raw) as ComandaFormState & {
+      mesa?: string | number | null;
+    };
+    return normalizarBorrador(form);
   } catch {
     return null;
   }
@@ -53,7 +59,10 @@ export function borradorTieneDatos(form: ComandaFormState): boolean {
     [...form.entrantes, ...form.primeros, ...form.segundos, ...form.bebidas].some(
       (p) => p.nombre.trim().length > 0,
     ) ||
-    (form.extras ?? []).some((e) => Number(e.cantidad) > 0) ||
+    form.postres.some((p) => p.nombre.trim().length > 0) ||
+    form.cafes.some((p) => p.nombre.trim().length > 0) ||
+    form.estadoXCafe !== null ||
+    form.extras.some((e) => e.cantidad > 0) ||
     form.observaciones.some((o) => o.trim().length > 0)
   );
 }

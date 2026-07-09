@@ -5,14 +5,17 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { PrintStatusBanner } from "@/components/impresion/PrintStatusBanner";
 import { ComandaTicketPreview } from "@/components/comanda/nueva/ComandaTicketPreview";
-import { imprimirComandaCocina } from "@/modules/impresion-wifi";
+import { imprimirComandaCocina, imprimirComandaPostres } from "@/modules/impresion-wifi";
 import { PRINT_MESSAGES } from "@/modules/impresion-wifi";
 import { getNombreMesaComanda } from "@/lib/mesas/resolve-mesa";
 import { usesRemoteData } from "@/lib/data/backend";
 import type { ComandaCocina } from "@/types/comanda";
+import type { ComandaPostres } from "@/types/postres";
+import { PostresTicketPreview } from "@/components/postres/nueva/PostresTicketPreview";
 
 interface ComandaEnviadaViewProps {
   comanda: ComandaCocina;
+  comandaPostres?: ComandaPostres | null;
   onNueva: () => void;
   synced: boolean;
   syncAviso?: string | null;
@@ -21,6 +24,7 @@ interface ComandaEnviadaViewProps {
 
 export function ComandaEnviadaView({
   comanda,
+  comandaPostres,
   onNueva,
   synced,
   syncAviso,
@@ -55,13 +59,22 @@ export function ComandaEnviadaView({
       setPrintError(false);
       try {
         const batch = await imprimirComandaCocina(comanda);
+        let summary = batch.allOk ? batch.summary : PRINT_MESSAGES.printFailGuardado;
+        let error = !batch.allOk;
+
+        if (comandaPostres && puedeImprimir) {
+          const batchPostres = await imprimirComandaPostres(comandaPostres);
+          if (!batchPostres.allOk) {
+            error = true;
+            summary = `${summary} · Postres: ${PRINT_MESSAGES.printFailGuardado}`;
+          } else {
+            summary = `${summary} · Postres OK`;
+          }
+        }
+
         if (!cancelled) {
-          setPrintSummary(
-            batch.allOk
-              ? batch.summary
-              : PRINT_MESSAGES.printFailGuardado,
-          );
-          setPrintError(!batch.allOk);
+          setPrintSummary(summary);
+          setPrintError(error);
         }
       } catch {
         if (!cancelled) {
@@ -76,7 +89,7 @@ export function ComandaEnviadaView({
     return () => {
       cancelled = true;
     };
-  }, [comanda, puedeImprimir]);
+  }, [comanda, comandaPostres, puedeImprimir]);
 
   const handleReintentar = async () => {
     if (!onReintentarSync) return;
@@ -137,6 +150,12 @@ export function ComandaEnviadaView({
       />
 
       <ComandaTicketPreview comanda={comanda} />
+
+      {comandaPostres && (
+        <div className="mt-6">
+          <PostresTicketPreview comanda={comandaPostres} />
+        </div>
+      )}
 
       <div className="mt-6 space-y-3">
         <Button fullWidth size="lg" onClick={onNueva}>

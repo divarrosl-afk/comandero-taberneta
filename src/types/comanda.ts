@@ -1,5 +1,7 @@
 import type { EstadoPanel } from "@/types/panel";
 
+import type { EstadoCafeX, PostreFormItem } from "@/types/postres";
+
 export type TipoServicio = "menu" | "carta" | "mixto";
 
 export type TipoPlato = "menu" | "menu_medio" | "menu_suplemento" | "carta";
@@ -148,6 +150,9 @@ export interface ComandaFormState {
   primeros: PlatoFormItem[];
   segundos: PlatoFormItem[];
   bebidas: PlatoFormItem[];
+  postres: PostreFormItem[];
+  cafes: PostreFormItem[];
+  estadoXCafe: EstadoCafeX | null;
   extras: ExtraMesaItem[];
   observaciones: string[];
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { BottomBar } from "@/components/ui/BottomBar";
 import { MesaSelector } from "@/components/comanda/MesaSelector";
@@ -10,41 +10,43 @@ import { ExtrasMesaSection } from "@/components/comanda/nueva/ExtrasMesaSection"
 import { ObservacionesSection } from "@/components/comanda/nueva/ObservacionesSection";
 import { SeccionPlatosPanel } from "@/components/comanda/nueva/SeccionPlatosPanel";
 import { SectionTabs, type TabComanda } from "@/components/comanda/nueva/SectionTabs";
+import { CafesSeccionPanel } from "@/components/postres/nueva/CafesSeccionPanel";
+import { PostresSeccionPanel } from "@/components/postres/nueva/PostresSeccionPanel";
 import type { useComandaForm } from "@/hooks/useComandaForm";
 import {
-  useScrollToPlatoCard,
-  type PlatoEnfocado,
-} from "@/hooks/useScrollToPlatoCard";
-import type { ProductoCatalogo, SeccionCatalogo } from "@/types/catalogo";
-import type { SeccionPlatos } from "@/types/comanda";
-import { scrollSeccionAlInicio } from "@/lib/ui/scroll-seccion";
-import {
-  formEsValido,
-  formTieneContenido,
+  formTieneContenidoCocina,
+  formTienePostresOCafes,
 } from "@/lib/comanda/map-form";
-
-const CATALOGO_A_PLATOS: Partial<Record<SeccionCatalogo, SeccionPlatos>> = {
-  entrantes: "entrantes",
-  primeros: "primeros",
-  segundos: "segundos",
-  bebidas: "bebidas",
-};
+import type { SeccionPlatos } from "@/types/comanda";
 
 type ComandaFormActions = ReturnType<typeof useComandaForm>;
 
 interface ComandaEditViewProps {
   form: ComandaFormActions["form"];
   borradorRecuperado: boolean;
+  esValido: boolean;
   onSetMesa: ComandaFormActions["setMesa"];
   onUpdatePlato: ComandaFormActions["updatePlato"];
   onAddPlato: ComandaFormActions["addPlato"];
-  onAddPlatoFromCatalog: ComandaFormActions["addPlatoFromCatalog"];
+  onConfirmPlato: ComandaFormActions["confirmPlato"];
   onRemovePlato: ComandaFormActions["removePlato"];
   onDuplicatePlato: ComandaFormActions["duplicatePlato"];
   onClearSeccion: ComandaFormActions["clearSeccion"];
   onToggleModificacion: ComandaFormActions["toggleModificacion"];
   onCycleSalsa: ComandaFormActions["cycleSalsa"];
   onSetExtraCantidad: ComandaFormActions["setExtraCantidad"];
+  onUpdatePostre: ComandaFormActions["updatePostre"];
+  onAddPostre: ComandaFormActions["addPostre"];
+  onAddPostreFrecuente: ComandaFormActions["addPostreFrecuente"];
+  onRemovePostre: ComandaFormActions["removePostre"];
+  onDuplicatePostre: ComandaFormActions["duplicatePostre"];
+  onClearPostres: ComandaFormActions["clearPostres"];
+  onUpdateCafe: ComandaFormActions["updateCafe"];
+  onAddCafe: ComandaFormActions["addCafe"];
+  onAddCafeRapido: ComandaFormActions["addCafeRapido"];
+  onRemoveCafe: ComandaFormActions["removeCafe"];
+  onDuplicateCafe: ComandaFormActions["duplicateCafe"];
+  onClearCafes: ComandaFormActions["clearCafes"];
   onSetObservacion: ComandaFormActions["setObservacion"];
   onAddObservacion: ComandaFormActions["addObservacion"];
   onRemoveObservacion: ComandaFormActions["removeObservacion"];
@@ -55,87 +57,72 @@ interface ComandaEditViewProps {
 
 function getValidationHint(form: ComandaFormActions["form"]): string | undefined {
   if (!form.mesa) return "Selecciona una mesa";
-  if (!formTieneContenido(form)) {
-    return "Añade al menos un plato, bebida o extra";
-  }
-  return undefined;
+  return "Añade al menos un plato, bebida, postre, café, extra u observación";
 }
 
-export function ComandaEditView({
-  form,
-  borradorRecuperado,
-  onSetMesa,
-  onUpdatePlato,
-  onAddPlato,
-  onAddPlatoFromCatalog,
-  onRemovePlato,
-  onDuplicatePlato,
-  onClearSeccion,
-  onToggleModificacion,
-  onCycleSalsa,
-  onSetExtraCantidad,
-  onSetObservacion,
-  onAddObservacion,
-  onRemoveObservacion,
-  onObservacionRapida,
-  onDescartarBorrador,
-  onPreview,
-}: ComandaEditViewProps) {
-  const puedeEnviar = formEsValido(form);
+function panelPlatos(
+  titulo: string,
+  seccion: SeccionPlatos,
+  props: ComandaEditViewProps,
+  conTipo = false,
+  busqueda: string,
+  onBusquedaChange: (v: string) => void,
+) {
+  return (
+    <SeccionPlatosPanel
+      titulo={titulo}
+      seccion={seccion}
+      platos={props.form[seccion]}
+      conTipo={conTipo}
+      active
+      busqueda={busqueda}
+      onBusquedaChange={onBusquedaChange}
+      onUpdate={(id, c) => props.onUpdatePlato(seccion, id, c)}
+      onAdd={() => props.onAddPlato(seccion)}
+      onConfirmPlato={(plato) => props.onConfirmPlato(seccion, plato)}
+      onRemove={(id) => props.onRemovePlato(seccion, id)}
+      onDuplicate={(id) => props.onDuplicatePlato(seccion, id)}
+      onClear={() => props.onClearSeccion(seccion)}
+      onToggleModificacion={(id, mod) =>
+        props.onToggleModificacion(seccion, id, mod)
+      }
+      onCycleSalsa={(id, sid, nom) => props.onCycleSalsa(seccion, id, sid, nom)}
+    />
+  );
+}
+
+export function ComandaEditView(props: ComandaEditViewProps) {
+  const {
+    form,
+    borradorRecuperado,
+    esValido,
+    onSetMesa,
+    onSetExtraCantidad,
+    onSetObservacion,
+    onAddObservacion,
+    onRemoveObservacion,
+    onObservacionRapida,
+    onDescartarBorrador,
+    onPreview,
+    onUpdatePostre,
+    onAddPostre,
+    onAddPostreFrecuente,
+    onRemovePostre,
+    onDuplicatePostre,
+    onClearPostres,
+    onUpdateCafe,
+    onAddCafe,
+    onAddCafeRapido,
+    onRemoveCafe,
+    onDuplicateCafe,
+    onClearCafes,
+  } = props;
+
   const [tab, setTab] = useState<TabComanda>("mesa");
   const [busqueda, setBusqueda] = useState("");
-  const [platoEnfocado, setPlatoEnfocado] = useState<PlatoEnfocado | null>(null);
-  const tabContentRef = useRef<HTMLDivElement>(null);
-  const scrollTabAlInicio = useRef(false);
 
-  const limpiarEnfoque = useCallback(() => setPlatoEnfocado(null), []);
-  useScrollToPlatoCard(platoEnfocado, limpiarEnfoque);
-
-  useEffect(() => {
-    if (!scrollTabAlInicio.current) return;
-    scrollTabAlInicio.current = false;
-    scrollSeccionAlInicio(tabContentRef.current);
-  }, [tab]);
-
-  const seleccionarMesa = useCallback(
-    (mesaId: string) => {
-      onSetMesa(mesaId);
-      scrollTabAlInicio.current = true;
-      setTab("entrantes");
-      setBusqueda("");
-      setPlatoEnfocado(null);
-    },
-    [onSetMesa],
-  );
-
-  useEffect(() => {
-    if (form.mesa) {
-      setTab((t) => {
-        if (t === "mesa") {
-          scrollTabAlInicio.current = true;
-          return "entrantes";
-        }
-        return t;
-      });
-    }
-  }, [form.mesa]);
-
-  const seleccionarCatalogo = (
-    seccionTab: SeccionPlatos,
-    producto: ProductoCatalogo,
-  ) => {
-    const destino =
-      busqueda.trim().length > 0
-        ? CATALOGO_A_PLATOS[producto.seccion] ?? seccionTab
-        : seccionTab;
-    const platoId = onAddPlatoFromCatalog(destino, producto);
-    if (!platoId) return;
-
-    if (tab !== destino) {
-      setTab(destino);
-    }
-    setPlatoEnfocado({ seccion: destino, id: platoId, nonce: Date.now() });
-  };
+  const enviaCocina = formTieneContenidoCocina(form);
+  const enviaPostres = formTienePostresOCafes(form);
 
   return (
     <>
@@ -147,6 +134,11 @@ export function ComandaEditView({
           ← Inicio
         </Link>
         <h1 className="text-2xl font-bold text-primary">Nueva comanda</h1>
+        {enviaCocina && enviaPostres && (
+          <p className="mt-1 text-xs text-muted">
+            Se enviarán ticket cocina y ticket postres
+          </p>
+        )}
       </header>
 
       {borradorRecuperado && (
@@ -168,123 +160,48 @@ export function ComandaEditView({
       <SectionTabs
         active={tab}
         onChange={(t) => {
-          scrollTabAlInicio.current = true;
           setTab(t);
           setBusqueda("");
-          setPlatoEnfocado(null);
         }}
       />
 
-      <div ref={tabContentRef} className="mt-4 space-y-4 pb-4 scroll-mt-28">
+      <div className="mt-4 space-y-4 pb-4">
         {tab === "mesa" && (
-          <div className="space-y-6">
-            <MesaSelector mesaSeleccionada={form.mesa} onSelect={seleccionarMesa} />
-          </div>
+          <MesaSelector mesaSeleccionada={form.mesa} onSelect={onSetMesa} />
         )}
 
-        {tab === "entrantes" && (
-          <SeccionPlatosPanel
-            titulo="Entrantes"
-            seccion="entrantes"
-            platos={form.entrantes}
-            active
-            onUpdate={(id, c) => onUpdatePlato("entrantes", id, c)}
-            onAdd={() => onAddPlato("entrantes")}
-            onSelectCatalogo={(p) => seleccionarCatalogo("entrantes", p)}
-            platoEnfocadoId={
-              platoEnfocado?.seccion === "entrantes" ? platoEnfocado.id : undefined
-            }
+        {tab === "entrantes" &&
+          panelPlatos("Entrantes", "entrantes", props, false, busqueda, setBusqueda)}
+        {tab === "primeros" &&
+          panelPlatos("Primeros", "primeros", props, true, busqueda, setBusqueda)}
+        {tab === "segundos" &&
+          panelPlatos("Segundos", "segundos", props, true, busqueda, setBusqueda)}
+        {tab === "bebidas" &&
+          panelPlatos("Bebidas", "bebidas", props, false, busqueda, setBusqueda)}
+
+        {tab === "postres" && (
+          <PostresSeccionPanel
+            postres={form.postres}
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
-            onRemove={(id) => onRemovePlato("entrantes", id)}
-            onDuplicate={(id) => onDuplicatePlato("entrantes", id)}
-            onClear={() => onClearSeccion("entrantes")}
-            onToggleModificacion={(id, mod) =>
-              onToggleModificacion("entrantes", id, mod)
-            }
-            onCycleSalsa={(id, sid, nom) =>
-              onCycleSalsa("entrantes", id, sid, nom)
-            }
+            onUpdate={onUpdatePostre}
+            onAdd={onAddPostre}
+            onAddFrecuente={onAddPostreFrecuente}
+            onRemove={onRemovePostre}
+            onDuplicate={onDuplicatePostre}
+            onClear={onClearPostres}
           />
         )}
 
-        {tab === "primeros" && (
-          <SeccionPlatosPanel
-            titulo="Primeros"
-            seccion="primeros"
-            platos={form.primeros}
-            conTipo
-            active
-            onUpdate={(id, c) => onUpdatePlato("primeros", id, c)}
-            onAdd={() => onAddPlato("primeros")}
-            onSelectCatalogo={(p) => seleccionarCatalogo("primeros", p)}
-            platoEnfocadoId={
-              platoEnfocado?.seccion === "primeros" ? platoEnfocado.id : undefined
-            }
-            busqueda={busqueda}
-            onBusquedaChange={setBusqueda}
-            onRemove={(id) => onRemovePlato("primeros", id)}
-            onDuplicate={(id) => onDuplicatePlato("primeros", id)}
-            onClear={() => onClearSeccion("primeros")}
-            onToggleModificacion={(id, mod) =>
-              onToggleModificacion("primeros", id, mod)
-            }
-            onCycleSalsa={(id, sid, nom) =>
-              onCycleSalsa("primeros", id, sid, nom)
-            }
-          />
-        )}
-
-        {tab === "segundos" && (
-          <SeccionPlatosPanel
-            titulo="Segundos"
-            seccion="segundos"
-            platos={form.segundos}
-            conTipo
-            active
-            onUpdate={(id, c) => onUpdatePlato("segundos", id, c)}
-            onAdd={() => onAddPlato("segundos")}
-            onSelectCatalogo={(p) => seleccionarCatalogo("segundos", p)}
-            platoEnfocadoId={
-              platoEnfocado?.seccion === "segundos" ? platoEnfocado.id : undefined
-            }
-            busqueda={busqueda}
-            onBusquedaChange={setBusqueda}
-            onRemove={(id) => onRemovePlato("segundos", id)}
-            onDuplicate={(id) => onDuplicatePlato("segundos", id)}
-            onClear={() => onClearSeccion("segundos")}
-            onToggleModificacion={(id, mod) =>
-              onToggleModificacion("segundos", id, mod)
-            }
-            onCycleSalsa={(id, sid, nom) =>
-              onCycleSalsa("segundos", id, sid, nom)
-            }
-          />
-        )}
-
-        {tab === "bebidas" && (
-          <SeccionPlatosPanel
-            titulo="Bebidas"
-            seccion="bebidas"
-            platos={form.bebidas}
-            active
-            onUpdate={(id, c) => onUpdatePlato("bebidas", id, c)}
-            onAdd={() => onAddPlato("bebidas")}
-            onSelectCatalogo={(p) => seleccionarCatalogo("bebidas", p)}
-            platoEnfocadoId={
-              platoEnfocado?.seccion === "bebidas" ? platoEnfocado.id : undefined
-            }
-            busqueda={busqueda}
-            onBusquedaChange={setBusqueda}
-            onRemove={(id) => onRemovePlato("bebidas", id)}
-            onDuplicate={(id) => onDuplicatePlato("bebidas", id)}
-            onClear={() => onClearSeccion("bebidas")}
-            onToggleModificacion={(id, mod) =>
-              onToggleModificacion("bebidas", id, mod)
-            }
-            onCycleSalsa={(id, sid, nom) =>
-              onCycleSalsa("bebidas", id, sid, nom)
-            }
+        {tab === "cafes" && (
+          <CafesSeccionPanel
+            cafes={form.cafes}
+            onUpdate={onUpdateCafe}
+            onAdd={onAddCafe}
+            onAddRapido={onAddCafeRapido}
+            onRemove={onRemoveCafe}
+            onDuplicate={onDuplicateCafe}
+            onClear={onClearCafes}
           />
         )}
 
@@ -306,8 +223,8 @@ export function ComandaEditView({
         )}
       </div>
 
-      <BottomBar hint={getValidationHint(form)}>
-        <Button fullWidth size="lg" disabled={!puedeEnviar} onClick={onPreview}>
+      <BottomBar hint={!esValido ? getValidationHint(form) : undefined}>
+        <Button fullWidth size="lg" disabled={!esValido} onClick={onPreview}>
           Ver vista previa
         </Button>
       </BottomBar>

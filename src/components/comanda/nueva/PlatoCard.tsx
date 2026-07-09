@@ -36,7 +36,7 @@ export function PlatoCard({
   onColapsar,
 }: PlatoCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [expandido, setExpandido] = useState(true);
+  const [expandido, setExpandido] = useState(false);
   const tieneContenido = platoTieneContenido(plato);
 
   useEffect(() => {

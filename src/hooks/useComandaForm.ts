@@ -8,6 +8,7 @@ import {
   cargarBorrador,
   guardarBorrador,
   limpiarBorrador,
+  normalizarBorrador,
 } from "@/lib/storage/borrador-comanda";
 import type {
   ComandaFormState,
@@ -19,6 +20,11 @@ import type {
 import { platoFieldsFromProducto } from "@/lib/carta/plato-from-producto";
 import { useMenuDia } from "@/hooks/useMenuDia";
 import type { ProductoCatalogo } from "@/types/catalogo";
+import {
+  crearPostreVacio,
+  duplicarPostre,
+} from "@/lib/postres/postre-factory";
+import type { EstadoCafeX, PostreFormItem } from "@/types/postres";
 
 const estadoInicial: ComandaFormState = {
   mesa: null,
@@ -27,6 +33,9 @@ const estadoInicial: ComandaFormState = {
   primeros: [crearPlatoVacio()],
   segundos: [crearPlatoVacio()],
   bebidas: [crearPlatoVacio()],
+  postres: [crearPostreVacio()],
+  cafes: [crearPostreVacio()],
+  estadoXCafe: null,
   extras: [],
   observaciones: [""],
 };
@@ -57,6 +66,17 @@ function estadoConMesa(
   return base;
 }
 
+function insertarPlato(
+  lista: PlatoFormItem[],
+  plato: PlatoFormItem,
+): PlatoFormItem[] {
+  const vacio = lista.find((p) => !p.nombre.trim());
+  if (vacio) {
+    return lista.map((p) => (p.id === vacio.id ? { ...plato, id: vacio.id } : p));
+  }
+  return [...lista, plato];
+}
+
 export function useComandaForm(
   camareroFijo?: string | null,
   mesaInicial?: string | null,
@@ -73,7 +93,7 @@ export function useComandaForm(
 
     const borrador = cargarBorrador();
     if (borrador && borradorTieneDatos(borrador)) {
-      setForm(aplicarCamareroFijo(borrador, camareroFijo));
+      setForm(aplicarCamareroFijo(normalizarBorrador(borrador), camareroFijo));
       setBorradorRecuperado(true);
     } else {
       const base = camareroFijo
@@ -126,6 +146,13 @@ export function useComandaForm(
     setForm((prev) => ({
       ...prev,
       [seccion]: [...prev[seccion], crearPlatoVacio()],
+    }));
+  }, []);
+
+  const confirmPlato = useCallback((seccion: SeccionPlatos, plato: PlatoFormItem) => {
+    setForm((prev) => ({
+      ...prev,
+      [seccion]: insertarPlato(prev[seccion], plato),
     }));
   }, []);
 
@@ -249,7 +276,7 @@ export function useComandaForm(
   const setExtraCantidad = useCallback(
     (extraId: string, nombre: string, cantidad: number) => {
       setForm((prev) => {
-        const extras = (prev.extras ?? []).filter((e) => e.id !== extraId);
+        const extras = prev.extras.filter((e) => e.id !== extraId);
         if (cantidad > 0) {
           extras.push({ id: extraId, nombre, cantidad });
         }
@@ -258,6 +285,153 @@ export function useComandaForm(
     },
     [],
   );
+
+  const cycleExtra = useCallback((extraId: string, nombre: string) => {
+    setForm((prev) => {
+      const actual = prev.extras.find((e) => e.id === extraId)?.cantidad ?? 0;
+      const siguiente = actual >= 3 ? 0 : actual + 1;
+      const extras = prev.extras.filter((e) => e.id !== extraId);
+
+      if (siguiente > 0) {
+        extras.push({ id: extraId, nombre, cantidad: siguiente });
+      }
+
+      return { ...prev, extras };
+    });
+  }, []);
+
+  const updatePostre = useCallback(
+    (id: string, cambios: Partial<PostreFormItem>) => {
+      setForm((prev) => ({
+        ...prev,
+        postres: prev.postres.map((p) =>
+          p.id === id ? { ...p, ...cambios } : p,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const addPostre = useCallback(() => {
+    setForm((prev) => ({
+      ...prev,
+      postres: [...prev.postres, crearPostreVacio()],
+    }));
+  }, []);
+
+  const addPostreFrecuente = useCallback((producto: ProductoCatalogo) => {
+    setForm((prev) => {
+      const vacio = prev.postres.find((p) => !p.nombre.trim());
+      const datos = { nombre: producto.nombre };
+      if (vacio) {
+        return {
+          ...prev,
+          postres: prev.postres.map((p) =>
+            p.id === vacio.id ? { ...p, ...datos } : p,
+          ),
+        };
+      }
+      return {
+        ...prev,
+        postres: [...prev.postres, { ...crearPostreVacio(), ...datos }],
+      };
+    });
+  }, []);
+
+  const removePostre = useCallback((id: string) => {
+    setForm((prev) => {
+      const lista = prev.postres.filter((p) => p.id !== id);
+      return {
+        ...prev,
+        postres: lista.length ? lista : [crearPostreVacio()],
+      };
+    });
+  }, []);
+
+  const duplicatePostre = useCallback((id: string) => {
+    setForm((prev) => {
+      const index = prev.postres.findIndex((p) => p.id === id);
+      if (index === -1) return prev;
+      const copia = duplicarPostre(prev.postres[index]);
+      const lista = [...prev.postres];
+      lista.splice(index + 1, 0, copia);
+      return { ...prev, postres: lista };
+    });
+  }, []);
+
+  const clearPostres = useCallback(() => {
+    setForm((prev) => ({ ...prev, postres: [crearPostreVacio()] }));
+  }, []);
+
+  const updateCafe = useCallback(
+    (id: string, cambios: Partial<PostreFormItem>) => {
+      setForm((prev) => ({
+        ...prev,
+        cafes: prev.cafes.map((c) =>
+          c.id === id ? { ...c, ...cambios } : c,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const addCafe = useCallback(() => {
+    setForm((prev) => ({
+      ...prev,
+      cafes: [...prev.cafes, crearPostreVacio()],
+    }));
+  }, []);
+
+  const addCafeRapido = useCallback((nombre: string) => {
+    setForm((prev) => {
+      const vacio = prev.cafes.find((c) => !c.nombre.trim());
+      const datos = { nombre };
+      if (vacio) {
+        return {
+          ...prev,
+          cafes: prev.cafes.map((c) =>
+            c.id === vacio.id ? { ...c, ...datos } : c,
+          ),
+        };
+      }
+      return {
+        ...prev,
+        cafes: [...prev.cafes, { ...crearPostreVacio(), ...datos }],
+      };
+    });
+  }, []);
+
+  const removeCafe = useCallback((id: string) => {
+    setForm((prev) => {
+      const lista = prev.cafes.filter((c) => c.id !== id);
+      return {
+        ...prev,
+        cafes: lista.length ? lista : [crearPostreVacio()],
+      };
+    });
+  }, []);
+
+  const duplicateCafe = useCallback((id: string) => {
+    setForm((prev) => {
+      const index = prev.cafes.findIndex((c) => c.id === id);
+      if (index === -1) return prev;
+      const copia = duplicarPostre(prev.cafes[index]);
+      const lista = [...prev.cafes];
+      lista.splice(index + 1, 0, copia);
+      return { ...prev, cafes: lista };
+    });
+  }, []);
+
+  const clearCafes = useCallback(() => {
+    setForm((prev) => ({ ...prev, cafes: [crearPostreVacio()] }));
+  }, []);
+
+  const setEstadoXCafe = useCallback((estado: EstadoCafeX | null) => {
+    setForm((prev) => ({
+      ...prev,
+      estadoXCafe: prev.estadoXCafe === estado ? null : estado,
+    }));
+  }, []);
 
   const setObservacion = useCallback((index: number, valor: string) => {
     setForm((prev) => {
@@ -319,13 +493,28 @@ export function useComandaForm(
     setCamarero,
     updatePlato,
     addPlato,
+    confirmPlato,
     addPlatoFromCatalog,
     removePlato,
     duplicatePlato,
     clearSeccion,
     toggleModificacion,
     cycleSalsa,
+    cycleExtra,
     setExtraCantidad,
+    updatePostre,
+    addPostre,
+    addPostreFrecuente,
+    removePostre,
+    duplicatePostre,
+    clearPostres,
+    updateCafe,
+    addCafe,
+    addCafeRapido,
+    removeCafe,
+    duplicateCafe,
+    clearCafes,
+    setEstadoXCafe,
     setObservacion,
     addObservacion,
     removeObservacion,

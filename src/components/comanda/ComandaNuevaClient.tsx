@@ -4,17 +4,19 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, Suspense, useEffect, useState } from "react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
-import { CamareroAccesosBar } from "@/components/navigation/CamareroAccesosBar";
 import { ComandaEditView } from "@/components/comanda/nueva/ComandaEditView";
 import { ComandaEnviadaView } from "@/components/comanda/nueva/ComandaEnviadaView";
+import { PostresEnviadaView } from "@/components/postres/nueva/PostresEnviadaView";
 import { ComandaPreviewView } from "@/components/comanda/nueva/ComandaPreviewView";
 import { useAuth } from "@/contexts/AuthContext";
 import { useComandaForm } from "@/hooks/useComandaForm";
-import { formToComanda } from "@/lib/comanda/map-form";
+import { formToComanda, formToComandaPostres } from "@/lib/comanda/map-form";
 import { notificarComandaEnviada, marcarMesaOcupada } from "@/lib/mesas/estado-mesa";
 import { limpiarBorrador } from "@/lib/storage/borrador-comanda";
 import { guardarComanda, type PersistResult } from "@/lib/comandas/comandas-service";
+import { guardarPostres } from "@/lib/postres/postres-service";
 import type { ComandaCocina } from "@/types/comanda";
+import type { ComandaPostres } from "@/types/postres";
 
 function ComandaNuevaForm() {
   const searchParams = useSearchParams();
@@ -26,56 +28,120 @@ function ComandaNuevaForm() {
     step,
     setStep,
     reset,
+    esValido,
     borradorRecuperado,
     descartarBorrador,
   } = formActions;
 
   const [syncAviso, setSyncAviso] = useState<string | null>(null);
   const [envio, setEnvio] = useState<PersistResult<ComandaCocina> | null>(null);
+  const [envioPostres, setEnvioPostres] =
+    useState<PersistResult<ComandaPostres> | null>(null);
 
   const comanda = useMemo(() => formToComanda(form), [form]);
+  const comandaPostres = useMemo(() => formToComandaPostres(form), [form]);
 
   useEffect(() => {
     if (mesaParam) marcarMesaOcupada(mesaParam);
   }, [mesaParam]);
 
   const handleEnviar = async () => {
-    if (!comanda) return;
-    const resultado = await guardarComanda(comanda, {
-      camareroUsername: sesion?.username ?? form.camareroId,
-    });
-    setEnvio(resultado);
-    if (!resultado.synced) {
+    if (!comanda && !comandaPostres) return;
+
+    const username = sesion?.username ?? form.camareroId;
+    let synced = true;
+    const avisos: string[] = [];
+
+    if (comanda) {
+      const resultado = await guardarComanda(comanda, { camareroUsername: username });
+      setEnvio(resultado);
+      if (!resultado.synced) {
+        synced = false;
+        avisos.push("cocina");
+      }
+    } else {
+      setEnvio(null);
+    }
+
+    if (comandaPostres) {
+      const resultadoPostres = await guardarPostres(comandaPostres, {
+        camareroUsername: username,
+      });
+      setEnvioPostres(resultadoPostres);
+      if (!resultadoPostres.synced) {
+        synced = false;
+        avisos.push("postres");
+      }
+    } else {
+      setEnvioPostres(null);
+    }
+
+    if (!synced) {
       setSyncAviso(
-        "No se ha podido sincronizar, guardado localmente en este dispositivo.",
+        `No se ha podido sincronizar (${avisos.join(" y ")}), guardado localmente.`,
       );
     } else {
       setSyncAviso(null);
     }
-    notificarComandaEnviada(comanda.mesa);
+
+    const mesaId = comanda?.mesa ?? comandaPostres?.mesa;
+    if (mesaId) notificarComandaEnviada(mesaId);
     limpiarBorrador();
     setStep("enviada");
   };
 
-  const mesaId = mesaParam ?? form.mesa ?? null;
+  const reintentarSync = async () => {
+    const username = sesion?.username ?? form.camareroId;
+    let ok = true;
+    if (comanda) {
+      const r = await guardarComanda(comanda, { camareroUsername: username });
+      setEnvio(r);
+      if (!r.synced) ok = false;
+    }
+    if (comandaPostres) {
+      const rp = await guardarPostres(comandaPostres, {
+        camareroUsername: username,
+      });
+      setEnvioPostres(rp);
+      if (!rp.synced) ok = false;
+    }
+    if (ok) {
+      setSyncAviso(null);
+    } else {
+      setSyncAviso("No se ha podido sincronizar, guardado localmente.");
+    }
+    return ok;
+  };
 
   return (
     <main className="mx-auto min-h-dvh max-w-lg px-4 py-4 pb-32">
-      <CamareroAccesosBar activo="nota" mesaId={mesaId} className="mb-4" />
       {step === "editar" && (
         <ComandaEditView
           form={form}
           borradorRecuperado={borradorRecuperado}
+          esValido={esValido}
           onSetMesa={formActions.setMesa}
           onUpdatePlato={formActions.updatePlato}
           onAddPlato={formActions.addPlato}
-          onAddPlatoFromCatalog={formActions.addPlatoFromCatalog}
+          onConfirmPlato={formActions.confirmPlato}
           onRemovePlato={formActions.removePlato}
           onDuplicatePlato={formActions.duplicatePlato}
           onClearSeccion={formActions.clearSeccion}
           onToggleModificacion={formActions.toggleModificacion}
           onCycleSalsa={formActions.cycleSalsa}
           onSetExtraCantidad={formActions.setExtraCantidad}
+          onUpdatePostre={formActions.updatePostre}
+          onAddPostre={formActions.addPostre}
+          onAddPostreFrecuente={formActions.addPostreFrecuente}
+          onRemovePostre={formActions.removePostre}
+          onDuplicatePostre={formActions.duplicatePostre}
+          onClearPostres={formActions.clearPostres}
+          onUpdateCafe={formActions.updateCafe}
+          onAddCafe={formActions.addCafe}
+          onAddCafeRapido={formActions.addCafeRapido}
+          onRemoveCafe={formActions.removeCafe}
+          onDuplicateCafe={formActions.duplicateCafe}
+          onClearCafes={formActions.clearCafes}
           onSetObservacion={formActions.setObservacion}
           onAddObservacion={formActions.addObservacion}
           onRemoveObservacion={formActions.removeObservacion}
@@ -85,35 +151,33 @@ function ComandaNuevaForm() {
         />
       )}
 
-      {step === "preview" && comanda && (
+      {step === "preview" && (comanda || comandaPostres) && (
         <ComandaPreviewView
           comanda={comanda}
+          comandaPostres={comandaPostres}
           onEdit={() => setStep("editar")}
           onSend={handleEnviar}
         />
       )}
 
-      {step === "enviada" && comanda && envio && (
+      {step === "enviada" && envio?.data && (
         <ComandaEnviadaView
           comanda={envio.data}
-          synced={envio.synced}
+          comandaPostres={envioPostres?.data ?? null}
+          synced={!syncAviso}
           onNueva={reset}
           syncAviso={syncAviso}
-          onReintentarSync={async () => {
-            const r = await guardarComanda(comanda, {
-              camareroUsername: sesion?.username ?? form.camareroId,
-            });
-            setEnvio(r);
-            if (r.synced) {
-              setSyncAviso(null);
-            } else {
-              setSyncAviso(
-                r.error ??
-                  "No se ha podido sincronizar, guardado localmente en este dispositivo.",
-              );
-            }
-            return r.synced;
-          }}
+          onReintentarSync={reintentarSync}
+        />
+      )}
+
+      {step === "enviada" && !envio?.data && envioPostres?.data && (
+        <PostresEnviadaView
+          comanda={envioPostres.data}
+          synced={!syncAviso}
+          onNueva={reset}
+          syncAviso={syncAviso}
+          onReintentarSync={reintentarSync}
         />
       )}
     </main>
