@@ -7,14 +7,6 @@ import { dividirDestacados } from "@/lib/catalogo/search";
 import { hayHistorialVentas } from "@/lib/catalogo/popularidad";
 import { productoEnMenuHoy } from "@/lib/carta/format-producto";
 import {
-  agruparBocadillos,
-  listaSonBocadillos,
-} from "@/lib/carta/bocadillos-grid";
-import {
-  agruparTorradas,
-  listaUsaGridTorradas,
-} from "@/lib/carta/torradas-grid";
-import {
   agruparProductosPorCategoria,
   origenACartaServicio,
   type OrigenPlatos,
@@ -44,14 +36,12 @@ function PlatoBoton({
   producto,
   subtitulo,
   badge,
-  etiqueta,
   onSelect,
   onInfo,
 }: {
   producto: ProductoCatalogo;
   subtitulo: string;
   badge?: string;
-  etiqueta?: string;
   onSelect: () => void;
   onInfo: () => void;
 }) {
@@ -83,7 +73,7 @@ function PlatoBoton({
               ★
             </span>
           )}
-          {etiqueta ?? nombreBoton(producto)}
+          {nombreBoton(producto)}
         </span>
         {subtitulo && (
           <span className="mt-0.5 text-xs font-medium text-muted">{subtitulo}</span>
@@ -129,192 +119,6 @@ function subtituloProducto(
   return precioPart;
 }
 
-function GridBocadillos({
-  lista,
-  menu,
-  seccionPlatos,
-  seccion,
-  modoBusqueda,
-  ventasPorId,
-  onSelect,
-  onInfo,
-}: {
-  lista: ProductoCatalogo[];
-  menu: ReturnType<typeof useMenuDia>["menu"];
-  seccionPlatos?: SeccionPlatos;
-  seccion: SeccionCatalogo;
-  modoBusqueda?: boolean;
-  ventasPorId: Map<string, number>;
-  onSelect: (producto: ProductoCatalogo) => void;
-  onInfo: (producto: ProductoCatalogo) => void;
-}) {
-  const filas = useMemo(() => agruparBocadillos(lista), [lista]);
-  if (filas.length === 0) return null;
-
-  const renderCelda = (
-    producto: ProductoCatalogo | undefined,
-    etiqueta: "1/2" | "BOC",
-  ) => {
-    if (!producto) {
-      return (
-        <div
-          className="min-h-[4.25rem] rounded-2xl border-2 border-dashed border-border/60 bg-stone-50"
-          aria-hidden="true"
-        />
-      );
-    }
-
-    const enMenu = productoEnMenuHoy(
-      producto,
-      menu,
-      seccionPlatos as "primeros" | "segundos",
-    );
-    const ventas = ventasPorId.get(producto.id) ?? 0;
-
-    return (
-      <PlatoBoton
-        producto={producto}
-        badge={
-          modoBusqueda
-            ? producto.categoriaCarta
-              ? labelCategoriaCarta(
-                  producto.cartaServicio ?? "almuerzo",
-                  producto.categoriaCarta,
-                )
-              : labelSeccion(producto.seccion)
-            : ventas > 0
-              ? `🔥 ${ventas}`
-              : undefined
-        }
-        subtitulo={subtituloProducto(
-          producto,
-          enMenu,
-          menu?.precioMenu,
-          modoBusqueda,
-        )}
-        onSelect={() => !producto.agotado && onSelect(producto)}
-        onInfo={() => onInfo(producto)}
-        etiqueta={etiqueta}
-      />
-    );
-  };
-
-  return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 px-1">
-        <p className="text-center text-xs font-bold uppercase tracking-wide text-accent">
-          1/2
-        </p>
-        <p className="text-center text-xs font-bold uppercase tracking-wide text-accent">
-          BOC
-        </p>
-      </div>
-      {filas.map((fila) => (
-        <div key={fila.relleno} className="space-y-1">
-          <p className="px-1 text-xs font-semibold text-foreground">{fila.relleno}</p>
-          <div className="grid grid-cols-2 gap-2">
-            {renderCelda(fila.medio, "1/2")}
-            {renderCelda(fila.entero, "BOC")}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function GridTorradas({
-  lista,
-  menu,
-  seccionPlatos,
-  seccion,
-  modoBusqueda,
-  ventasPorId,
-  onSelect,
-  onInfo,
-}: {
-  lista: ProductoCatalogo[];
-  menu: ReturnType<typeof useMenuDia>["menu"];
-  seccionPlatos?: SeccionPlatos;
-  seccion: SeccionCatalogo;
-  modoBusqueda?: boolean;
-  ventasPorId: Map<string, number>;
-  onSelect: (producto: ProductoCatalogo) => void;
-  onInfo: (producto: ProductoCatalogo) => void;
-}) {
-  const filas = useMemo(() => agruparTorradas(lista), [lista]);
-  if (filas.length === 0) return null;
-
-  const renderCelda = (
-    producto: ProductoCatalogo | undefined,
-    etiqueta: "Desayuno" | "Carta",
-  ) => {
-    if (!producto) {
-      return (
-        <div
-          className="min-h-[4.25rem] rounded-2xl border-2 border-dashed border-border/60 bg-stone-50"
-          aria-hidden="true"
-        />
-      );
-    }
-
-    const enMenu = productoEnMenuHoy(
-      producto,
-      menu,
-      seccionPlatos as "primeros" | "segundos",
-    );
-    const ventas = ventasPorId.get(producto.id) ?? 0;
-
-    return (
-      <PlatoBoton
-        producto={producto}
-        badge={
-          modoBusqueda
-            ? producto.categoriaCarta
-              ? labelCategoriaCarta(
-                  producto.cartaServicio ?? "almuerzo",
-                  producto.categoriaCarta,
-                )
-              : labelSeccion(producto.seccion)
-            : ventas > 0
-              ? `🔥 ${ventas}`
-              : undefined
-        }
-        subtitulo={subtituloProducto(
-          producto,
-          enMenu,
-          menu?.precioMenu,
-          modoBusqueda,
-        )}
-        onSelect={() => !producto.agotado && onSelect(producto)}
-        onInfo={() => onInfo(producto)}
-        etiqueta={etiqueta}
-      />
-    );
-  };
-
-  return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 px-1">
-        <p className="text-center text-xs font-bold uppercase tracking-wide text-accent">
-          Desayuno
-        </p>
-        <p className="text-center text-xs font-bold uppercase tracking-wide text-accent">
-          Carta
-        </p>
-      </div>
-      {filas.map((fila) => (
-        <div key={fila.relleno} className="space-y-1">
-          <p className="px-1 text-xs font-semibold text-foreground">{fila.relleno}</p>
-          <div className="grid grid-cols-2 gap-2">
-            {renderCelda(fila.desayuno, "Desayuno")}
-            {renderCelda(fila.carta, "Carta")}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function GridProductos({
   lista,
   menu,
@@ -335,36 +139,6 @@ function GridProductos({
   onInfo: (producto: ProductoCatalogo) => void;
 }) {
   if (lista.length === 0) return null;
-
-  if (listaSonBocadillos(lista)) {
-    return (
-      <GridBocadillos
-        lista={lista}
-        menu={menu}
-        seccionPlatos={seccionPlatos}
-        seccion={seccion}
-        modoBusqueda={modoBusqueda}
-        ventasPorId={ventasPorId}
-        onSelect={onSelect}
-        onInfo={onInfo}
-      />
-    );
-  }
-
-  if (listaUsaGridTorradas(lista)) {
-    return (
-      <GridTorradas
-        lista={lista}
-        menu={menu}
-        seccionPlatos={seccionPlatos}
-        seccion={seccion}
-        modoBusqueda={modoBusqueda}
-        ventasPorId={ventasPorId}
-        onSelect={onSelect}
-        onInfo={onInfo}
-      />
-    );
-  }
 
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -566,13 +340,7 @@ function SelectorPorCategorias({
           key={grupo.id}
           id={grupo.id}
           label={grupo.label}
-          count={
-            listaSonBocadillos(grupo.productos)
-              ? agruparBocadillos(grupo.productos).length
-              : listaUsaGridTorradas(grupo.productos)
-                ? agruparTorradas(grupo.productos).length
-                : grupo.productos.length
-          }
+          count={grupo.productos.length}
           abierta={abiertas.has(grupo.id)}
           onToggle={() => toggle(grupo.id)}
         >
@@ -690,48 +458,6 @@ export function CartaMenuSelector({
     lista: ProductoCatalogo[],
   ) => {
     if (lista.length === 0) return null;
-
-    if (listaSonBocadillos(lista)) {
-      return (
-        <div className="space-y-4">
-          {tituloBloque && (
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-              {tituloBloque}
-            </p>
-          )}
-          <GridBocadillos
-            lista={lista}
-            menu={menu}
-            seccionPlatos={seccionPlatos}
-            seccion={seccion}
-            ventasPorId={ventasPorId}
-            onSelect={onSelect}
-            onInfo={setFicha}
-          />
-        </div>
-      );
-    }
-
-    if (listaUsaGridTorradas(lista)) {
-      return (
-        <div className="space-y-4">
-          {tituloBloque && (
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-              {tituloBloque}
-            </p>
-          )}
-          <GridTorradas
-            lista={lista}
-            menu={menu}
-            seccionPlatos={seccionPlatos}
-            seccion={seccion}
-            ventasPorId={ventasPorId}
-            onSelect={onSelect}
-            onInfo={setFicha}
-          />
-        </div>
-      );
-    }
 
     const { favoritos, masVendidos, recomendados, resto } = dividirDestacados(
       lista,

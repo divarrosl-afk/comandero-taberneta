@@ -150,8 +150,8 @@ function expandirItem(
   if (item.medio !== undefined && item.grande !== undefined) {
     const esBocadillo = meta.categoriaCarta.startsWith("bocadillo");
     if (esBocadillo) {
-      push(`1/2 BOC ${item.nombre}`, item.medio, `1/2 ${item.nombre}`);
-      push(`BOC ${item.nombre}`, item.grande, item.nombre);
+      push(`1/2 BOC ${item.nombre}`, item.medio);
+      push(`BOC ${item.nombre}`, item.grande);
       return result;
     }
     push(`${prefijo} ${item.nombre} (medio)`, item.medio, `${item.nombre} medio`);
@@ -163,8 +163,8 @@ function expandirItem(
     const esTorrada = meta.categoriaCarta === "torradas";
     if (esTorrada) {
       const relleno = rellenoTorrada(item.nombre);
-      push(formatoTorradaDesayuno(relleno), item.desayuno, "Desayuno");
-      push(formatoTorradaCarta(relleno), item.grande, relleno);
+      push(formatoTorradaDesayuno(relleno), item.desayuno);
+      push(formatoTorradaCarta(relleno), item.grande);
       return result;
     }
     push(`Torrada ${item.nombre} (desayuno)`, item.desayuno);
