@@ -14,6 +14,10 @@ export function platoFieldsFromProducto(
     nombre: producto.nombre,
   };
 
+  if (producto.categoriaCarta?.startsWith("bocadillo")) {
+    fields.tipoSeleccion = "carta";
+  }
+
   const aplicaMenu =
     opts.seccion === "primeros" || opts.seccion === "segundos";
   const esImportadoPdf = producto.id.startsWith("menu-imp-");

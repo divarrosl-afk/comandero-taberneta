@@ -1,4 +1,4 @@
-import { getExtraLabel, getModificacionLabel, getSalsaLabel } from "@/data/comanda-catalogo";
+import { getExtraLabel, getModificacionTicketLabel, getSalsaLabel } from "@/data/comanda-catalogo";
 import { CAMARERO_EQUIPO } from "@/lib/comanda/camarero-equipo";
 import { generarIdComanda } from "@/lib/comandas/comandas-service";
 import { getMesaCodigo } from "@/lib/mesas/resolve-mesa";
@@ -23,7 +23,11 @@ function mapPlatoBase(item: PlatoFormItem): Omit<PlatoComanda, "tipo" | "saleCom
     id: item.id,
     nombre: item.nombre.trim(),
     cantidad: item.cantidad,
-    modificaciones: item.modificaciones.map(getModificacionLabel),
+    modificaciones: item.modificaciones.flatMap((m) => {
+      const label = getModificacionTicketLabel(m.id);
+      if (m.cantidad <= 1) return [label];
+      return [`${label} x${m.cantidad}`];
+    }),
     salsas: item.salsas.map((s) => ({
       nombre: s.nombre || getSalsaLabel(s.id as SalsaId),
       cantidad: s.cantidad,

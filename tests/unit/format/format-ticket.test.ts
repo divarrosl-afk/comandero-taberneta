@@ -162,6 +162,34 @@ describe("ticket-kitchen", () => {
     expect(comandaToTicketBarra(comanda)).toBeNull();
   });
 
+  it("formatea bocadillos en línea con siglas BOC y mods con +", () => {
+    const comanda = comandaCocinaFixture({
+      entrantes: [
+        plato({
+          id: "b1",
+          nombre: "1/2 BOC Bacon",
+          tipo: "carta",
+          modificaciones: ["QUESO", "CEBOLLA FRITA", "PIM VERDE"],
+        }),
+        plato({
+          id: "b2",
+          nombre: "BOC Lomo",
+          tipo: "carta",
+          modificaciones: ["QUESO"],
+        }),
+      ],
+      primeros: [],
+      segundos: [],
+      bebidas: [],
+    });
+    const texto = formatKitchenTicketPlain(comanda, "cocina");
+    expect(texto).toContain(
+      "(C) 1/2 BOC BACON + QUESO + CEBOLLA FRITA + PIM VERDE",
+    );
+    expect(texto).toContain("(C) BOC LOMO + QUESO");
+    expect(texto).not.toContain(" - QUESO");
+  });
+
   it("platos repetidos con mods distintas agregan cantidad por mod", () => {
     const comanda = comandaCocinaFixture({
       entrantes: [],

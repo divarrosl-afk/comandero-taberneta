@@ -128,7 +128,8 @@ function ComandaNuevaForm() {
           onRemovePlato={formActions.removePlato}
           onDuplicatePlato={formActions.duplicatePlato}
           onClearSeccion={formActions.clearSeccion}
-          onToggleModificacion={formActions.toggleModificacion}
+          onTapModificacion={formActions.tapModificacion}
+          onSetModificacionCantidad={formActions.setModificacionCantidad}
           onCycleSalsa={formActions.cycleSalsa}
           onSetExtraCantidad={formActions.setExtraCantidad}
           onUpdatePostre={formActions.updatePostre}

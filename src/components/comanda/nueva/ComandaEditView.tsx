@@ -34,7 +34,8 @@ interface ComandaEditViewProps {
   onRemovePlato: ComandaFormActions["removePlato"];
   onDuplicatePlato: ComandaFormActions["duplicatePlato"];
   onClearSeccion: ComandaFormActions["clearSeccion"];
-  onToggleModificacion: ComandaFormActions["toggleModificacion"];
+  onTapModificacion: ComandaFormActions["tapModificacion"];
+  onSetModificacionCantidad: ComandaFormActions["setModificacionCantidad"];
   onCycleSalsa: ComandaFormActions["cycleSalsa"];
   onSetExtraCantidad: ComandaFormActions["setExtraCantidad"];
   onUpdatePostre: ComandaFormActions["updatePostre"];
@@ -87,8 +88,11 @@ function panelPlatos(
       onRemove={(id) => props.onRemovePlato(seccion, id)}
       onDuplicate={(id) => props.onDuplicatePlato(seccion, id)}
       onClear={() => props.onClearSeccion(seccion)}
-      onToggleModificacion={(id, mod) =>
-        props.onToggleModificacion(seccion, id, mod)
+      onTapModificacion={(id, mod) =>
+        props.onTapModificacion(seccion, id, mod)
+      }
+      onSetModificacionCantidad={(id, mod, cantidad) =>
+        props.onSetModificacionCantidad(seccion, id, mod, cantidad)
       }
       onCycleSalsa={(id, sid, nom) => props.onCycleSalsa(seccion, id, sid, nom)}
     />

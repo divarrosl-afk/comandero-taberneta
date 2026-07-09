@@ -143,6 +143,12 @@ function expandirItem(
   };
 
   if (item.medio !== undefined && item.grande !== undefined) {
+    const esBocadillo = meta.categoriaCarta.startsWith("bocadillo");
+    if (esBocadillo) {
+      push(`1/2 BOC ${item.nombre}`, item.medio, `1/2 ${item.nombre}`);
+      push(`BOC ${item.nombre}`, item.grande, item.nombre);
+      return result;
+    }
     push(`${prefijo} ${item.nombre} (medio)`, item.medio, `${item.nombre} medio`);
     push(`${prefijo} ${item.nombre} (grande)`, item.grande, item.nombre);
     return result;

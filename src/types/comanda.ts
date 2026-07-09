@@ -89,6 +89,11 @@ export interface SalsaCantidad {
   cantidad: 1 | 2 | 3;
 }
 
+export interface ModificacionCantidad {
+  id: ModificacionId;
+  cantidad: number;
+}
+
 export interface ExtraMesaItem {
   id: string;
   nombre: string;
@@ -139,7 +144,7 @@ export interface PlatoFormItem {
   cantidad: number;
   tipoSeleccion?: TipoPlatoSeleccion;
   suplemento?: number;
-  modificaciones: ModificacionId[];
+  modificaciones: ModificacionCantidad[];
   salsas: SalsaCantidad[];
   notaLibre?: string;
 }

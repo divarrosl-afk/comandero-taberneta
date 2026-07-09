@@ -9,7 +9,26 @@ export interface CatalogoItem<T extends string> {
   id: T;
   label: string;
   labelCorto?: string;
+  /** Etiqueta en ticket de cocina (mayúsculas). */
+  labelTicket?: string;
 }
+
+/** Modificaciones de un solo toque (activar/desactivar). */
+export const MODS_TOGGLE = new Set<ModificacionId>([
+  "sin_cebolla",
+  "sin_tomate",
+  "sin_queso",
+  "sin_gluten",
+  "sin_lactosa",
+  "sin_salsa",
+  "poco_hecho",
+  "al_punto",
+  "muy_hecho",
+  "compartir",
+  "para_llevar",
+  "urgente",
+  "ninos",
+]);
 
 export const MODIFICACIONES: CatalogoItem<ModificacionId>[] = [
   { id: "champis", label: "Champiñones", labelCorto: "Champis" },
@@ -102,6 +121,20 @@ export const OBSERVACIONES_RAPIDAS = [
 
 export function getModificacionLabel(id: ModificacionId): string {
   return MODIFICACIONES.find((m) => m.id === id)?.label ?? id;
+}
+
+export function getModificacionTicketLabel(id: ModificacionId): string {
+  const item = MODIFICACIONES.find((m) => m.id === id);
+  if (!item) return id.toUpperCase();
+  if (item.labelTicket) return item.labelTicket;
+  if (item.id.startsWith("sin_")) {
+    return item.label.toLocaleUpperCase("es-ES");
+  }
+  return (item.labelCorto ?? item.label).toLocaleUpperCase("es-ES");
+}
+
+export function esModToggle(id: ModificacionId): boolean {
+  return MODS_TOGGLE.has(id);
 }
 
 export function getSalsaLabel(id: SalsaId): string {

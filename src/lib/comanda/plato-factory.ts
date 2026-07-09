@@ -16,7 +16,7 @@ export function duplicarPlato(plato: PlatoFormItem): PlatoFormItem {
     ...plato,
     id: createId(),
     salsas: plato.salsas.map((s) => ({ ...s })),
-    modificaciones: [...plato.modificaciones],
+    modificaciones: plato.modificaciones.map((m) => ({ ...m })),
   };
 }
 

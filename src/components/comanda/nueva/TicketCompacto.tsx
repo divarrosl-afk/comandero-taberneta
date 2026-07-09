@@ -36,7 +36,9 @@ export function TicketCompacto({
             {p.nombre}
             {p.cantidad > 1 ? ` x${p.cantidad}` : ""}
             {(p.modificaciones?.length ?? 0) > 0 && (
-              <span className="ml-1 opacity-80">+{p.modificaciones.length}</span>
+              <span className="ml-1 opacity-80">
+                +{p.modificaciones.reduce((n, m) => n + m.cantidad, 0)}
+              </span>
             )}
           </button>
         ))}

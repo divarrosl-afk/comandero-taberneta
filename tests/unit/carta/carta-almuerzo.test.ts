@@ -20,7 +20,8 @@ describe("carta almuerzo oficial", () => {
     const productos = crearCatalogoDefault();
     const alm = productos.filter((p) => p.cartaServicio === "almuerzo");
 
-    expect(alm.some((p) => p.nombre.includes("(medio)"))).toBe(true);
+    expect(alm.some((p) => p.nombre.startsWith("1/2 BOC "))).toBe(true);
+    expect(alm.some((p) => p.nombre.startsWith("BOC "))).toBe(true);
     expect(alm.some((p) => p.nombre.includes("(desayuno)"))).toBe(true);
     expect(alm.some((p) => p.nombre === "Patatas bravas")).toBe(true);
     expect(alm.some((p) => p.nombre === "Jalapeños")).toBe(true);

@@ -70,7 +70,12 @@ interface SeccionPlatosPanelProps {
   onRemove: (id: string) => void;
   onDuplicate: (id: string) => void;
   onClear: () => void;
-  onToggleModificacion: (platoId: string, mod: ModificacionId) => void;
+  onTapModificacion: (platoId: string, mod: ModificacionId) => void;
+  onSetModificacionCantidad: (
+    platoId: string,
+    mod: ModificacionId,
+    cantidad: number,
+  ) => void;
   onCycleSalsa: (platoId: string, salsaId: string, nombre: string) => void;
 }
 
@@ -88,7 +93,8 @@ export function SeccionPlatosPanel({
   onRemove,
   onDuplicate,
   onClear,
-  onToggleModificacion,
+  onTapModificacion,
+  onSetModificacionCantidad,
   onCycleSalsa,
 }: SeccionPlatosPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
@@ -157,8 +163,11 @@ export function SeccionPlatosPanel({
                 setActivoId(null);
               }}
               onDuplicate={() => onDuplicate(platoActivo.id)}
-              onToggleModificacion={(mod) =>
-                onToggleModificacion(platoActivo.id, mod)
+              onTapModificacion={(mod) =>
+                onTapModificacion(platoActivo.id, mod)
+              }
+              onSetModificacionCantidad={(mod, cantidad) =>
+                onSetModificacionCantidad(platoActivo.id, mod, cantidad)
               }
               onCycleSalsa={(id, nombre) =>
                 onCycleSalsa(platoActivo.id, id, nombre)
