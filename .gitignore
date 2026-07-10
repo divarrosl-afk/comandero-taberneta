@@ -50,3 +50,6 @@ public/fallback-*.js.map
 # Print server logs
 print-server/logs/
 print-server/data/
+
+# Local backup snapshots (use scripts/backup-estado.sh)
+/backups/
